@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { spots as initialSpots, Spot, categoryColors } from "@/data/spots";
+import { categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
-import { MapPin } from "lucide-react";
+import { MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 
 // Mui Ne coordinates
 const MUI_NE_CENTER: [number, number] = [108.2900, 10.9320];
@@ -20,9 +21,9 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   
-  const [spots, setSpots] = useState<Spot[]>(initialSpots);
-  const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Spot["category"] | null>(null);
+  const { spots, loading, addSpot } = useSpots();
+  const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
   const [pendingCoordinates, setPendingCoordinates] = useState<[number, number] | null>(null);
 
@@ -51,11 +52,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         setIsSelectingLocation(false);
         toast.success("Location selected! Open the form to complete adding the spot.");
       }
-    });
-
-    // Add markers after map loads
-    map.current.on("load", () => {
-      addMarkers();
     });
 
     return () => {
@@ -133,12 +129,17 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   useEffect(() => {
     if (map.current?.isStyleLoaded()) {
       addMarkers();
+    } else {
+      map.current?.on("load", addMarkers);
     }
   }, [selectedCategory, spots]);
 
-  const handleAddSpot = (newSpot: Spot) => {
-    setSpots((prev) => [...prev, newSpot]);
-    setPendingCoordinates(null);
+  const handleAddSpot = async (spotInput: SpotInput) => {
+    const result = await addSpot(spotInput);
+    if (result) {
+      setPendingCoordinates(null);
+    }
+    return result;
   };
 
   const handleSelectLocation = () => {
@@ -154,6 +155,17 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       duration: 800,
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="font-body text-muted-foreground">Loading spots...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-lg">
@@ -206,7 +218,18 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       {/* Selected spot card */}
       {selectedSpot && (
         <div className="absolute bottom-4 left-4 z-20 md:bottom-6 md:left-6">
-          <SpotCard spot={selectedSpot} onClose={handleCloseSpot} />
+          <SpotCard 
+            spot={{
+              id: selectedSpot.id,
+              name: selectedSpot.name,
+              description: selectedSpot.description,
+              image: selectedSpot.image_url || "",
+              category: selectedSpot.category,
+              coordinates: selectedSpot.coordinates,
+              tags: selectedSpot.tags || undefined,
+            }} 
+            onClose={handleCloseSpot} 
+          />
         </div>
       )}
 
@@ -256,7 +279,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   );
 };
 
-const getIconPath = (category: Spot["category"]) => {
+const getIconPath = (category: DbSpot["category"]) => {
   switch (category) {
     case "accommodation":
       return '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>';

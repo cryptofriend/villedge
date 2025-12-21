@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      spots: {
+        Row: {
+          category: string
+          coordinates: Json
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          name: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          coordinates: Json
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+          name: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          coordinates?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
