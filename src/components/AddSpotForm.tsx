@@ -17,23 +17,74 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, MapPin } from "lucide-react";
+import { Plus, MapPin, Link } from "lucide-react";
 import { categoryLabels } from "@/data/spots";
 import { toast } from "sonner";
 import { SpotInput } from "@/hooks/useSpots";
 
 type SpotCategory = "accommodation" | "food" | "activity" | "work";
 
+// Parse coordinates from various Google Maps URL formats
+const parseGoogleMapsUrl = (url: string): [number, number] | null => {
+  try {
+    // Format: @lat,lng or !3d{lat}!4d{lng}
+    const atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (atMatch) {
+      const lat = parseFloat(atMatch[1]);
+      const lng = parseFloat(atMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return [lng, lat]; // Mapbox uses [lng, lat]
+      }
+    }
+
+    // Format: !3d{lat}!4d{lng}
+    const dMatch = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+    if (dMatch) {
+      const lat = parseFloat(dMatch[1]);
+      const lng = parseFloat(dMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return [lng, lat];
+      }
+    }
+
+    // Format: q=lat,lng or query=lat,lng
+    const qMatch = url.match(/[?&](?:q|query)=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (qMatch) {
+      const lat = parseFloat(qMatch[1]);
+      const lng = parseFloat(qMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return [lng, lat];
+      }
+    }
+
+    // Format: ll=lat,lng
+    const llMatch = url.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (llMatch) {
+      const lat = parseFloat(llMatch[1]);
+      const lng = parseFloat(llMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return [lng, lat];
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 interface AddSpotFormProps {
   onAddSpot: (spot: SpotInput) => Promise<unknown>;
   onSelectLocation?: () => void;
   pendingCoordinates?: [number, number] | null;
+  onSetCoordinates?: (coords: [number, number]) => void;
 }
 
 export const AddSpotForm = ({
   onAddSpot,
   onSelectLocation,
   pendingCoordinates,
+  onSetCoordinates,
 }: AddSpotFormProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -42,6 +93,23 @@ export const AddSpotForm = ({
   const [tags, setTags] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+
+  const handlePasteGoogleMaps = () => {
+    if (!googleMapsUrl.trim()) {
+      toast.error("Please paste a Google Maps URL");
+      return;
+    }
+
+    const coords = parseGoogleMapsUrl(googleMapsUrl.trim());
+    if (coords) {
+      onSetCoordinates?.(coords);
+      toast.success("Location extracted from Google Maps!");
+      setGoogleMapsUrl("");
+    } else {
+      toast.error("Could not extract coordinates from URL. Try a different link format.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,8 +235,35 @@ export const AddSpotForm = ({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Location *</Label>
+            
+            {/* Google Maps URL input */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Paste Google Maps link..."
+                value={googleMapsUrl}
+                onChange={(e) => setGoogleMapsUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handlePasteGoogleMaps}
+                title="Extract location"
+              >
+                <Link className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">or</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            {/* Map selection button */}
             <Button
               type="button"
               variant="outline"
@@ -185,7 +280,7 @@ export const AddSpotForm = ({
             </Button>
             {!pendingCoordinates && (
               <p className="text-xs text-muted-foreground">
-                Click the button, then click on the map to set location
+                Paste a Google Maps link above, or click to select on map
               </p>
             )}
           </div>
