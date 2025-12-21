@@ -27,6 +27,7 @@ export interface SpotUpdate {
   image_url?: string;
   category?: "accommodation" | "food" | "activity" | "work";
   tags?: string[];
+  google_maps_url?: string;
 }
 
 export const useSpots = () => {
