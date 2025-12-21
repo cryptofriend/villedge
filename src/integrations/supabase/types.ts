@@ -20,6 +20,7 @@ export type Database = {
           coordinates: Json
           created_at: string
           description: string
+          google_maps_url: string | null
           id: string
           image_url: string | null
           name: string
@@ -31,6 +32,7 @@ export type Database = {
           coordinates: Json
           created_at?: string
           description: string
+          google_maps_url?: string | null
           id?: string
           image_url?: string | null
           name: string
@@ -42,6 +44,7 @@ export type Database = {
           coordinates?: Json
           created_at?: string
           description?: string
+          google_maps_url?: string | null
           id?: string
           image_url?: string | null
           name?: string

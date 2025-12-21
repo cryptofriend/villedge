@@ -10,17 +10,15 @@ export interface DbSpot {
   category: "accommodation" | "food" | "activity" | "work";
   coordinates: [number, number];
   tags: string[] | null;
+  google_maps_url: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface SpotInput {
   name: string;
-  description: string;
-  image_url?: string;
-  category: "accommodation" | "food" | "activity" | "work";
   coordinates: [number, number];
-  tags?: string[];
+  google_maps_url?: string;
 }
 
 export interface SpotUpdate {
@@ -69,11 +67,10 @@ export const useSpots = () => {
         .from("spots")
         .insert({
           name: spot.name,
-          description: spot.description,
-          image_url: spot.image_url || null,
-          category: spot.category,
+          description: "",
+          category: "activity",
           coordinates: spot.coordinates,
-          tags: spot.tags || [],
+          google_maps_url: spot.google_maps_url || null,
         })
         .select()
         .single();
