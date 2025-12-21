@@ -110,9 +110,24 @@ export const useSpots = () => {
     }
   };
 
+  const deleteSpot = async (spotId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from("spots").delete().eq("id", spotId);
+
+      if (error) throw error;
+
+      setSpots((prev) => prev.filter((s) => s.id !== spotId));
+      return true;
+    } catch (err) {
+      console.error("Error deleting spot:", err);
+      toast.error("Failed to delete spot");
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchSpots();
   }, []);
 
-  return { spots, loading, error, addSpot, updateSpotCoordinates, refetch: fetchSpots };
+  return { spots, loading, error, addSpot, updateSpotCoordinates, deleteSpot, refetch: fetchSpots };
 };

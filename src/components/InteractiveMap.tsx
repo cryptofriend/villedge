@@ -22,7 +22,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
-  const { spots, loading, addSpot, updateSpotCoordinates } = useSpots();
+  const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
@@ -381,7 +381,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
               coordinates: selectedSpot.coordinates,
               tags: selectedSpot.tags || undefined,
             }} 
-            onClose={handleCloseSpot} 
+            onClose={handleCloseSpot}
+            onDelete={deleteSpot}
           />
         </div>
       )}

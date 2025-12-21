@@ -1,12 +1,23 @@
 import { Spot, categoryColors } from "@/data/spots";
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface SpotCardProps {
   spot: Spot;
   onClose: () => void;
+  onDelete?: (spotId: string) => Promise<boolean>;
 }
 
-export const SpotCard = ({ spot, onClose }: SpotCardProps) => {
+export const SpotCard = ({ spot, onClose, onDelete }: SpotCardProps) => {
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    const success = await onDelete(spot.id);
+    if (success) {
+      toast.success("Spot deleted");
+      onClose();
+    }
+  };
+
   return (
     <div className="animate-fade-in-up w-[320px] overflow-hidden rounded-lg bg-card shadow-elevated">
       {/* Image */}
@@ -26,6 +37,17 @@ export const SpotCard = ({ spot, onClose }: SpotCardProps) => {
         >
           <X className="h-4 w-4" />
         </button>
+
+        {/* Delete button */}
+        {onDelete && (
+          <button
+            onClick={handleDelete}
+            className="absolute right-3 top-14 flex h-8 w-8 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground backdrop-blur-sm transition-colors hover:bg-destructive"
+            aria-label="Delete spot"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
 
         {/* Category badge */}
         <div
