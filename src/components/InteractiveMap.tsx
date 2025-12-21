@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
+import { Button } from "@/components/ui/button";
 
 // Mui Ne coordinates
 const MUI_NE_CENTER: [number, number] = [108.2900, 10.9320];
@@ -25,12 +26,66 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
-  const isSelectingLocationRef = useRef(false);
   const [pendingCoordinates, setPendingCoordinates] = useState<[number, number] | null>(null);
+  const selectionMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const [selectionCoords, setSelectionCoords] = useState<[number, number] | null>(null);
 
+  // Create/update the draggable selection marker
   useEffect(() => {
-    isSelectingLocationRef.current = isSelectingLocation;
+    if (!map.current) return;
+
+    if (isSelectingLocation) {
+      // Create a draggable marker at center of map
+      const center = map.current.getCenter();
+      const initialCoords: [number, number] = [center.lng, center.lat];
+      setSelectionCoords(initialCoords);
+
+      const el = document.createElement("div");
+      el.innerHTML = `
+        <div style="
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: grab;
+        ">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="#c45c3e" stroke="#fff" stroke-width="1.5">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3" fill="#fff" stroke="#c45c3e"/>
+          </svg>
+        </div>
+      `;
+
+      const marker = new mapboxgl.Marker({ element: el, draggable: true })
+        .setLngLat(initialCoords)
+        .addTo(map.current);
+
+      marker.on("dragend", () => {
+        const lngLat = marker.getLngLat();
+        setSelectionCoords([lngLat.lng, lngLat.lat]);
+      });
+
+      selectionMarkerRef.current = marker;
+    } else {
+      // Remove selection marker when not selecting
+      if (selectionMarkerRef.current) {
+        selectionMarkerRef.current.remove();
+        selectionMarkerRef.current = null;
+      }
+      setSelectionCoords(null);
+    }
   }, [isSelectingLocation]);
+
+  // Cleanup selection marker on unmount
+  useEffect(() => {
+    return () => {
+      if (selectionMarkerRef.current) {
+        selectionMarkerRef.current.remove();
+        selectionMarkerRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (map.current || !mapContainer.current || !mapboxToken) return;
@@ -49,19 +104,13 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
     m.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
 
-    const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
-      if (!isSelectingLocationRef.current) return;
-      setPendingCoordinates([e.lngLat.lng, e.lngLat.lat]);
-      setIsSelectingLocation(false);
-      toast.success("Location selected! Open the form to complete adding the spot.");
-    };
-
-    m.on("click", handleMapClick);
-
     return () => {
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
-      m.off("click", handleMapClick);
+      if (selectionMarkerRef.current) {
+        selectionMarkerRef.current.remove();
+        selectionMarkerRef.current = null;
+      }
       m.remove();
       map.current = null;
     };
@@ -160,7 +209,18 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
   const handleSelectLocation = () => {
     setIsSelectingLocation(true);
-    toast.info("Click anywhere on the map to select a location");
+  };
+
+  const handleConfirmLocation = () => {
+    if (selectionCoords) {
+      setPendingCoordinates(selectionCoords);
+      setIsSelectingLocation(false);
+      toast.success("Location confirmed! Complete the form to add the spot.");
+    }
+  };
+
+  const handleCancelSelection = () => {
+    setIsSelectingLocation(false);
   };
 
   const handleCloseSpot = () => {
@@ -188,15 +248,33 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         </div>
       )}
 
-      {/* Location selection overlay */}
+      {/* Location selection UI */}
       {isSelectingLocation && (
-        <div 
-          className="absolute inset-0 z-30 flex cursor-crosshair items-center justify-center bg-foreground/10 pointer-events-none"
-        >
-          <div className="rounded-lg bg-card px-4 py-2 shadow-card pointer-events-auto">
+        <div className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 transform">
+          <div className="flex items-center gap-3 rounded-lg bg-card px-4 py-3 shadow-lg">
             <p className="font-body text-sm text-foreground">
-              Click on the map to select location
+              Drag the pin to select location
             </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCancelSelection}
+                className="gap-1"
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="sage"
+                onClick={handleConfirmLocation}
+                className="gap-1"
+              >
+                <Check className="h-4 w-4" />
+                Confirm
+              </Button>
+            </div>
           </div>
         </div>
       )}
