@@ -24,47 +24,66 @@ import { SpotInput } from "@/hooks/useSpots";
 
 type SpotCategory = "accommodation" | "food" | "activity" | "work";
 
-// Parse coordinates from various Google Maps URL formats
-const parseGoogleMapsUrl = (url: string): [number, number] | null => {
+// Parse coordinates and place name from various Google Maps URL formats
+const parseGoogleMapsUrl = (url: string): { coords: [number, number]; name?: string } | null => {
   try {
-    // Format: @lat,lng or !3d{lat}!4d{lng}
+    let coords: [number, number] | null = null;
+    let placeName: string | undefined;
+
+    // Extract place name from /place/Name/ format
+    const placeMatch = url.match(/\/place\/([^\/]+)/);
+    if (placeMatch) {
+      placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+    }
+
+    // Format: @lat,lng
     const atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
     if (atMatch) {
       const lat = parseFloat(atMatch[1]);
       const lng = parseFloat(atMatch[2]);
       if (!isNaN(lat) && !isNaN(lng)) {
-        return [lng, lat]; // Mapbox uses [lng, lat]
+        coords = [lng, lat]; // Mapbox uses [lng, lat]
       }
     }
 
     // Format: !3d{lat}!4d{lng}
-    const dMatch = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
-    if (dMatch) {
-      const lat = parseFloat(dMatch[1]);
-      const lng = parseFloat(dMatch[2]);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        return [lng, lat];
+    if (!coords) {
+      const dMatch = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+      if (dMatch) {
+        const lat = parseFloat(dMatch[1]);
+        const lng = parseFloat(dMatch[2]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          coords = [lng, lat];
+        }
       }
     }
 
-    // Format: q=lat,lng or query=lat,lng
-    const qMatch = url.match(/[?&](?:q|query)=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-    if (qMatch) {
-      const lat = parseFloat(qMatch[1]);
-      const lng = parseFloat(qMatch[2]);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        return [lng, lat];
+    // Format: q=lat,lng or query=lat,lng (only if no place name found)
+    if (!coords) {
+      const qMatch = url.match(/[?&](?:q|query)=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (qMatch) {
+        const lat = parseFloat(qMatch[1]);
+        const lng = parseFloat(qMatch[2]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          coords = [lng, lat];
+        }
       }
     }
 
     // Format: ll=lat,lng
-    const llMatch = url.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-    if (llMatch) {
-      const lat = parseFloat(llMatch[1]);
-      const lng = parseFloat(llMatch[2]);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        return [lng, lat];
+    if (!coords) {
+      const llMatch = url.match(/[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (llMatch) {
+        const lat = parseFloat(llMatch[1]);
+        const lng = parseFloat(llMatch[2]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          coords = [lng, lat];
+        }
       }
+    }
+
+    if (coords) {
+      return { coords, name: placeName };
     }
 
     return null;
@@ -226,10 +245,13 @@ export const AddSpotForm = ({
               value={googleMapsUrl}
               onChange={(e) => {
                 setGoogleMapsUrl(e.target.value);
-                // Auto-extract coordinates on paste
-                const coords = parseGoogleMapsUrl(e.target.value.trim());
-                if (coords) {
-                  onSetCoordinates?.(coords);
+                // Auto-extract coordinates and name on paste
+                const result = parseGoogleMapsUrl(e.target.value.trim());
+                if (result) {
+                  onSetCoordinates?.(result.coords);
+                  if (result.name && !name) {
+                    setName(result.name);
+                  }
                 }
               }}
             />
