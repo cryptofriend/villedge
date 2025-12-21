@@ -20,19 +20,24 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
-  
+
   const { spots, loading, addSpot } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
+  const isSelectingLocationRef = useRef(false);
   const [pendingCoordinates, setPendingCoordinates] = useState<[number, number] | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
+    isSelectingLocationRef.current = isSelectingLocation;
+  }, [isSelectingLocation]);
+
+  useEffect(() => {
+    if (map.current || !mapContainer.current || !mapboxToken) return;
 
     mapboxgl.accessToken = mapboxToken;
 
-    map.current = new mapboxgl.Map({
+    const m = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
       center: MUI_NE_CENTER,
@@ -40,23 +45,25 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       pitch: 30,
     });
 
-    map.current.addControl(
-      new mapboxgl.NavigationControl({ visualizePitch: true }),
-      "top-right"
-    );
+    map.current = m;
 
-    // Add click handler for location selection
-    map.current.on("click", (e) => {
-      if (isSelectingLocation) {
-        setPendingCoordinates([e.lngLat.lng, e.lngLat.lat]);
-        setIsSelectingLocation(false);
-        toast.success("Location selected! Open the form to complete adding the spot.");
-      }
-    });
+    m.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
+
+    const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
+      if (!isSelectingLocationRef.current) return;
+      setPendingCoordinates([e.lngLat.lng, e.lngLat.lat]);
+      setIsSelectingLocation(false);
+      toast.success("Location selected! Open the form to complete adding the spot.");
+    };
+
+    m.on("click", handleMapClick);
 
     return () => {
       markersRef.current.forEach((marker) => marker.remove());
-      map.current?.remove();
+      markersRef.current = [];
+      m.off("click", handleMapClick);
+      m.remove();
+      map.current = null;
     };
   }, [mapboxToken]);
 
@@ -127,11 +134,20 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   };
 
   useEffect(() => {
-    if (map.current?.isStyleLoaded()) {
+    if (!map.current) return;
+
+    const m = map.current;
+    const onLoad = () => addMarkers();
+
+    if (m.isStyleLoaded()) {
       addMarkers();
     } else {
-      map.current?.on("load", addMarkers);
+      m.on("load", onLoad);
     }
+
+    return () => {
+      m.off("load", onLoad);
+    };
   }, [selectedCategory, spots]);
 
   const handleAddSpot = async (spotInput: SpotInput) => {
@@ -156,21 +172,21 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="font-body text-muted-foreground">Loading spots...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-lg">
       {/* Map container */}
       <div ref={mapContainer} className="h-full w-full" />
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="font-body text-muted-foreground">Loading spots...</p>
+          </div>
+        </div>
+      )}
 
       {/* Location selection overlay */}
       {isSelectingLocation && (
