@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, MapPin, Link } from "lucide-react";
+import { Plus, MapPin } from "lucide-react";
 import { categoryLabels } from "@/data/spots";
 import { toast } from "sonner";
 import { SpotInput } from "@/hooks/useSpots";
@@ -75,14 +75,12 @@ const parseGoogleMapsUrl = (url: string): [number, number] | null => {
 
 interface AddSpotFormProps {
   onAddSpot: (spot: SpotInput) => Promise<unknown>;
-  onSelectLocation?: () => void;
   pendingCoordinates?: [number, number] | null;
   onSetCoordinates?: (coords: [number, number]) => void;
 }
 
 export const AddSpotForm = ({
   onAddSpot,
-  onSelectLocation,
   pendingCoordinates,
   onSetCoordinates,
 }: AddSpotFormProps) => {
@@ -95,21 +93,6 @@ export const AddSpotForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
 
-  const handlePasteGoogleMaps = () => {
-    if (!googleMapsUrl.trim()) {
-      toast.error("Please paste a Google Maps URL");
-      return;
-    }
-
-    const coords = parseGoogleMapsUrl(googleMapsUrl.trim());
-    if (coords) {
-      onSetCoordinates?.(coords);
-      toast.success("Location extracted from Google Maps!");
-      setGoogleMapsUrl("");
-    } else {
-      toast.error("Could not extract coordinates from URL. Try a different link format.");
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,52 +218,29 @@ export const AddSpotForm = ({
             />
           </div>
 
-          <div className="space-y-3">
-            <Label>Location *</Label>
-            
-            {/* Google Maps URL input */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Paste Google Maps link..."
-                value={googleMapsUrl}
-                onChange={(e) => setGoogleMapsUrl(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={handlePasteGoogleMaps}
-                title="Extract location"
-              >
-                <Link className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">or</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-
-            {/* Map selection button */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full justify-start gap-2"
-              onClick={() => {
-                onSelectLocation?.();
-                setOpen(false);
+          <div className="space-y-2">
+            <Label htmlFor="googleMapsUrl">Google Maps Link *</Label>
+            <Input
+              id="googleMapsUrl"
+              placeholder="Paste Google Maps link..."
+              value={googleMapsUrl}
+              onChange={(e) => {
+                setGoogleMapsUrl(e.target.value);
+                // Auto-extract coordinates on paste
+                const coords = parseGoogleMapsUrl(e.target.value.trim());
+                if (coords) {
+                  onSetCoordinates?.(coords);
+                }
               }}
-            >
-              <MapPin className="h-4 w-4" />
-              {pendingCoordinates
-                ? `Selected: ${pendingCoordinates[1].toFixed(4)}, ${pendingCoordinates[0].toFixed(4)}`
-                : "Click to select on map"}
-            </Button>
-            {!pendingCoordinates && (
+            />
+            {pendingCoordinates ? (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                Location: {pendingCoordinates[1].toFixed(4)}, {pendingCoordinates[0].toFixed(4)}
+              </p>
+            ) : (
               <p className="text-xs text-muted-foreground">
-                Paste a Google Maps link above, or click to select on map
+                Paste a Google Maps link to extract the location
               </p>
             )}
           </div>
