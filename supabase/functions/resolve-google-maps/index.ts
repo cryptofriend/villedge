@@ -1,0 +1,179 @@
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface PlaceData {
+  name?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  coordinates?: [number, number];
+  description?: string;
+  imageUrl?: string;
+  resolvedUrl?: string;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { url } = await req.json();
+
+    if (!url) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'URL is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Resolving Google Maps URL:', url);
+
+    // Follow redirects to get the final URL
+    let finalUrl = url;
+    
+    // For shortened URLs, we need to follow the redirect
+    if (url.includes('maps.app.goo.gl') || url.includes('goo.gl')) {
+      try {
+        const response = await fetch(url, {
+          method: 'HEAD',
+          redirect: 'follow',
+        });
+        finalUrl = response.url;
+        console.log('Resolved to:', finalUrl);
+      } catch (e) {
+        console.log('Could not follow redirect, trying fetch:', e);
+        // Try a full fetch if HEAD fails
+        const response = await fetch(url, { redirect: 'follow' });
+        finalUrl = response.url;
+      }
+    }
+
+    const placeData: PlaceData = {
+      resolvedUrl: finalUrl,
+    };
+
+    // Extract coordinates from the final URL
+    // Format: @lat,lng,zoom
+    const atMatch = finalUrl.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (atMatch) {
+      const lat = parseFloat(atMatch[1]);
+      const lng = parseFloat(atMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        placeData.coordinates = [lng, lat]; // Mapbox uses [lng, lat]
+      }
+    }
+
+    // Format: !3d{lat}!4d{lng}
+    if (!placeData.coordinates) {
+      const dMatch = finalUrl.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+      if (dMatch) {
+        const lat = parseFloat(dMatch[1]);
+        const lng = parseFloat(dMatch[2]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          placeData.coordinates = [lng, lat];
+        }
+      }
+    }
+
+    // Extract place name from /place/Name/ format
+    const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
+    if (placeMatch) {
+      placeData.name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+    }
+
+    // If we still don't have coordinates, try to extract from data parameter
+    if (!placeData.coordinates) {
+      const dataMatch = finalUrl.match(/data=.*!8m2!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+      if (dataMatch) {
+        const lat = parseFloat(dataMatch[1]);
+        const lng = parseFloat(dataMatch[2]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          placeData.coordinates = [lng, lat];
+        }
+      }
+    }
+
+    // Try to fetch the page to get more details
+    try {
+      const pageResponse = await fetch(finalUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        },
+      });
+      const html = await pageResponse.text();
+      
+      // Extract meta description
+      const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+      if (descMatch) {
+        placeData.description = descMatch[1];
+      }
+      
+      // Try to extract og:image
+      const imgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+      if (imgMatch) {
+        placeData.imageUrl = imgMatch[1];
+      }
+
+      // Try to extract title if we don't have a name
+      if (!placeData.name) {
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (titleMatch) {
+          // Clean up the title (remove "- Google Maps" suffix)
+          placeData.name = titleMatch[1].replace(/\s*[-–]\s*Google Maps.*$/i, '').trim();
+        }
+      }
+
+      // Look for coordinates in various script tags
+      if (!placeData.coordinates) {
+        // Try to find coordinates in the page content
+        const coordPatterns = [
+          /\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/,
+          /"(-?\d+\.\d+),(-?\d+\.\d+)"/,
+          /center=(-?\d+\.\d+),(-?\d+\.\d+)/,
+        ];
+        
+        for (const pattern of coordPatterns) {
+          const match = html.match(pattern);
+          if (match) {
+            const lat = parseFloat(match[1]);
+            const lng = parseFloat(match[2]);
+            if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+              placeData.coordinates = [lng, lat];
+              break;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Could not fetch page details:', e);
+    }
+
+    if (!placeData.coordinates) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Could not extract coordinates from URL',
+          resolvedUrl: finalUrl 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Extracted place data:', placeData);
+
+    return new Response(
+      JSON.stringify({ success: true, data: placeData }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error resolving Google Maps URL:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to resolve URL';
+    return new Response(
+      JSON.stringify({ success: false, error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
