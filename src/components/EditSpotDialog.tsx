@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface EditSpotDialogProps {
-  spot: Spot;
+  spot: Spot & { google_maps_url?: string | null };
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: (spotId: string, updates: SpotUpdate) => Promise<any>;
@@ -28,6 +28,7 @@ export const EditSpotDialog = ({ spot, open, onOpenChange, onUpdate }: EditSpotD
   const [category, setCategory] = useState<Spot["category"]>(spot.category);
   const [tags, setTags] = useState(spot.tags?.join(", ") || "");
   const [imageUrl, setImageUrl] = useState(spot.image || "");
+  const [googleMapsUrl, setGoogleMapsUrl] = useState(spot.google_maps_url || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +47,7 @@ export const EditSpotDialog = ({ spot, open, onOpenChange, onUpdate }: EditSpotD
       category,
       tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
       image_url: imageUrl.trim() || undefined,
+      google_maps_url: googleMapsUrl.trim() || undefined,
     };
 
     const result = await onUpdate(spot.id, updates);
@@ -118,6 +120,17 @@ export const EditSpotDialog = ({ spot, open, onOpenChange, onUpdate }: EditSpotD
               onChange={(e) => setTags(e.target.value)}
               placeholder="Coffee, Beach, WiFi"
               maxLength={200}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="googleMapsUrl">Google Maps Link</Label>
+            <Input
+              id="googleMapsUrl"
+              value={googleMapsUrl}
+              onChange={(e) => setGoogleMapsUrl(e.target.value)}
+              placeholder="https://maps.google.com/..."
+              type="url"
             />
           </div>
 

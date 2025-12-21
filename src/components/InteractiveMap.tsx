@@ -108,8 +108,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
       center: MAP_CENTER,
-      zoom: 14,
-      pitch: 30,
+      zoom: 13,
+      pitch: 20,
     });
 
     map.current = m;
@@ -265,7 +265,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     setSelectedSpot(null);
     map.current?.flyTo({
       center: MAP_CENTER,
-      zoom: 14,
+      zoom: 13,
       duration: 800,
     });
   };
