@@ -348,7 +348,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             {!isEditMode && (
               <AddSpotForm
                 onAddSpot={handleAddSpot}
-                onSelectLocation={handleSelectLocation}
                 pendingCoordinates={pendingCoordinates}
                 onSetCoordinates={setPendingCoordinates}
               />
