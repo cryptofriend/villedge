@@ -190,8 +190,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
       {/* Location selection overlay */}
       {isSelectingLocation && (
-        <div className="absolute inset-0 z-30 flex cursor-crosshair items-center justify-center bg-foreground/10">
-          <div className="rounded-lg bg-card px-4 py-2 shadow-card">
+        <div 
+          className="absolute inset-0 z-30 flex cursor-crosshair items-center justify-center bg-foreground/10 pointer-events-none"
+        >
+          <div className="rounded-lg bg-card px-4 py-2 shadow-card pointer-events-auto">
             <p className="font-body text-sm text-foreground">
               Click on the map to select location
             </p>
