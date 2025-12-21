@@ -19,6 +19,8 @@ export interface SpotInput {
   name: string;
   coordinates: [number, number];
   google_maps_url?: string;
+  image_url?: string;
+  description?: string;
 }
 
 export interface SpotUpdate {
@@ -68,10 +70,11 @@ export const useSpots = () => {
         .from("spots")
         .insert({
           name: spot.name,
-          description: "",
+          description: spot.description || "",
           category: "activity",
           coordinates: spot.coordinates,
           google_maps_url: spot.google_maps_url || null,
+          image_url: spot.image_url || null,
         })
         .select()
         .single();

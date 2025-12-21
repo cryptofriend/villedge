@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Spot, categoryColors } from "@/data/spots";
 import { SpotUpdate } from "@/hooks/useSpots";
-import { X, Trash2, Pencil, ExternalLink } from "lucide-react";
+import { X, Trash2, Pencil, ExternalLink, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { EditSpotDialog } from "./EditSpotDialog";
 
@@ -28,12 +28,21 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate }: SpotCardProps) =
     <>
       <div className="animate-fade-in-up w-[320px] overflow-hidden rounded-lg bg-card shadow-elevated">
         {/* Image */}
-        <div className="relative h-48 overflow-hidden">
-          <img
-            src={spot.image}
-            alt={spot.name}
-            className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
-          />
+        <div className="relative h-48 overflow-hidden bg-muted">
+          {spot.image ? (
+            <img
+              src={spot.image}
+              alt={spot.name}
+              className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+              <MapPin className="h-12 w-12 text-primary/40" />
+            </div>
+          )}
           <div className="gradient-overlay absolute inset-0" />
           
           {/* Close button */}

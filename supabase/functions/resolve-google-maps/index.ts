@@ -100,7 +100,9 @@ Deno.serve(async (req) => {
     try {
       const pageResponse = await fetch(finalUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
         },
       });
       const html = await pageResponse.text();
@@ -111,10 +113,39 @@ Deno.serve(async (req) => {
         placeData.description = descMatch[1];
       }
       
-      // Try to extract og:image
-      const imgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
-      if (imgMatch) {
-        placeData.imageUrl = imgMatch[1];
+      // Try to extract og:image (multiple patterns)
+      let imageFound = false;
+      
+      // Pattern 1: og:image meta tag
+      const ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+      if (ogImgMatch && ogImgMatch[1]) {
+        placeData.imageUrl = ogImgMatch[1];
+        imageFound = true;
+      }
+      
+      // Pattern 2: twitter:image meta tag
+      if (!imageFound) {
+        const twitterImgMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i);
+        if (twitterImgMatch && twitterImgMatch[1]) {
+          placeData.imageUrl = twitterImgMatch[1];
+          imageFound = true;
+        }
+      }
+      
+      // Pattern 3: Look for Google Photos URLs in the page
+      if (!imageFound) {
+        const googlePhotoMatch = html.match(/https:\/\/lh\d\.googleusercontent\.com\/[^"'\s]+/);
+        if (googlePhotoMatch) {
+          // Get a reasonably sized image
+          let imgUrl = googlePhotoMatch[0];
+          // Remove size parameters and add a standard size
+          imgUrl = imgUrl.replace(/=w\d+-h\d+[^"'\s]*/g, '=w800-h600');
+          if (!imgUrl.includes('=w')) {
+            imgUrl += '=w800-h600';
+          }
+          placeData.imageUrl = imgUrl;
+          imageFound = true;
+        }
       }
 
       // Try to extract title if we don't have a name
