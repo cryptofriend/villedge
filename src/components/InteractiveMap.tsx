@@ -10,8 +10,8 @@ import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { Button } from "@/components/ui/button";
 
-// Mui Ne coordinates
-const MUI_NE_CENTER: [number, number] = [108.2900, 10.9320];
+// SeaLinks Golf Club coordinates
+const MAP_CENTER: [number, number] = [108.2378, 10.9628];
 
 interface InteractiveMapProps {
   mapboxToken: string;
@@ -107,7 +107,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     const m = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
-      center: MUI_NE_CENTER,
+      center: MAP_CENTER,
       zoom: 14,
       pitch: 30,
     });
@@ -264,7 +264,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const handleCloseSpot = () => {
     setSelectedSpot(null);
     map.current?.flyTo({
-      center: MUI_NE_CENTER,
+      center: MAP_CENTER,
       zoom: 14,
       duration: 800,
     });
