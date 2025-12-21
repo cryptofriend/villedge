@@ -23,6 +23,14 @@ export interface SpotInput {
   tags?: string[];
 }
 
+export interface SpotUpdate {
+  name?: string;
+  description?: string;
+  image_url?: string;
+  category?: "accommodation" | "food" | "activity" | "work";
+  tags?: string[];
+}
+
 export const useSpots = () => {
   const [spots, setSpots] = useState<DbSpot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,9 +133,37 @@ export const useSpots = () => {
     }
   };
 
+  const updateSpot = async (spotId: string, updates: SpotUpdate): Promise<DbSpot | null> => {
+    try {
+      const { data, error } = await supabase
+        .from("spots")
+        .update(updates)
+        .eq("id", spotId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedSpot: DbSpot = {
+        ...data,
+        category: data.category as DbSpot["category"],
+        coordinates: data.coordinates as [number, number],
+      };
+
+      setSpots((prev) =>
+        prev.map((s) => (s.id === spotId ? updatedSpot : s))
+      );
+      return updatedSpot;
+    } catch (err) {
+      console.error("Error updating spot:", err);
+      toast.error("Failed to update spot");
+      return null;
+    }
+  };
+
   useEffect(() => {
     fetchSpots();
   }, []);
 
-  return { spots, loading, error, addSpot, updateSpotCoordinates, deleteSpot, refetch: fetchSpots };
+  return { spots, loading, error, addSpot, updateSpotCoordinates, deleteSpot, updateSpot, refetch: fetchSpots };
 };
