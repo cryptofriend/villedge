@@ -87,9 +87,32 @@ export const useSpots = () => {
     }
   };
 
+  const updateSpotCoordinates = async (
+    spotId: string,
+    coordinates: [number, number]
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("spots")
+        .update({ coordinates })
+        .eq("id", spotId);
+
+      if (error) throw error;
+
+      setSpots((prev) =>
+        prev.map((s) => (s.id === spotId ? { ...s, coordinates } : s))
+      );
+      return true;
+    } catch (err) {
+      console.error("Error updating spot coordinates:", err);
+      toast.error("Failed to update location");
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchSpots();
   }, []);
 
-  return { spots, loading, error, addSpot, refetch: fetchSpots };
+  return { spots, loading, error, addSpot, updateSpotCoordinates, refetch: fetchSpots };
 };
