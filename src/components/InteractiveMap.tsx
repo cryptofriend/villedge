@@ -29,37 +29,47 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [pendingCoordinates, setPendingCoordinates] = useState<[number, number] | null>(null);
   const selectionMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [selectionCoords, setSelectionCoords] = useState<[number, number] | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   // Create/update the draggable selection marker
   useEffect(() => {
-    if (!map.current) return;
+    if (!mapReady || !map.current) return;
+
+    const m = map.current;
 
     if (isSelectingLocation) {
+      // Remove existing marker first
+      if (selectionMarkerRef.current) {
+        selectionMarkerRef.current.remove();
+        selectionMarkerRef.current = null;
+      }
+
       // Create a draggable marker at center of map
-      const center = map.current.getCenter();
+      const center = m.getCenter();
       const initialCoords: [number, number] = [center.lng, center.lat];
       setSelectionCoords(initialCoords);
 
       const el = document.createElement("div");
       el.innerHTML = `
         <div style="
-          width: 48px;
-          height: 48px;
+          width: 56px;
+          height: 56px;
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           justify-content: center;
           cursor: grab;
+          filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         ">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="#c45c3e" stroke="#fff" stroke-width="1.5">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="#c45c3e" stroke="#fff" stroke-width="1">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
             <circle cx="12" cy="10" r="3" fill="#fff" stroke="#c45c3e"/>
           </svg>
         </div>
       `;
 
-      const marker = new mapboxgl.Marker({ element: el, draggable: true })
+      const marker = new mapboxgl.Marker({ element: el, draggable: true, anchor: 'bottom' })
         .setLngLat(initialCoords)
-        .addTo(map.current);
+        .addTo(m);
 
       marker.on("dragend", () => {
         const lngLat = marker.getLngLat();
@@ -75,7 +85,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       }
       setSelectionCoords(null);
     }
-  }, [isSelectingLocation]);
+  }, [isSelectingLocation, mapReady]);
 
   // Cleanup selection marker on unmount
   useEffect(() => {
@@ -104,7 +114,17 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
     m.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
 
+    // Set mapReady when style is loaded (handles both immediate and async cases)
+    if (m.isStyleLoaded()) {
+      setMapReady(true);
+    } else {
+      m.once("load", () => {
+        setMapReady(true);
+      });
+    }
+
     return () => {
+      setMapReady(false);
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
       if (selectionMarkerRef.current) {
