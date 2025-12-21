@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { spots, Spot, categoryColors } from "@/data/spots";
+import { spots as initialSpots, Spot, categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
-import { Input } from "./ui/input";
+import { AddSpotForm } from "./AddSpotForm";
 import { MapPin } from "lucide-react";
+import { toast } from "sonner";
 
 // Mui Ne coordinates
 const MUI_NE_CENTER: [number, number] = [108.2900, 10.9320];
@@ -19,8 +20,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   
+  const [spots, setSpots] = useState<Spot[]>(initialSpots);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Spot["category"] | null>(null);
+  const [isSelectingLocation, setIsSelectingLocation] = useState(false);
+  const [pendingCoordinates, setPendingCoordinates] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
@@ -39,6 +43,15 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       new mapboxgl.NavigationControl({ visualizePitch: true }),
       "top-right"
     );
+
+    // Add click handler for location selection
+    map.current.on("click", (e) => {
+      if (isSelectingLocation) {
+        setPendingCoordinates([e.lngLat.lng, e.lngLat.lat]);
+        setIsSelectingLocation(false);
+        toast.success("Location selected! Open the form to complete adding the spot.");
+      }
+    });
 
     // Add markers after map loads
     map.current.on("load", () => {
@@ -121,7 +134,17 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     if (map.current?.isStyleLoaded()) {
       addMarkers();
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, spots]);
+
+  const handleAddSpot = (newSpot: Spot) => {
+    setSpots((prev) => [...prev, newSpot]);
+    setPendingCoordinates(null);
+  };
+
+  const handleSelectLocation = () => {
+    setIsSelectingLocation(true);
+    toast.info("Click anywhere on the map to select a location");
+  };
 
   const handleCloseSpot = () => {
     setSelectedSpot(null);
@@ -137,6 +160,17 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       {/* Map container */}
       <div ref={mapContainer} className="h-full w-full" />
 
+      {/* Location selection overlay */}
+      {isSelectingLocation && (
+        <div className="absolute inset-0 z-30 flex cursor-crosshair items-center justify-center bg-foreground/10">
+          <div className="rounded-lg bg-card px-4 py-2 shadow-card">
+            <p className="font-body text-sm text-foreground">
+              Click on the map to select location
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header overlay */}
       <div className="absolute left-0 right-0 top-0 z-10 bg-gradient-to-b from-background/90 via-background/60 to-transparent p-4 pb-16 md:p-6 md:pb-20">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -149,6 +183,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <AddSpotForm
+              onAddSpot={handleAddSpot}
+              onSelectLocation={handleSelectLocation}
+              pendingCoordinates={pendingCoordinates}
+            />
             <div className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
               Jan 15 – Feb 15, 2026
             </div>
