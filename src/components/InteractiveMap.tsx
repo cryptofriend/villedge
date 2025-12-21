@@ -5,7 +5,7 @@ import { categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
-import { MapPin, Loader2, Check, X } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
-  const { spots, loading, addSpot } = useSpots();
+  const { spots, loading, addSpot, updateSpotCoordinates } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
@@ -30,6 +30,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const selectionMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [selectionCoords, setSelectionCoords] = useState<[number, number] | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   // Create/update the draggable selection marker
   useEffect(() => {
@@ -142,6 +144,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     // Clear existing markers
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
+    spotMarkersRef.current.clear();
 
     const filteredSpots = selectedCategory
       ? spots.filter((s) => s.category === selectedCategory)
@@ -156,12 +159,12 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           width: 36px;
           height: 36px;
           background-color: ${categoryColors[spot.category]};
-          border: 3px solid #faf8f5;
+          border: 3px solid ${isEditMode ? '#c45c3e' : '#faf8f5'};
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          cursor: pointer;
+          cursor: ${isEditMode ? 'grab' : 'pointer'};
           transition: all 0.3s ease;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         ">
@@ -185,20 +188,35 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         }
       });
 
-      const marker = new mapboxgl.Marker(el)
+      const marker = new mapboxgl.Marker({ element: el, draggable: isEditMode })
         .setLngLat(spot.coordinates)
         .addTo(map.current!);
 
-      el.addEventListener("click", () => {
-        setSelectedSpot(spot);
-        map.current?.flyTo({
-          center: spot.coordinates,
-          zoom: 15,
-          duration: 800,
+      // Handle drag end for edit mode
+      if (isEditMode) {
+        marker.on("dragend", async () => {
+          const lngLat = marker.getLngLat();
+          const newCoords: [number, number] = [lngLat.lng, lngLat.lat];
+          const success = await updateSpotCoordinates(spot.id, newCoords);
+          if (success) {
+            toast.success(`${spot.name} location updated!`);
+          }
         });
+      }
+
+      el.addEventListener("click", () => {
+        if (!isEditMode) {
+          setSelectedSpot(spot);
+          map.current?.flyTo({
+            center: spot.coordinates,
+            zoom: 15,
+            duration: 800,
+          });
+        }
       });
 
       markersRef.current.push(marker);
+      spotMarkersRef.current.set(spot.id, marker);
     });
   };
 
@@ -217,7 +235,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     return () => {
       m.off("load", onLoad);
     };
-  }, [selectedCategory, spots]);
+  }, [selectedCategory, spots, isEditMode]);
 
   const handleAddSpot = async (spotInput: SpotInput) => {
     const result = await addSpot(spotInput);
@@ -311,12 +329,30 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <AddSpotForm
-              onAddSpot={handleAddSpot}
-              onSelectLocation={handleSelectLocation}
-              pendingCoordinates={pendingCoordinates}
-              onSetCoordinates={setPendingCoordinates}
-            />
+            <Button
+              variant={isEditMode ? "destructive" : "outline"}
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                setIsEditMode(!isEditMode);
+                if (isEditMode) {
+                  toast.success("Edit mode disabled");
+                } else {
+                  toast.info("Edit mode enabled - drag pins to adjust locations");
+                }
+              }}
+            >
+              <Edit3 className="h-4 w-4" />
+              {isEditMode ? "Done Editing" : "Edit Locations"}
+            </Button>
+            {!isEditMode && (
+              <AddSpotForm
+                onAddSpot={handleAddSpot}
+                onSelectLocation={handleSelectLocation}
+                pendingCoordinates={pendingCoordinates}
+                onSetCoordinates={setPendingCoordinates}
+              />
+            )}
             <div className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
               Jan 15 – Feb 15, 2026
             </div>
