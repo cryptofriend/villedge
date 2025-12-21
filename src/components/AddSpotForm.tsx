@@ -18,11 +18,14 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Plus, MapPin } from "lucide-react";
-import { Spot, categoryLabels } from "@/data/spots";
+import { categoryLabels } from "@/data/spots";
 import { toast } from "sonner";
+import { SpotInput } from "@/hooks/useSpots";
+
+type SpotCategory = "accommodation" | "food" | "activity" | "work";
 
 interface AddSpotFormProps {
-  onAddSpot: (spot: Spot) => void;
+  onAddSpot: (spot: SpotInput) => Promise<unknown>;
   onSelectLocation?: () => void;
   pendingCoordinates?: [number, number] | null;
 }
@@ -35,11 +38,12 @@ export const AddSpotForm = ({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<Spot["category"]>("activity");
+  const [category, setCategory] = useState<SpotCategory>("activity");
   const [tags, setTags] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
@@ -52,11 +56,12 @@ export const AddSpotForm = ({
       return;
     }
 
-    const newSpot: Spot = {
-      id: `spot-${Date.now()}`,
+    setIsSubmitting(true);
+
+    const newSpot: SpotInput = {
       name: name.trim(),
       description: description.trim() || "A great spot in Popup Village",
-      image: imageUrl.trim() || "",
+      image_url: imageUrl.trim() || undefined,
       category,
       coordinates: pendingCoordinates,
       tags: tags
@@ -65,16 +70,20 @@ export const AddSpotForm = ({
         .filter(Boolean),
     };
 
-    onAddSpot(newSpot);
-    toast.success(`${name} added to the map!`);
+    const result = await onAddSpot(newSpot);
+    setIsSubmitting(false);
 
-    // Reset form
-    setName("");
-    setDescription("");
-    setCategory("activity");
-    setTags("");
-    setImageUrl("");
-    setOpen(false);
+    if (result) {
+      toast.success(`${name} added to the map!`);
+
+      // Reset form
+      setName("");
+      setDescription("");
+      setCategory("activity");
+      setTags("");
+      setImageUrl("");
+      setOpen(false);
+    }
   };
 
   return (
@@ -107,14 +116,14 @@ export const AddSpotForm = ({
             <Label htmlFor="category">Category *</Label>
             <Select
               value={category}
-              onValueChange={(v) => setCategory(v as Spot["category"])}
+              onValueChange={(v) => setCategory(v as SpotCategory)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {(
-                  Object.entries(categoryLabels) as [Spot["category"], string][]
+                  Object.entries(categoryLabels) as [SpotCategory, string][]
                 ).map(([key, label]) => (
                   <SelectItem key={key} value={key}>
                     {label}
@@ -190,8 +199,13 @@ export const AddSpotForm = ({
             >
               Cancel
             </Button>
-            <Button type="submit" variant="sage" className="flex-1">
-              Add Spot
+            <Button
+              type="submit"
+              variant="sage"
+              className="flex-1"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Adding..." : "Add Spot"}
             </Button>
           </div>
         </form>
