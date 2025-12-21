@@ -11,7 +11,7 @@ import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { Button } from "@/components/ui/button";
 
 // SeaLinks Golf Club coordinates
-const MAP_CENTER: [number, number] = [108.2378, 10.9628];
+const MAP_CENTER: [number, number] = [108.1885, 10.9355];
 
 interface InteractiveMapProps {
   mapboxToken: string;
