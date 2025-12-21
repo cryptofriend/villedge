@@ -109,6 +109,8 @@ export const AddSpotForm = ({
       name: name.trim(),
       coordinates: pendingCoordinates,
       google_maps_url: placeData?.resolvedUrl || googleMapsUrl.trim() || undefined,
+      image_url: placeData?.imageUrl || undefined,
+      description: placeData?.description || undefined,
     };
 
     const result = await onAddSpot(newSpot);
