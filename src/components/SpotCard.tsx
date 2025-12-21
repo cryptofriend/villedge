@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Spot, categoryColors } from "@/data/spots";
 import { SpotUpdate } from "@/hooks/useSpots";
-import { X, Trash2, Pencil } from "lucide-react";
+import { X, Trash2, Pencil, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { EditSpotDialog } from "./EditSpotDialog";
 
 interface SpotCardProps {
-  spot: Spot;
+  spot: Spot & { google_maps_url?: string | null };
   onClose: () => void;
   onDelete?: (spotId: string) => Promise<boolean>;
   onUpdate?: (spotId: string, updates: SpotUpdate) => Promise<any>;
@@ -97,6 +97,19 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate }: SpotCardProps) =
                 </span>
               ))}
             </div>
+          )}
+
+          {/* Google Maps Link */}
+          {spot.google_maps_url && (
+            <a
+              href={spot.google_maps_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open in Google Maps
+            </a>
           )}
         </div>
       </div>

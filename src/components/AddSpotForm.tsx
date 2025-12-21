@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -9,20 +8,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Plus, MapPin } from "lucide-react";
-import { categoryLabels } from "@/data/spots";
 import { toast } from "sonner";
 import { SpotInput } from "@/hooks/useSpots";
-
-type SpotCategory = "accommodation" | "food" | "activity" | "work";
 
 // Parse coordinates and place name from various Google Maps URL formats
 const parseGoogleMapsUrl = (url: string): { coords: [number, number]; name?: string } | null => {
@@ -58,7 +47,7 @@ const parseGoogleMapsUrl = (url: string): { coords: [number, number]; name?: str
       }
     }
 
-    // Format: q=lat,lng or query=lat,lng (only if no place name found)
+    // Format: q=lat,lng or query=lat,lng
     if (!coords) {
       const qMatch = url.match(/[?&](?:q|query)=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
       if (qMatch) {
@@ -105,13 +94,8 @@ export const AddSpotForm = ({
 }: AddSpotFormProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<SpotCategory>("activity");
-  const [tags, setTags] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +106,7 @@ export const AddSpotForm = ({
     }
 
     if (!pendingCoordinates) {
-      toast.error("Please select a location on the map");
+      toast.error("Please paste a valid Google Maps link");
       return;
     }
 
@@ -130,14 +114,8 @@ export const AddSpotForm = ({
 
     const newSpot: SpotInput = {
       name: name.trim(),
-      description: description.trim() || "A great spot in Popup Village",
-      image_url: imageUrl.trim() || undefined,
-      category,
       coordinates: pendingCoordinates,
-      tags: tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
+      google_maps_url: googleMapsUrl.trim() || undefined,
     };
 
     const result = await onAddSpot(newSpot);
@@ -148,10 +126,8 @@ export const AddSpotForm = ({
 
       // Reset form
       setName("");
-      setDescription("");
-      setCategory("activity");
-      setTags("");
-      setImageUrl("");
+      setGoogleMapsUrl("");
+      onSetCoordinates?.(undefined as any);
       setOpen(false);
     }
   };
@@ -171,72 +147,6 @@ export const AddSpotForm = ({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Spot Name *</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Sunrise Yoga Spot"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category">Category *</Label>
-            <Select
-              value={category}
-              onValueChange={(v) => setCategory(v as SpotCategory)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(
-                  Object.entries(categoryLabels) as [SpotCategory, string][]
-                ).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="What makes this spot special?"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={500}
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags (comma-separated)</Label>
-            <Input
-              id="tags"
-              placeholder="e.g., Beach, Sunset, Yoga"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              maxLength={200}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="imageUrl">Image URL (optional)</Label>
-            <Input
-              id="imageUrl"
-              placeholder="https://..."
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              type="url"
-            />
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="googleMapsUrl">Google Maps Link *</Label>
             <Input
@@ -265,6 +175,17 @@ export const AddSpotForm = ({
                 Paste a Google Maps link to extract the location
               </p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Spot Name *</Label>
+            <Input
+              id="name"
+              placeholder="e.g., Sunrise Yoga Spot"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={100}
+            />
           </div>
 
           <div className="flex gap-3 pt-2">

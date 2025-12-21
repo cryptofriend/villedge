@@ -379,6 +379,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
               category: selectedSpot.category,
               coordinates: selectedSpot.coordinates,
               tags: selectedSpot.tags || undefined,
+              google_maps_url: selectedSpot.google_maps_url,
             }} 
             onClose={handleCloseSpot}
             onDelete={deleteSpot}
