@@ -33,6 +33,8 @@ export const EmbedMap = ({ mapboxToken }: EmbedMapProps) => {
       zoom: 14,
       pitch: 0,
       attributionControl: false,
+      scrollZoom: true,
+      doubleClickZoom: true,
     });
 
     map.current = m;
