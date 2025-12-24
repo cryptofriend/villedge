@@ -13,6 +13,7 @@ import { Plus, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SpotInput } from "@/hooks/useSpots";
 import { supabase } from "@/integrations/supabase/client";
+import { ImageUpload } from "@/components/ImageUpload";
 
 interface PlaceData {
   name?: string;
@@ -39,6 +40,7 @@ export const AddSpotForm = ({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [placeData, setPlaceData] = useState<PlaceData | null>(null);
@@ -109,7 +111,7 @@ export const AddSpotForm = ({
       name: name.trim(),
       coordinates: pendingCoordinates,
       google_maps_url: placeData?.resolvedUrl || googleMapsUrl.trim() || undefined,
-      image_url: placeData?.imageUrl || undefined,
+      image_url: imageUrl.trim() || placeData?.imageUrl || undefined,
       description: placeData?.description || undefined,
     };
 
@@ -122,6 +124,7 @@ export const AddSpotForm = ({
       // Reset form
       setName("");
       setGoogleMapsUrl("");
+      setImageUrl("");
       setPlaceData(null);
       onSetCoordinates?.(null);
       setOpen(false);
@@ -179,6 +182,15 @@ export const AddSpotForm = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={100}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Image (optional)</Label>
+            <ImageUpload
+              value={imageUrl}
+              onChange={setImageUrl}
+              placeholder="https://..."
             />
           </div>
 
