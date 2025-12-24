@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/ImageUpload";
 
 interface EditSpotDialogProps {
   spot: Spot & { google_maps_url?: string | null };
@@ -135,13 +136,11 @@ export const EditSpotDialog = ({ spot, open, onOpenChange, onUpdate }: EditSpotD
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="imageUrl">Image URL (optional)</Label>
-            <Input
-              id="imageUrl"
+            <Label>Image (optional)</Label>
+            <ImageUpload
               value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
+              onChange={setImageUrl}
               placeholder="https://..."
-              type="url"
             />
           </div>
 
