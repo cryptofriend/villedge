@@ -52,10 +52,10 @@ export const spots: Spot[] = [
 ];
 
 export const categoryColors: Record<Spot["category"], string> = {
-  accommodation: "#4A6741",
-  food: "#8B7355",
-  activity: "#5C7A5C",
-  work: "#3D5A3D",
+  accommodation: "#C4C790",
+  food: "#8E9456",
+  activity: "#6E956E",
+  work: "#8E9456",
 };
 
 export const categoryLabels: Record<Spot["category"], string> = {

@@ -134,9 +134,13 @@ export const AddSpotForm = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="sage" size="sm" className="gap-2">
+        <Button 
+          variant="sage" 
+          size="icon" 
+          className="h-10 w-10 rounded-full"
+          title="Add Spot"
+        >
           <Plus className="h-4 w-4" />
-          Add Spot
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">

@@ -5,10 +5,11 @@ import { categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
-import { MapPin, Loader2, Check, X, Edit3 } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { Button } from "@/components/ui/button";
+import popupVillageLogo from "@/assets/popup-village-logo.png";
 
 // SeaLinks Golf Club coordinates
 const MAP_CENTER: [number, number] = [108.1885, 10.9355];
@@ -320,19 +321,31 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       {/* Header overlay */}
       <div className="absolute left-0 right-0 top-0 z-10 bg-gradient-to-b from-background/90 via-background/60 to-transparent p-4 pb-16 md:p-6 md:pb-20">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
-              Popup Village
-            </h1>
-            <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
-              Mũi Né, Vietnam · One of the world's great kitesurf spots
-            </p>
+          <div className="flex items-center gap-3">
+            <img 
+              src={popupVillageLogo} 
+              alt="Popup Village" 
+              className="h-10 w-10 md:h-12 md:w-12"
+            />
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
+                  Popup Village
+                </h1>
+                <span className="font-body text-sm text-muted-foreground">
+                  Jan 15 – Feb 15, 2026
+                </span>
+              </div>
+              <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
+                Mũi Né, Vietnam · One of the world's great kitesurf spots
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant={isEditMode ? "destructive" : "outline"}
-              size="sm"
-              className="gap-2"
+              size="icon"
+              className="h-10 w-10 rounded-full"
               onClick={() => {
                 setIsEditMode(!isEditMode);
                 if (isEditMode) {
@@ -341,9 +354,9 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
                   toast.info("Edit mode enabled - drag pins to adjust locations");
                 }
               }}
+              title={isEditMode ? "Done Editing" : "Edit Locations"}
             >
               <Edit3 className="h-4 w-4" />
-              {isEditMode ? "Done Editing" : "Edit Locations"}
             </Button>
             {!isEditMode && (
               <AddSpotForm
@@ -352,9 +365,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
                 onSetCoordinates={setPendingCoordinates}
               />
             )}
-            <div className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-              Jan 15 – Feb 15, 2026
-            </div>
           </div>
         </div>
 
