@@ -17,6 +17,7 @@ interface PopupVillage {
 interface PopupTimelineProps {
   villages: PopupVillage[];
   activeVillage: PopupVillage;
+  isZoomedIn?: boolean;
   onVillageClick: (village: PopupVillage) => void;
 }
 
@@ -112,8 +113,11 @@ const villageColors: { [key: string]: string } = {
   "edge-city-austin": "#667EEA",
 };
 
-export const PopupTimeline = ({ villages, activeVillage, onVillageClick }: PopupTimelineProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onVillageClick }: PopupTimelineProps) => {
+  const [isManuallyExpanded, setIsManuallyExpanded] = useState(true);
+  
+  // Auto-collapse when zoomed in, but allow manual override
+  const isExpanded = isZoomedIn ? false : isManuallyExpanded;
 
   // Create a 12-month timeline starting from current month
   const { timelineStart, timelineEnd, months, todayPosition } = useMemo(() => {
@@ -190,7 +194,7 @@ export const PopupTimeline = ({ villages, activeVillage, onVillageClick }: Popup
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setIsExpanded(true)}
+            onClick={() => setIsManuallyExpanded(true)}
             className="gap-2 rounded-full bg-card/95 shadow-lg backdrop-blur-sm"
           >
             <Calendar className="h-4 w-4" />
@@ -208,7 +212,7 @@ export const PopupTimeline = ({ villages, activeVillage, onVillageClick }: Popup
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsExpanded(false)}
+              onClick={() => setIsManuallyExpanded(false)}
               className="h-6 gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
               <ChevronDown className="h-3 w-3" />
