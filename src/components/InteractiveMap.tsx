@@ -612,24 +612,37 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       <div className="absolute left-0 right-0 top-0 z-10 bg-gradient-to-b from-background/90 via-background/60 to-transparent p-4 pb-16 md:p-6 md:pb-20">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src={activeVillage.logo} 
-              alt={activeVillage.name} 
-              className="h-10 w-10 rounded md:h-12 md:w-12"
-            />
-            <div>
-              <div className="flex items-center gap-3">
+            {isZoomedIn ? (
+              <>
+                <img 
+                  src={activeVillage.logo} 
+                  alt={activeVillage.name} 
+                  className="h-10 w-10 rounded md:h-12 md:w-12"
+                />
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
+                      {activeVillage.name}
+                    </h1>
+                    <span className="font-body text-sm text-muted-foreground">
+                      {activeVillage.dates}
+                    </span>
+                  </div>
+                  <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
+                    {activeVillage.location} · {activeVillage.description}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div>
                 <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
-                  {activeVillage.name}
+                  Popup Villages
                 </h1>
-                <span className="font-body text-sm text-muted-foreground">
-                  {activeVillage.dates}
-                </span>
+                <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
+                  Explore communities around the world
+                </p>
               </div>
-              <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
-                {activeVillage.location} · {activeVillage.description}
-              </p>
-            </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -658,13 +671,15 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           </div>
         </div>
 
-        {/* Category filter */}
-        <div className="mt-4">
-          <CategoryLegend
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
-        </div>
+        {/* Category filter - only show when zoomed in */}
+        {isZoomedIn && (
+          <div className="mt-4">
+            <CategoryLegend
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
+          </div>
+        )}
       </div>
 
       {/* Selected spot card */}
@@ -692,24 +707,37 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       <div className="absolute bottom-28 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:bottom-32 md:block">
         {/* Village info header */}
         <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
-          <img 
-            src={activeVillage.logo} 
-            alt={activeVillage.name} 
-            className="h-10 w-10 rounded"
-          />
-          <div>
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              {activeVillage.name}
-            </h3>
-            <p className="text-xs text-muted-foreground">{activeVillage.dates}</p>
-          </div>
+          {isZoomedIn ? (
+            <>
+              <img 
+                src={activeVillage.logo} 
+                alt={activeVillage.name} 
+                className="h-10 w-10 rounded"
+              />
+              <div>
+                <h3 className="font-display text-sm font-semibold text-foreground">
+                  {activeVillage.name}
+                </h3>
+                <p className="text-xs text-muted-foreground">{activeVillage.dates}</p>
+              </div>
+            </>
+          ) : (
+            <div>
+              <h3 className="font-display text-sm font-semibold text-foreground">
+                Popup Villages
+              </h3>
+              <p className="text-xs text-muted-foreground">Click on a village to explore</p>
+            </div>
+          )}
         </div>
         
-        {/* Village details */}
-        <div className="mb-3 text-xs">
-          <p className="text-muted-foreground">Location</p>
-          <p className="font-medium text-foreground">{activeVillage.location} · {activeVillage.description}</p>
-        </div>
+        {/* Village details - only show when zoomed in */}
+        {isZoomedIn && (
+          <div className="mb-3 text-xs">
+            <p className="text-muted-foreground">Location</p>
+            <p className="font-medium text-foreground">{activeVillage.location} · {activeVillage.description}</p>
+          </div>
+        )}
         
         <div className="grid grid-cols-2 gap-2 text-xs">
           {activeVillage.participants && (
