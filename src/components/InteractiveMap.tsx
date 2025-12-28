@@ -33,7 +33,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [selectionCoords, setSelectionCoords] = useState<[number, number] | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isClusteredView, setIsClusteredView] = useState(false);
+  const isClusteredRef = useRef(false);
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   
   const CLUSTER_ZOOM_THRESHOLD = 12;
@@ -234,6 +234,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
     spotMarkersRef.current.clear();
+    
+    // Also remove cluster marker when re-adding markers
+    removeClusterMarker();
+    isClusteredRef.current = false;
 
     const filteredSpots = selectedCategory
       ? spots.filter((s) => s.category === selectedCategory)
@@ -316,8 +320,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     const zoom = map.current.getZoom();
     const shouldCluster = zoom < CLUSTER_ZOOM_THRESHOLD;
     
-    if (shouldCluster !== isClusteredView) {
-      setIsClusteredView(shouldCluster);
+    if (shouldCluster !== isClusteredRef.current) {
+      isClusteredRef.current = shouldCluster;
       
       if (shouldCluster) {
         // Hide individual markers, show cluster
@@ -335,7 +339,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         removeClusterMarker();
       }
     }
-  }, [isClusteredView, createClusterMarker, removeClusterMarker]);
+  }, [createClusterMarker, removeClusterMarker]);
 
   // Update markers when dependencies change
   useEffect(() => {
