@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ChevronUp, ChevronDown, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface PopupVillage {
   id: string;
@@ -111,8 +113,10 @@ const villageColors: { [key: string]: string } = {
 };
 
 export const PopupTimeline = ({ villages, activeVillage, onVillageClick }: PopupTimelineProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   // Create a 12-month timeline starting from current month
-  const { timelineStart, timelineEnd, months } = useMemo(() => {
+  const { timelineStart, timelineEnd, months, todayPosition } = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 12, 0);
@@ -127,7 +131,11 @@ export const PopupTimeline = ({ villages, activeVillage, onVillageClick }: Popup
       });
     }
     
-    return { timelineStart: start, timelineEnd: end, months: monthLabels };
+    // Calculate today's position
+    const totalDuration = end.getTime() - start.getTime();
+    const todayPos = ((now.getTime() - start.getTime()) / totalDuration) * 100;
+    
+    return { timelineStart: start, timelineEnd: end, months: monthLabels, todayPosition: Math.max(0, Math.min(100, todayPos)) };
   }, []);
 
   // Calculate positions for each village
@@ -175,58 +183,102 @@ export const PopupTimeline = ({ villages, activeVillage, onVillageClick }: Popup
   }, [villagePositions]);
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-background/95 via-background/80 to-transparent px-4 pb-4 pt-8 md:px-6">
-      {/* Month labels */}
-      <div className="relative mb-2 h-6">
-        {months.map((month, i) => (
-          <div
-            key={i}
-            className="absolute text-xs font-medium text-muted-foreground"
-            style={{ left: `${month.position}%` }}
+    <div className="absolute bottom-0 left-0 right-0 z-20">
+      {/* Collapsed state */}
+      {!isExpanded && (
+        <div className="flex items-center justify-center px-4 pb-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsExpanded(true)}
+            className="gap-2 rounded-full bg-card/95 shadow-lg backdrop-blur-sm"
           >
-            {month.label}
-          </div>
-        ))}
-      </div>
-      
-      {/* Timeline track */}
-      <div className="relative rounded-lg bg-secondary/30 backdrop-blur-sm" style={{ minHeight: `${Math.max(1, rows.length) * 32 + 8}px` }}>
-        {/* Grid lines */}
-        <div className="absolute inset-0 flex">
-          {months.map((_, i) => (
-            <div
-              key={i}
-              className="h-full border-l border-border/30"
-              style={{ width: `${100 / 12}%` }}
-            />
-          ))}
+            <Calendar className="h-4 w-4" />
+            <span>Show Timeline</span>
+            <ChevronUp className="h-4 w-4" />
+          </Button>
         </div>
-        
-        {/* Village bars */}
-        {rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="relative h-8">
-            {row.map(({ village, position }) => (
-              <button
-                key={village.id}
-                onClick={() => onVillageClick(village)}
-                className={`absolute top-1 flex h-6 items-center gap-1 overflow-hidden rounded-full px-2 text-xs font-medium text-white transition-all hover:scale-105 hover:shadow-lg ${
-                  activeVillage.id === village.id ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""
-                }`}
-                style={{
-                  left: `${position.left}%`,
-                  width: `${position.width}%`,
-                  minWidth: "60px",
-                  backgroundColor: villageColors[village.id] || "#6B7280",
-                }}
-                title={`${village.name}\n${village.dates}`}
+      )}
+
+      {/* Expanded state */}
+      {isExpanded && (
+        <div className="bg-gradient-to-t from-background/95 via-background/80 to-transparent px-4 pb-4 pt-8 md:px-6">
+          {/* Collapse button */}
+          <div className="mb-2 flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(false)}
+              className="h-6 gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ChevronDown className="h-3 w-3" />
+              Hide
+            </Button>
+          </div>
+
+          {/* Month labels */}
+          <div className="relative mb-2 h-6">
+            {months.map((month, i) => (
+              <div
+                key={i}
+                className="absolute text-xs font-medium text-muted-foreground"
+                style={{ left: `${month.position}%` }}
               >
-                <img src={village.logo} alt="" className="h-4 w-4 shrink-0 rounded-sm" />
-                <span className="truncate">{village.name}</span>
-              </button>
+                {month.label}
+              </div>
             ))}
           </div>
-        ))}
-      </div>
+          
+          {/* Timeline track */}
+          <div className="relative rounded-lg bg-secondary/30 backdrop-blur-sm" style={{ minHeight: `${Math.max(1, rows.length) * 32 + 8}px` }}>
+            {/* Grid lines */}
+            <div className="absolute inset-0 flex">
+              {months.map((_, i) => (
+                <div
+                  key={i}
+                  className="h-full border-l border-border/30"
+                  style={{ width: `${100 / 12}%` }}
+                />
+              ))}
+            </div>
+
+            {/* Today marker */}
+            <div
+              className="absolute top-0 z-10 h-full w-0.5 bg-primary"
+              style={{ left: `${todayPosition}%` }}
+            >
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+                Today
+              </div>
+            </div>
+            
+            {/* Village bars */}
+            {rows.map((row, rowIndex) => (
+              <div key={rowIndex} className="relative h-8">
+                {row.map(({ village, position }) => (
+                  <button
+                    key={village.id}
+                    onClick={() => onVillageClick(village)}
+                    className={`absolute top-1 flex h-6 items-center gap-1 overflow-hidden rounded-full px-2 text-xs font-medium text-white transition-all hover:scale-105 hover:shadow-lg ${
+                      activeVillage.id === village.id ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""
+                    }`}
+                    style={{
+                      left: `${position.left}%`,
+                      width: `${position.width}%`,
+                      minWidth: "60px",
+                      backgroundColor: villageColors[village.id] || "#6B7280",
+                    }}
+                    title={`${village.name}\n${village.dates}`}
+                  >
+                    <img src={village.logo} alt="" className="h-4 w-4 shrink-0 rounded-sm" />
+                    <span className="truncate">{village.name}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
