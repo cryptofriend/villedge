@@ -584,7 +584,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       )}
 
       {/* Spots list sidebar */}
-      <div className="absolute bottom-4 right-4 z-10 hidden max-h-[350px] w-72 overflow-auto rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:block">
+      <div className="absolute bottom-4 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:block">
         {/* Village info header */}
         <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
           <img 
@@ -601,7 +601,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         </div>
         
         {/* Village details */}
-        <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-2 gap-2 text-xs">
           {activeVillage.participants && (
             <div className="rounded-md bg-secondary/50 p-2">
               <p className="text-muted-foreground">Participants</p>
@@ -614,47 +614,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
               <p className="font-medium text-foreground">{activeVillage.focus}</p>
             </div>
           )}
-        </div>
-        
-        {/* Spots list */}
-        <h4 className="mb-2 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Explore Spots
-        </h4>
-        <div className="flex flex-col gap-2">
-          {(selectedCategory
-            ? spots.filter((s) => s.category === selectedCategory)
-            : spots
-          ).map((spot) => (
-            <button
-              key={spot.id}
-              onClick={() => {
-                setSelectedSpot(spot);
-                map.current?.flyTo({
-                  center: spot.coordinates,
-                  zoom: 15,
-                  duration: 800,
-                });
-              }}
-              className={`flex items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-secondary ${
-                selectedSpot?.id === spot.id ? "bg-secondary" : ""
-              }`}
-            >
-              <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                style={{ backgroundColor: categoryColors[spot.category] }}
-              >
-                <MapPin className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate font-body text-sm font-medium text-foreground">
-                  {spot.name}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {spot.tags?.slice(0, 2).join(" · ")}
-                </p>
-              </div>
-            </button>
-          ))}
         </div>
       </div>
     </div>
