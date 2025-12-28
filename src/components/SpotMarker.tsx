@@ -131,6 +131,18 @@ export const CategoryLegend = ({
 
   return (
     <div className="flex flex-wrap gap-2">
+      {/* All button */}
+      <button
+        onClick={() => onSelectCategory(null)}
+        className={cn(
+          "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200",
+          selectedCategory === null
+            ? "border-transparent bg-foreground text-background"
+            : "border-border bg-card text-foreground hover:bg-secondary"
+        )}
+      >
+        All
+      </button>
       {categories.map((category) => (
         <button
           key={category}
@@ -140,13 +152,13 @@ export const CategoryLegend = ({
           className={cn(
             "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200",
             selectedCategory === category
-              ? "border-transparent text-primary-foreground"
+              ? "border-transparent text-foreground"
               : "border-border bg-card text-foreground hover:bg-secondary"
           )}
           style={
             selectedCategory === category
               ? { backgroundColor: categoryColors[category] }
-              : undefined
+              : { borderColor: categoryColors[category] }
           }
         >
           <span
