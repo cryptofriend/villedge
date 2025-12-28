@@ -5,6 +5,7 @@ import { categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
+import { PopupTimeline } from "./PopupTimeline";
 import { MapPin, Loader2, Check, X, Edit3, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
@@ -723,6 +724,20 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           )}
         </div>
       </div>
+
+      {/* Timeline */}
+      <PopupTimeline
+        villages={POPUP_VILLAGES}
+        activeVillage={activeVillage}
+        onVillageClick={(village) => {
+          setActiveVillage(village);
+          map.current?.flyTo({
+            center: village.center,
+            zoom: 15,
+            duration: 800,
+          });
+        }}
+      />
     </div>
   );
 };
