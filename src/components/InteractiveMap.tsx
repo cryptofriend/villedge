@@ -12,11 +12,14 @@ import { Button } from "@/components/ui/button";
 import popupVillageLogo from "@/assets/popup-village-logo.png";
 import networkStateLogo from "@/assets/network-state-logo.png";
 import edgeCityLogo from "@/assets/edge-city-logo.png";
+import marsCollegeLogo from "@/assets/mars-college-logo.webp";
+import ipeVillageLogo from "@/assets/ipe-village-logo.webp";
+import zuafriqueLogo from "@/assets/zuafrique-logo.webp";
 
 // SeaLinks Golf Club coordinates (Proof of Retreat)
 const MAP_CENTER: [number, number] = [108.1885, 10.9355];
 
-// Forest City coordinates (Network State)
+// Forest City coordinates (Network State / Network School v2)
 const FOREST_CITY_CENTER: [number, number] = [103.5710, 1.4050];
 
 // Healdsburg, CA coordinates (Edge Esmeralda)
@@ -24,6 +27,21 @@ const HEALDSBURG_CENTER: [number, number] = [-122.8697, 38.6107];
 
 // Austin, TX coordinates (Edge City Austin)
 const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
+
+// Chiang Mai, Thailand coordinates (ETHChiangmai)
+const CHIANG_MAI_CENTER: [number, number] = [98.9853, 18.7883];
+
+// California desert coordinates (Mars College)
+const BOMBAY_BEACH_CENTER: [number, number] = [-115.7294, 33.3511];
+
+// Santa Catarina, Brazil coordinates (Ipê Village II)
+const SANTA_CATARINA_CENTER: [number, number] = [-48.5482, -27.5954];
+
+// Kilifi, Kenya coordinates (ZuAfrique 2.0)
+const KILIFI_CENTER: [number, number] = [39.8499, -3.6305];
+
+// Luštica Bay, Montenegro coordinates (Ārc Montenegro)
+const LUSTICA_CENTER: [number, number] = [18.6833, 42.3833];
 
 // Define popup villages configuration
 interface PopupVillage {
@@ -51,26 +69,81 @@ const POPUP_VILLAGES: PopupVillage[] = [
     focus: "Web3 & Deep Tech",
   },
   {
-    id: "network-state",
-    name: "Network State",
+    id: "network-school-v2",
+    name: "Network School v2",
     logo: networkStateLogo,
     center: FOREST_CITY_CENTER,
-    dates: "Mar 1 – Apr 30, 2026",
+    dates: "Mar 1, 2025 – Mar 1, 2026",
     location: "Forest City, Malaysia",
-    description: "Building the future of governance",
-    participants: "100+ pioneers",
-    focus: "Governance & Society",
+    description: "Year-long Web3 community residency",
+    participants: "100-500 pioneers",
+    focus: "Crypto & Governance",
+  },
+  {
+    id: "ethchiangmai",
+    name: "ETHChiangmai",
+    logo: networkStateLogo,
+    center: CHIANG_MAI_CENTER,
+    dates: "Dec 8, 2025 – Mar 2, 2026",
+    location: "Chiang Mai, Thailand",
+    description: "Web3 Unconference, Bootcamp & Summit",
+    participants: "100-500 builders",
+    focus: "Crypto & Tech",
+  },
+  {
+    id: "mars-college",
+    name: "Mars College",
+    logo: marsCollegeLogo,
+    center: BOMBAY_BEACH_CENTER,
+    dates: "May 1 – Apr 27, 2026",
+    location: "California, USA",
+    description: "Off-grid solarpunk campus in the desert",
+    participants: "25-100 Martians",
+    focus: "Tech, Governance & AI",
+  },
+  {
+    id: "arc-montenegro",
+    name: "Ārc Montenegro",
+    logo: networkStateLogo,
+    center: LUSTICA_CENTER,
+    dates: "Coming 2026",
+    location: "Luštica Bay, Montenegro",
+    description: "Straight after EthCC. Two months.",
+    participants: "500-2500",
+    focus: "Crypto & Governance",
+  },
+  {
+    id: "ipe-village-ii",
+    name: "Ipê Village II",
+    logo: ipeVillageLogo,
+    center: SANTA_CATARINA_CENTER,
+    dates: "Apr 6 – May 1, 2026",
+    location: "Santa Catarina, Brazil",
+    description: "Brazil's first ever pop-up village",
+    participants: "100-500 builders",
+    focus: "Crypto & Governance",
+  },
+  {
+    id: "zuafrique-2",
+    name: "ZuAfrique 2.0",
+    logo: zuafriqueLogo,
+    center: KILIFI_CENTER,
+    dates: "Apr 12 – May 3, 2026",
+    location: "Kilifi, Kenya",
+    description: "Africa's largest onchain movement",
+    participants: "100-500 builders",
+    focus: "Crypto & Culture",
   },
   {
     id: "edge-esmeralda",
     name: "Edge Esmeralda",
     logo: edgeCityLogo,
     center: HEALDSBURG_CENTER,
-    dates: "May 24 – Jun 21, 2025",
+    dates: "May 30 – Jun 27, 2026",
     location: "Healdsburg, CA",
-    description: "Innovation in wine country",
-    participants: "200+ innovators",
-    focus: "Tech & Community",
+    description: "Prototyping new ways of living",
+    participants: "500-2500 innovators",
+    focus: "Culture, Science & Tech",
   },
   {
     id: "edge-city-austin",
@@ -79,8 +152,8 @@ const POPUP_VILLAGES: PopupVillage[] = [
     center: AUSTIN_CENTER,
     dates: "Mar 2 – 7, 2025",
     location: "Austin, TX",
-    description: "Where tech meets culture",
-    participants: "150+ creators",
+    description: "Pop-up village during SXSW",
+    participants: "100-500 creators",
     focus: "Culture & Technology",
   },
 ];
