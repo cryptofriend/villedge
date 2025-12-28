@@ -63,7 +63,7 @@ const POPUP_VILLAGES: PopupVillage[] = [
     name: "Proof of Retreat",
     logo: popupVillageLogo,
     center: MAP_CENTER,
-    dates: "Jan 15 – Feb 15, 2026",
+    dates: "Dec 1, 2025 – Apr 1, 2026",
     location: "Mũi Né, Vietnam",
     description: "One of the world's great kitesurf spots",
     participants: "50+ builders",
@@ -687,7 +687,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       )}
 
       {/* Spots list sidebar */}
-      <div className="absolute bottom-4 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:block">
+      <div className="absolute bottom-28 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:bottom-32 md:block">
         {/* Village info header */}
         <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
           <img 
