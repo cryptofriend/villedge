@@ -11,12 +11,19 @@ import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { Button } from "@/components/ui/button";
 import popupVillageLogo from "@/assets/popup-village-logo.png";
 import networkStateLogo from "@/assets/network-state-logo.png";
+import edgeCityLogo from "@/assets/edge-city-logo.png";
 
 // SeaLinks Golf Club coordinates (Proof of Retreat)
 const MAP_CENTER: [number, number] = [108.1885, 10.9355];
 
 // Forest City coordinates (Network State)
 const FOREST_CITY_CENTER: [number, number] = [103.5710, 1.4050];
+
+// Healdsburg, CA coordinates (Edge Esmeralda)
+const HEALDSBURG_CENTER: [number, number] = [-122.8697, 38.6107];
+
+// Austin, TX coordinates (Edge City Austin)
+const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
 
 // Define popup villages configuration
 interface PopupVillage {
@@ -53,6 +60,28 @@ const POPUP_VILLAGES: PopupVillage[] = [
     description: "Building the future of governance",
     participants: "100+ pioneers",
     focus: "Governance & Society",
+  },
+  {
+    id: "edge-esmeralda",
+    name: "Edge Esmeralda",
+    logo: edgeCityLogo,
+    center: HEALDSBURG_CENTER,
+    dates: "May 24 – Jun 21, 2025",
+    location: "Healdsburg, CA",
+    description: "Innovation in wine country",
+    participants: "200+ innovators",
+    focus: "Tech & Community",
+  },
+  {
+    id: "edge-city-austin",
+    name: "Edge City Austin",
+    logo: edgeCityLogo,
+    center: AUSTIN_CENTER,
+    dates: "Mar 2 – 7, 2025",
+    location: "Austin, TX",
+    description: "Where tech meets culture",
+    participants: "150+ creators",
+    focus: "Culture & Technology",
   },
 ];
 
