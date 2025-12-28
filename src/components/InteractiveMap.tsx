@@ -24,6 +24,11 @@ interface PopupVillage {
   name: string;
   logo: string;
   center: [number, number];
+  dates: string;
+  location: string;
+  description: string;
+  participants?: string;
+  focus?: string;
 }
 
 const POPUP_VILLAGES: PopupVillage[] = [
@@ -32,12 +37,22 @@ const POPUP_VILLAGES: PopupVillage[] = [
     name: "Proof of Retreat",
     logo: popupVillageLogo,
     center: MAP_CENTER,
+    dates: "Jan 15 – Feb 15, 2026",
+    location: "Mũi Né, Vietnam",
+    description: "One of the world's great kitesurf spots",
+    participants: "50+ builders",
+    focus: "Web3 & Deep Tech",
   },
   {
     id: "network-state",
     name: "Network State",
     logo: networkStateLogo,
     center: FOREST_CITY_CENTER,
+    dates: "Mar 1 – Apr 30, 2026",
+    location: "Forest City, Malaysia",
+    description: "Building the future of governance",
+    participants: "100+ pioneers",
+    focus: "Governance & Society",
   },
 ];
 
@@ -62,6 +77,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const isClusteredRef = useRef(false);
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const [activeVillage, setActiveVillage] = useState<PopupVillage>(POPUP_VILLAGES[0]);
   
   const CLUSTER_ZOOM_THRESHOLD = 12;
 
@@ -229,6 +245,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       });
       
       el.addEventListener("click", () => {
+        setActiveVillage(village);
         map.current?.flyTo({
           center: village.center,
           zoom: 15,
@@ -491,21 +508,21 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src={popupVillageLogo} 
-              alt="Popup Village" 
-              className="h-10 w-10 md:h-12 md:w-12"
+              src={activeVillage.logo} 
+              alt={activeVillage.name} 
+              className="h-10 w-10 rounded md:h-12 md:w-12"
             />
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
-                  Popup Village
+                  {activeVillage.name}
                 </h1>
                 <span className="font-body text-sm text-muted-foreground">
-                  Jan 15 – Feb 15, 2026
+                  {activeVillage.dates}
                 </span>
               </div>
               <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
-                Mũi Né, Vietnam · One of the world's great kitesurf spots
+                {activeVillage.location} · {activeVillage.description}
               </p>
             </div>
           </div>
@@ -567,10 +584,42 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       )}
 
       {/* Spots list sidebar */}
-      <div className="absolute bottom-4 right-4 z-10 hidden max-h-[300px] w-72 overflow-auto rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block">
-        <h3 className="mb-3 font-display text-sm font-semibold text-foreground">
+      <div className="absolute bottom-4 right-4 z-10 hidden max-h-[350px] w-72 overflow-auto rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:block">
+        {/* Village info header */}
+        <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
+          <img 
+            src={activeVillage.logo} 
+            alt={activeVillage.name} 
+            className="h-10 w-10 rounded"
+          />
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              {activeVillage.name}
+            </h3>
+            <p className="text-xs text-muted-foreground">{activeVillage.dates}</p>
+          </div>
+        </div>
+        
+        {/* Village details */}
+        <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
+          {activeVillage.participants && (
+            <div className="rounded-md bg-secondary/50 p-2">
+              <p className="text-muted-foreground">Participants</p>
+              <p className="font-medium text-foreground">{activeVillage.participants}</p>
+            </div>
+          )}
+          {activeVillage.focus && (
+            <div className="rounded-md bg-secondary/50 p-2">
+              <p className="text-muted-foreground">Focus</p>
+              <p className="font-medium text-foreground">{activeVillage.focus}</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Spots list */}
+        <h4 className="mb-2 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Explore Spots
-        </h3>
+        </h4>
         <div className="flex flex-col gap-2">
           {(selectedCategory
             ? spots.filter((s) => s.category === selectedCategory)
