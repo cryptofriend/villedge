@@ -22,6 +22,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const clusterMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
@@ -32,7 +33,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [selectionCoords, setSelectionCoords] = useState<[number, number] | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isClusteredView, setIsClusteredView] = useState(false);
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  
+  const CLUSTER_ZOOM_THRESHOLD = 12;
 
   // Create/update the draggable selection marker
   useEffect(() => {
@@ -139,7 +143,91 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     };
   }, [mapboxToken]);
 
-  const addMarkers = () => {
+  // Calculate center point of all spots for cluster marker
+  const getSpotsCenterPoint = useCallback((): [number, number] => {
+    if (spots.length === 0) return MAP_CENTER;
+    
+    const sumLng = spots.reduce((sum, spot) => sum + spot.coordinates[0], 0);
+    const sumLat = spots.reduce((sum, spot) => sum + spot.coordinates[1], 0);
+    
+    return [sumLng / spots.length, sumLat / spots.length];
+  }, [spots]);
+
+  // Create cluster marker
+  const createClusterMarker = useCallback(() => {
+    if (!map.current) return;
+    
+    // Remove existing cluster marker
+    if (clusterMarkerRef.current) {
+      clusterMarkerRef.current.remove();
+      clusterMarkerRef.current = null;
+    }
+    
+    const centerPoint = getSpotsCenterPoint();
+    
+    const el = document.createElement("div");
+    el.className = "cluster-marker";
+    el.innerHTML = `
+      <div style="
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(250, 248, 245, 0.95);
+        padding: 8px 16px 8px 8px;
+        border-radius: 24px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      ">
+        <img src="${popupVillageLogo}" alt="Popup Village" style="width: 32px; height: 32px;" />
+        <span style="
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 600;
+          color: #3d4a3f;
+          white-space: nowrap;
+        ">Proof of Retreat</span>
+      </div>
+    `;
+    
+    el.addEventListener("mouseenter", () => {
+      const container = el.firstChild as HTMLElement;
+      if (container) {
+        container.style.transform = "scale(1.05)";
+      }
+    });
+    
+    el.addEventListener("mouseleave", () => {
+      const container = el.firstChild as HTMLElement;
+      if (container) {
+        container.style.transform = "scale(1)";
+      }
+    });
+    
+    el.addEventListener("click", () => {
+      map.current?.flyTo({
+        center: centerPoint,
+        zoom: 15,
+        duration: 800,
+      });
+    });
+    
+    const marker = new mapboxgl.Marker({ element: el })
+      .setLngLat(centerPoint)
+      .addTo(map.current);
+    
+    clusterMarkerRef.current = marker;
+  }, [getSpotsCenterPoint]);
+
+  // Remove cluster marker
+  const removeClusterMarker = useCallback(() => {
+    if (clusterMarkerRef.current) {
+      clusterMarkerRef.current.remove();
+      clusterMarkerRef.current = null;
+    }
+  }, []);
+
+  const addMarkers = useCallback(() => {
     if (!map.current) return;
 
     // Clear existing markers
@@ -219,16 +307,49 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       markersRef.current.push(marker);
       spotMarkersRef.current.set(spot.id, marker);
     });
-  };
+  }, [selectedCategory, spots, isEditMode, updateSpotCoordinates]);
 
+  // Handle zoom-based clustering
+  const updateMarkersVisibility = useCallback(() => {
+    if (!map.current) return;
+    
+    const zoom = map.current.getZoom();
+    const shouldCluster = zoom < CLUSTER_ZOOM_THRESHOLD;
+    
+    if (shouldCluster !== isClusteredView) {
+      setIsClusteredView(shouldCluster);
+      
+      if (shouldCluster) {
+        // Hide individual markers, show cluster
+        markersRef.current.forEach((marker) => {
+          const el = marker.getElement();
+          el.style.display = 'none';
+        });
+        createClusterMarker();
+      } else {
+        // Show individual markers, hide cluster
+        markersRef.current.forEach((marker) => {
+          const el = marker.getElement();
+          el.style.display = 'block';
+        });
+        removeClusterMarker();
+      }
+    }
+  }, [isClusteredView, createClusterMarker, removeClusterMarker]);
+
+  // Update markers when dependencies change
   useEffect(() => {
     if (!map.current) return;
 
     const m = map.current;
-    const onLoad = () => addMarkers();
+    const onLoad = () => {
+      addMarkers();
+      updateMarkersVisibility();
+    };
 
     if (m.isStyleLoaded()) {
       addMarkers();
+      updateMarkersVisibility();
     } else {
       m.on("load", onLoad);
     }
@@ -236,7 +357,27 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     return () => {
       m.off("load", onLoad);
     };
-  }, [selectedCategory, spots, isEditMode]);
+  }, [selectedCategory, spots, isEditMode, addMarkers, updateMarkersVisibility]);
+
+  // Listen to zoom changes for clustering
+  useEffect(() => {
+    if (!map.current || !mapReady) return;
+    
+    const m = map.current;
+    
+    const handleZoom = () => {
+      updateMarkersVisibility();
+    };
+    
+    m.on("zoom", handleZoom);
+    
+    // Initial check
+    updateMarkersVisibility();
+    
+    return () => {
+      m.off("zoom", handleZoom);
+    };
+  }, [mapReady, updateMarkersVisibility]);
 
   const handleAddSpot = async (spotInput: SpotInput) => {
     const result = await addSpot(spotInput);
