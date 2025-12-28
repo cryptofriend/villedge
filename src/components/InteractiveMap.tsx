@@ -10,9 +10,36 @@ import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { Button } from "@/components/ui/button";
 import popupVillageLogo from "@/assets/popup-village-logo.png";
+import networkStateLogo from "@/assets/network-state-logo.png";
 
-// SeaLinks Golf Club coordinates
+// SeaLinks Golf Club coordinates (Proof of Retreat)
 const MAP_CENTER: [number, number] = [108.1885, 10.9355];
+
+// Forest City coordinates (Network State)
+const FOREST_CITY_CENTER: [number, number] = [103.5710, 1.4050];
+
+// Define popup villages configuration
+interface PopupVillage {
+  id: string;
+  name: string;
+  logo: string;
+  center: [number, number];
+}
+
+const POPUP_VILLAGES: PopupVillage[] = [
+  {
+    id: "proof-of-retreat",
+    name: "Proof of Retreat",
+    logo: popupVillageLogo,
+    center: MAP_CENTER,
+  },
+  {
+    id: "network-state",
+    name: "Network State",
+    logo: networkStateLogo,
+    center: FOREST_CITY_CENTER,
+  },
+];
 
 interface InteractiveMapProps {
   mapboxToken: string;
@@ -22,7 +49,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const clusterMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const clusterMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
@@ -153,78 +180,74 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     return [sumLng / spots.length, sumLat / spots.length];
   }, [spots]);
 
-  // Create cluster marker
-  const createClusterMarker = useCallback(() => {
+  // Create cluster markers for all popup villages
+  const createClusterMarkers = useCallback(() => {
     if (!map.current) return;
     
-    // Remove existing cluster marker
-    if (clusterMarkerRef.current) {
-      clusterMarkerRef.current.remove();
-      clusterMarkerRef.current = null;
-    }
+    // Remove existing cluster markers
+    clusterMarkersRef.current.forEach((marker) => marker.remove());
+    clusterMarkersRef.current.clear();
     
-    const centerPoint = getSpotsCenterPoint();
-    
-    const el = document.createElement("div");
-    el.className = "cluster-marker";
-    el.innerHTML = `
-      <div style="
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(250, 248, 245, 0.95);
-        padding: 8px 16px 8px 8px;
-        border-radius: 24px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        cursor: pointer;
-        transition: all 0.3s ease;
-      ">
-        <img src="${popupVillageLogo}" alt="Popup Village" style="width: 32px; height: 32px;" />
-        <span style="
-          font-family: inherit;
-          font-size: 14px;
-          font-weight: 600;
-          color: #3d4a3f;
-          white-space: nowrap;
-        ">Proof of Retreat</span>
-      </div>
-    `;
-    
-    el.addEventListener("mouseenter", () => {
-      const container = el.firstChild as HTMLElement;
-      if (container) {
-        container.style.transform = "scale(1.05)";
-      }
-    });
-    
-    el.addEventListener("mouseleave", () => {
-      const container = el.firstChild as HTMLElement;
-      if (container) {
-        container.style.transform = "scale(1)";
-      }
-    });
-    
-    el.addEventListener("click", () => {
-      map.current?.flyTo({
-        center: centerPoint,
-        zoom: 15,
-        duration: 800,
+    POPUP_VILLAGES.forEach((village) => {
+      const el = document.createElement("div");
+      el.className = "cluster-marker";
+      el.innerHTML = `
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(250, 248, 245, 0.95);
+          padding: 8px 16px 8px 8px;
+          border-radius: 24px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+          cursor: pointer;
+          transition: all 0.3s ease;
+        ">
+          <img src="${village.logo}" alt="${village.name}" style="width: 32px; height: 32px; border-radius: 4px;" />
+          <span style="
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            color: #3d4a3f;
+            white-space: nowrap;
+          ">${village.name}</span>
+        </div>
+      `;
+      
+      el.addEventListener("mouseenter", () => {
+        const container = el.firstChild as HTMLElement;
+        if (container) {
+          container.style.transform = "scale(1.05)";
+        }
       });
+      
+      el.addEventListener("mouseleave", () => {
+        const container = el.firstChild as HTMLElement;
+        if (container) {
+          container.style.transform = "scale(1)";
+        }
+      });
+      
+      el.addEventListener("click", () => {
+        map.current?.flyTo({
+          center: village.center,
+          zoom: 15,
+          duration: 800,
+        });
+      });
+      
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(village.center)
+        .addTo(map.current!);
+      
+      clusterMarkersRef.current.set(village.id, marker);
     });
-    
-    const marker = new mapboxgl.Marker({ element: el })
-      .setLngLat(centerPoint)
-      .addTo(map.current);
-    
-    clusterMarkerRef.current = marker;
-  }, [getSpotsCenterPoint]);
+  }, []);
 
-  // Remove cluster marker
-  const removeClusterMarker = useCallback(() => {
-    if (clusterMarkerRef.current) {
-      clusterMarkerRef.current.remove();
-      clusterMarkerRef.current = null;
-    }
+  // Remove all cluster markers
+  const removeClusterMarkers = useCallback(() => {
+    clusterMarkersRef.current.forEach((marker) => marker.remove());
+    clusterMarkersRef.current.clear();
   }, []);
 
   const addMarkers = useCallback(() => {
@@ -235,8 +258,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     markersRef.current = [];
     spotMarkersRef.current.clear();
     
-    // Also remove cluster marker when re-adding markers
-    removeClusterMarker();
+    // Also remove cluster markers when re-adding markers
+    removeClusterMarkers();
     isClusteredRef.current = false;
 
     const filteredSpots = selectedCategory
@@ -324,22 +347,22 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       isClusteredRef.current = shouldCluster;
       
       if (shouldCluster) {
-        // Hide individual markers, show cluster
+        // Hide individual markers, show cluster markers
         markersRef.current.forEach((marker) => {
           const el = marker.getElement();
           el.style.display = 'none';
         });
-        createClusterMarker();
+        createClusterMarkers();
       } else {
-        // Show individual markers, hide cluster
+        // Show individual markers, hide cluster markers
         markersRef.current.forEach((marker) => {
           const el = marker.getElement();
           el.style.display = 'block';
         });
-        removeClusterMarker();
+        removeClusterMarkers();
       }
     }
-  }, [createClusterMarker, removeClusterMarker]);
+  }, [createClusterMarkers, removeClusterMarkers]);
 
   // Update markers when dependencies change
   useEffect(() => {
