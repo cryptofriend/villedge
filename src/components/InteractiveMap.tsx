@@ -601,6 +601,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         </div>
         
         {/* Village details */}
+        <div className="mb-3 text-xs">
+          <p className="text-muted-foreground">Location</p>
+          <p className="font-medium text-foreground">{activeVillage.location} · {activeVillage.description}</p>
+        </div>
+        
         <div className="grid grid-cols-2 gap-2 text-xs">
           {activeVillage.participants && (
             <div className="rounded-md bg-secondary/50 p-2">
