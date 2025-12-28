@@ -181,6 +181,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const isClusteredRef = useRef(false);
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const [activeVillage, setActiveVillage] = useState<PopupVillage>(POPUP_VILLAGES[0]);
+  const [isZoomedIn, setIsZoomedIn] = useState(false);
   
   const CLUSTER_ZOOM_THRESHOLD = 12;
 
@@ -465,6 +466,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     
     if (shouldCluster !== isClusteredRef.current) {
       isClusteredRef.current = shouldCluster;
+      setIsZoomedIn(!shouldCluster);
       
       if (shouldCluster) {
         // Hide individual markers, show cluster markers
@@ -729,6 +731,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       <PopupTimeline
         villages={POPUP_VILLAGES}
         activeVillage={activeVillage}
+        isZoomedIn={isZoomedIn}
         onVillageClick={(village) => {
           setActiveVillage(village);
           map.current?.flyTo({
