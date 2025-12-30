@@ -137,10 +137,10 @@ export const AddSpotForm = ({
         <Button 
           variant="sage" 
           size="icon" 
-          className="h-10 w-10 rounded-full"
+          className="h-12 w-12 rounded-full shadow-lg"
           title="Add Spot"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
