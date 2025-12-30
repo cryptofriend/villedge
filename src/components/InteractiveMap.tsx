@@ -644,31 +644,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant={isEditMode ? "destructive" : "outline"}
-              size="icon"
-              className="h-10 w-10 rounded-full"
-              onClick={() => {
-                setIsEditMode(!isEditMode);
-                if (isEditMode) {
-                  toast.success("Edit mode disabled");
-                } else {
-                  toast.info("Edit mode enabled - drag pins to adjust locations");
-                }
-              }}
-              title={isEditMode ? "Done Editing" : "Edit Locations"}
-            >
-              <Edit3 className="h-4 w-4" />
-            </Button>
-            {!isEditMode && (
-              <AddSpotForm
-                onAddSpot={handleAddSpot}
-                pendingCoordinates={pendingCoordinates}
-                onSetCoordinates={setPendingCoordinates}
-              />
-            )}
-          </div>
         </div>
 
         {/* Category filter - only show when zoomed in */}
@@ -753,6 +728,33 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Floating Action Buttons - bottom right */}
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 md:bottom-6 md:right-6">
+        <Button
+          variant={isEditMode ? "destructive" : "outline"}
+          size="icon"
+          className="h-12 w-12 rounded-full shadow-lg"
+          onClick={() => {
+            setIsEditMode(!isEditMode);
+            if (isEditMode) {
+              toast.success("Edit mode disabled");
+            } else {
+              toast.info("Edit mode enabled - drag pins to adjust locations");
+            }
+          }}
+          title={isEditMode ? "Done Editing" : "Edit Locations"}
+        >
+          <Edit3 className="h-5 w-5" />
+        </Button>
+        {!isEditMode && (
+          <AddSpotForm
+            onAddSpot={handleAddSpot}
+            pendingCoordinates={pendingCoordinates}
+            onSetCoordinates={setPendingCoordinates}
+          />
+        )}
       </div>
 
       {/* Timeline */}

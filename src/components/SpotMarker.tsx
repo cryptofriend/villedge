@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Spot, categoryColors, categoryLabels } from "@/data/spots";
 import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface SpotMarkerProps {
   spot: Spot;
@@ -122,6 +124,7 @@ export const CategoryLegend = ({
   selectedCategory: Spot["category"] | null;
   onSelectCategory: (category: Spot["category"] | null) => void;
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const categories: Spot["category"][] = [
     "accommodation",
     "food",
@@ -129,45 +132,82 @@ export const CategoryLegend = ({
     "work",
   ];
 
+  // When a specific category is selected, show only that button (collapsed state)
+  const showingSelectedOnly = selectedCategory !== null && !isExpanded;
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {/* All button */}
-      <button
-        onClick={() => onSelectCategory(null)}
-        className={cn(
-          "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200",
-          selectedCategory === null
-            ? "border-transparent bg-foreground text-background"
-            : "border-border bg-card text-foreground hover:bg-secondary"
-        )}
-      >
-        All
-      </button>
-      {categories.map((category) => (
+    <div className="flex flex-col gap-2">
+      {/* All button - always visible when no category selected or expanded */}
+      {(selectedCategory === null || isExpanded) && (
         <button
-          key={category}
-          onClick={() =>
-            onSelectCategory(selectedCategory === category ? null : category)
-          }
+          onClick={() => {
+            if (selectedCategory === null) {
+              setIsExpanded(!isExpanded);
+            } else {
+              onSelectCategory(null);
+              setIsExpanded(false);
+            }
+          }}
           className={cn(
-            "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-200",
-            selectedCategory === category
-              ? "border-transparent text-foreground"
-              : "border-border bg-card text-foreground hover:bg-secondary"
+            "flex w-fit items-center gap-2 rounded-full border text-sm transition-all duration-200",
+            selectedCategory === null
+              ? "border-foreground bg-foreground text-background font-semibold"
+              : "border-border bg-card text-foreground hover:bg-secondary font-medium"
           )}
-          style={
-            selectedCategory === category
-              ? { backgroundColor: categoryColors[category] }
-              : { borderColor: categoryColors[category] }
-          }
+          style={{ padding: "10px 8px" }}
         >
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: categoryColors[category] }}
-          />
-          {categoryLabels[category]}
+          {selectedCategory === null ? (
+            isExpanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )
+          ) : null}
+          All
         </button>
-      ))}
+      )}
+
+      {/* Category buttons - show when expanded OR showing selected only */}
+      {(isExpanded || showingSelectedOnly) &&
+        categories.map((category) => {
+          // When showing selected only, only render the selected category
+          if (showingSelectedOnly && selectedCategory !== category) return null;
+
+          const isSelected = selectedCategory === category;
+          const borderColor = categoryColors[category];
+
+          return (
+            <button
+              key={category}
+              onClick={() => {
+                if (isSelected) {
+                  // Clicking selected category expands to show all options
+                  setIsExpanded(true);
+                } else {
+                  onSelectCategory(category);
+                  setIsExpanded(false);
+                }
+              }}
+              className={cn(
+                "flex w-fit items-center gap-2 rounded-full border text-sm transition-all duration-200",
+                isSelected ? "font-semibold" : "font-medium"
+              )}
+              style={{
+                padding: "10px 8px",
+                borderColor: borderColor,
+                backgroundColor: isSelected
+                  ? `${borderColor}80`
+                  : "hsl(var(--card))",
+              }}
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: categoryColors[category] }}
+              />
+              {categoryLabels[category]}
+            </button>
+          );
+        })}
     </div>
   );
 };
