@@ -120,9 +120,15 @@ const MarkerIcon = ({ category }: { category: Spot["category"] }) => {
 export const CategoryLegend = ({
   selectedCategory,
   onSelectCategory,
+  availableTags = [],
+  selectedTags = [],
+  onSelectTags,
 }: {
   selectedCategory: Spot["category"] | null;
   onSelectCategory: (category: Spot["category"] | null) => void;
+  availableTags?: string[];
+  selectedTags?: string[];
+  onSelectTags?: (tags: string[]) => void;
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const categories: Spot["category"][] = [
@@ -134,6 +140,15 @@ export const CategoryLegend = ({
 
   // When a specific category is selected, show only that button (collapsed state)
   const showingSelectedOnly = selectedCategory !== null && !isExpanded;
+
+  const handleTagClick = (tag: string) => {
+    if (!onSelectTags) return;
+    if (selectedTags.includes(tag)) {
+      onSelectTags(selectedTags.filter((t) => t !== tag));
+    } else {
+      onSelectTags([...selectedTags, tag]);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -208,6 +223,29 @@ export const CategoryLegend = ({
             </button>
           );
         })}
+
+      {/* Tags section - always visible below categories */}
+      {availableTags.length > 0 && onSelectTags && (
+        <div className="flex flex-wrap gap-1.5 max-w-[180px] mt-1">
+          {availableTags.map((tag) => {
+            const isSelected = selectedTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                onClick={() => handleTagClick(tag)}
+                className={cn(
+                  "px-2 py-1 text-xs rounded-full border transition-all duration-200",
+                  isSelected
+                    ? "bg-foreground text-background border-foreground font-medium"
+                    : "bg-card text-foreground border-border hover:bg-secondary"
+                )}
+              >
+                #{tag}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
