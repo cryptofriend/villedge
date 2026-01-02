@@ -112,6 +112,22 @@ const MarkerIcon = ({ category }: { category: Spot["category"] }) => {
           <line x1="12" y1="17" x2="12" y2="21" />
         </svg>
       );
+    case "atm":
+      return (
+        <svg
+          className={iconClass}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+          <line x1="6" y1="8" x2="6" y2="8.01" />
+          <line x1="10" y1="8" x2="10" y2="8.01" />
+          <line x1="14" y1="8" x2="14" y2="8.01" />
+          <rect x="6" y="12" width="12" height="4" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -130,6 +146,7 @@ export const CategoryLegend = ({
     "food",
     "activity",
     "work",
+    "atm",
   ];
 
   // When a specific category is selected, show only that button (collapsed state)
