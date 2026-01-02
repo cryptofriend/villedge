@@ -35,8 +35,8 @@ export const EditSpotDialog = ({ spot, open, onOpenChange, onUpdate }: EditSpotD
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !description.trim()) {
-      toast.error("Name and description are required");
+    if (!name.trim()) {
+      toast.error("Name is required");
       return;
     }
 
