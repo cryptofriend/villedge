@@ -183,7 +183,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [activeVillage, setActiveVillage] = useState<PopupVillage>(POPUP_VILLAGES[0]);
   const [isZoomedIn, setIsZoomedIn] = useState(true); // Start zoomed in since initial zoom is 15
   
-  const CLUSTER_ZOOM_THRESHOLD = 12;
+  const CLUSTER_ZOOM_THRESHOLD = 9;
 
   // Create/update the draggable selection marker
   useEffect(() => {
