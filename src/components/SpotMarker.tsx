@@ -224,8 +224,8 @@ export const CategoryLegend = ({
           );
         })}
 
-      {/* Tags section - always visible below categories */}
-      {availableTags.length > 0 && onSelectTags && (
+      {/* Tags section - only show when expanded */}
+      {isExpanded && availableTags.length > 0 && onSelectTags && (
         <div className="flex flex-wrap gap-1.5 max-w-[180px] mt-1">
           {availableTags.map((tag) => {
             const isSelected = selectedTags.includes(tag);

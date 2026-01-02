@@ -619,8 +619,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       )}
 
       {/* Header overlay */}
-      <div className="absolute left-0 right-0 top-0 z-10 bg-gradient-to-b from-background/90 via-background/60 to-transparent p-4 pb-16 md:p-6 md:pb-20">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="absolute left-0 right-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background/90 via-background/60 to-transparent p-4 pb-16 md:p-6 md:pb-20">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between pointer-events-auto w-fit">
           <div className="flex items-center gap-3">
             {isZoomedIn ? (
               <>
@@ -658,7 +658,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
         {/* Category filter - only show when zoomed in */}
         {isZoomedIn && (
-          <div className="mt-4">
+          <div className="mt-4 pointer-events-auto w-fit">
             <CategoryLegend
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
