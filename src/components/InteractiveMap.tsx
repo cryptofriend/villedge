@@ -470,7 +470,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       setIsZoomedIn(!shouldCluster);
       
       if (shouldCluster) {
-        // Hide individual markers, show cluster markers
+        // Hide individual markers, show cluster markers, and clear selected spot
+        setSelectedSpot(null);
         markersRef.current.forEach((marker) => {
           const el = marker.getElement();
           el.style.display = 'none';
