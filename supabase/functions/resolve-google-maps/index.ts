@@ -56,17 +56,19 @@ Deno.serve(async (req) => {
     };
 
     // Extract coordinates from the final URL
-    // Format: @lat,lng,zoom
-    const atMatch = finalUrl.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-    if (atMatch) {
-      const lat = parseFloat(atMatch[1]);
-      const lng = parseFloat(atMatch[2]);
+    // Priority: !8m2!3d!4d (most precise place marker) > !3d!4d > @lat,lng (view center, least precise)
+    
+    // Format: !8m2!3d{lat}!4d{lng} - This is the actual place marker location
+    const dataMatch = finalUrl.match(/!8m2!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+    if (dataMatch) {
+      const lat = parseFloat(dataMatch[1]);
+      const lng = parseFloat(dataMatch[2]);
       if (!isNaN(lat) && !isNaN(lng)) {
         placeData.coordinates = [lng, lat]; // Mapbox uses [lng, lat]
       }
     }
 
-    // Format: !3d{lat}!4d{lng}
+    // Format: !3d{lat}!4d{lng} - Also precise place location
     if (!placeData.coordinates) {
       const dMatch = finalUrl.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
       if (dMatch) {
@@ -78,22 +80,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Extract place name from /place/Name/ format
-    const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
-    if (placeMatch) {
-      placeData.name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
-    }
-
-    // If we still don't have coordinates, try to extract from data parameter
+    // Format: @lat,lng,zoom - This is the view center, use as fallback only
     if (!placeData.coordinates) {
-      const dataMatch = finalUrl.match(/data=.*!8m2!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
-      if (dataMatch) {
-        const lat = parseFloat(dataMatch[1]);
-        const lng = parseFloat(dataMatch[2]);
+      const atMatch = finalUrl.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (atMatch) {
+        const lat = parseFloat(atMatch[1]);
+        const lng = parseFloat(atMatch[2]);
         if (!isNaN(lat) && !isNaN(lng)) {
           placeData.coordinates = [lng, lat];
         }
       }
+    }
+
+    // Extract place name from /place/Name/ format
+    const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
+    if (placeMatch) {
+      placeData.name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
     }
 
     // Try to fetch the page to get more details
