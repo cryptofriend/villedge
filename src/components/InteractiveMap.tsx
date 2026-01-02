@@ -182,7 +182,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const isClusteredRef = useRef(false);
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const [activeVillage, setActiveVillage] = useState<PopupVillage>(POPUP_VILLAGES[0]);
-  const [isZoomedIn, setIsZoomedIn] = useState(false);
+  const [isZoomedIn, setIsZoomedIn] = useState(true); // Start zoomed in since initial zoom is 15
   
   const CLUSTER_ZOOM_THRESHOLD = 12;
 
