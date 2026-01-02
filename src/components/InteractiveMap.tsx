@@ -171,7 +171,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
   const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
   const [pendingCoordinates, setPendingCoordinates] = useState<[number, number] | null>(null);
@@ -384,16 +383,9 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     removeClusterMarkers();
     isClusteredRef.current = false;
 
-    let filteredSpots = selectedCategory
+    const filteredSpots = selectedCategory
       ? spots.filter((s) => s.category === selectedCategory)
       : spots;
-    
-    // Filter by tags if any are selected
-    if (selectedTags.length > 0) {
-      filteredSpots = filteredSpots.filter((s) => 
-        s.tags && selectedTags.some((tag) => s.tags?.includes(tag))
-      );
-    }
 
     filteredSpots.forEach((spot) => {
       // Create custom marker element
@@ -464,7 +456,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       markersRef.current.push(marker);
       spotMarkersRef.current.set(spot.id, marker);
     });
-  }, [selectedCategory, selectedTags, spots, isEditMode, updateSpotCoordinates]);
+  }, [selectedCategory, spots, isEditMode, updateSpotCoordinates]);
 
   // Handle zoom-based clustering
   const updateMarkersVisibility = useCallback(() => {
@@ -516,7 +508,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     return () => {
       m.off("load", onLoad);
     };
-  }, [selectedCategory, selectedTags, spots, isEditMode, addMarkers, updateMarkersVisibility]);
+  }, [selectedCategory, spots, isEditMode, addMarkers, updateMarkersVisibility]);
 
   // Listen to zoom changes for clustering
   useEffect(() => {
@@ -662,9 +654,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             <CategoryLegend
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
-              availableTags={[...new Set(spots.flatMap((s) => s.tags || []))].sort()}
-              selectedTags={selectedTags}
-              onSelectTags={setSelectedTags}
             />
           </div>
         )}
