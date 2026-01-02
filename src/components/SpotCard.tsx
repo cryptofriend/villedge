@@ -125,6 +125,7 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate }: SpotCardProps) =
 
       {onUpdate && (
         <EditSpotDialog
+          key={spot.id}
           spot={spot}
           open={isEditOpen}
           onOpenChange={setIsEditOpen}
