@@ -444,6 +444,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       el.addEventListener("click", () => {
         if (!isEditMode) {
           setSelectedSpot(spot);
+          setIsZoomedIn(true); // Hide timeline when spot is clicked
           map.current?.flyTo({
             center: spot.coordinates,
             zoom: 15,
