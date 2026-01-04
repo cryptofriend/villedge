@@ -625,38 +625,64 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
     setIsLocating(true);
 
+    const onSuccess = (position: GeolocationPosition) => {
+      const coords: [number, number] = [position.coords.longitude, position.coords.latitude];
+      setUserLocation(coords);
+      updateUserLocationMarker(coords);
+      setIsLocating(false);
+      
+      // Fly to user location
+      map.current?.flyTo({
+        center: coords,
+        zoom: 15,
+        duration: 1000,
+      });
+      
+      toast.success("Found your location!");
+    };
+
+    const onError = (error: GeolocationPositionError) => {
+      // If high accuracy fails, try with low accuracy
+      if (error.code === error.POSITION_UNAVAILABLE) {
+        navigator.geolocation.getCurrentPosition(
+          onSuccess,
+          (fallbackError) => {
+            setIsLocating(false);
+            switch (fallbackError.code) {
+              case fallbackError.PERMISSION_DENIED:
+                toast.error("Location access denied. Please enable location permissions.");
+                break;
+              case fallbackError.POSITION_UNAVAILABLE:
+                toast.error("Location unavailable. Try opening in a new tab.");
+                break;
+              case fallbackError.TIMEOUT:
+                toast.error("Location request timed out.");
+                break;
+              default:
+                toast.error("Unable to get your location.");
+            }
+          },
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 }
+        );
+        return;
+      }
+      
+      setIsLocating(false);
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          toast.error("Location access denied. Please enable location permissions.");
+          break;
+        case error.TIMEOUT:
+          toast.error("Location request timed out.");
+          break;
+        default:
+          toast.error("Unable to get your location.");
+      }
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords: [number, number] = [position.coords.longitude, position.coords.latitude];
-        setUserLocation(coords);
-        updateUserLocationMarker(coords);
-        setIsLocating(false);
-        
-        // Fly to user location
-        map.current?.flyTo({
-          center: coords,
-          zoom: 15,
-          duration: 1000,
-        });
-        
-        toast.success("Found your location!");
-      },
-      (error) => {
-        setIsLocating(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            toast.error("Location access denied. Please enable location permissions.");
-            break;
-          case error.POSITION_UNAVAILABLE:
-            toast.error("Location information unavailable.");
-            break;
-          case error.TIMEOUT:
-            toast.error("Location request timed out.");
-            break;
-          default:
-            toast.error("Unable to get your location.");
-        }
-      },
+      onSuccess,
+      onError,
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     );
   }, [updateUserLocationMarker]);
