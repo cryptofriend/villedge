@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { SpotInput } from "@/hooks/useSpots";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageUpload } from "@/components/ImageUpload";
+import { Spot, categoryColors, categoryLabels } from "@/data/spots";
 
 interface PlaceData {
   name?: string;
@@ -41,9 +42,12 @@ export const AddSpotForm = ({
   const [name, setName] = useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [category, setCategory] = useState<Spot["category"]>("activity");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [placeData, setPlaceData] = useState<PlaceData | null>(null);
+
+  const categories: Spot["category"][] = ["accommodation", "food", "activity", "work", "atm", "shopping"];
 
   const resolveGoogleMapsUrl = async (url: string) => {
     if (!url.trim()) return;
@@ -110,6 +114,7 @@ export const AddSpotForm = ({
     const newSpot: SpotInput = {
       name: name.trim(),
       coordinates: pendingCoordinates,
+      category,
       google_maps_url: placeData?.resolvedUrl || googleMapsUrl.trim() || undefined,
       image_url: imageUrl.trim() || placeData?.imageUrl || undefined,
       description: placeData?.description || undefined,
@@ -125,6 +130,7 @@ export const AddSpotForm = ({
       setName("");
       setGoogleMapsUrl("");
       setImageUrl("");
+      setCategory("activity");
       setPlaceData(null);
       onSetCoordinates?.(null);
       setOpen(false);
@@ -187,6 +193,27 @@ export const AddSpotForm = ({
               onChange={(e) => setName(e.target.value)}
               maxLength={100}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+                    category === cat
+                      ? "text-primary-foreground ring-2 ring-offset-2 ring-primary"
+                      : "text-primary-foreground opacity-60 hover:opacity-80"
+                  }`}
+                  style={{ backgroundColor: categoryColors[cat] }}
+                >
+                  {categoryLabels[cat]}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">
