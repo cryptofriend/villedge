@@ -826,6 +826,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             onClose={handleCloseSpot}
             onDelete={deleteSpot}
             onUpdate={updateSpot}
+            userLocation={userLocation}
           />
         </div>
       )}
