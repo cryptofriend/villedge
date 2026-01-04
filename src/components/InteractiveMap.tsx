@@ -575,14 +575,15 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       userMarkerRef.current.remove();
     }
 
-    // Create pulsing blue dot marker
+    // Create pulsing blue dot marker with high z-index
     const el = document.createElement("div");
+    el.style.zIndex = "9999";
     el.innerHTML = `
-      <div style="position: relative; width: 24px; height: 24px;">
+      <div style="position: relative; width: 32px; height: 32px;">
         <div style="
           position: absolute;
-          width: 24px;
-          height: 24px;
+          width: 32px;
+          height: 32px;
           background: rgba(59, 130, 246, 0.3);
           border-radius: 50%;
           animation: pulse 2s ease-out infinite;
@@ -592,12 +593,12 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 14px;
-          height: 14px;
+          width: 18px;
+          height: 18px;
           background: #3b82f6;
           border: 3px solid white;
           border-radius: 50%;
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
         "></div>
       </div>
       <style>
@@ -870,22 +871,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           ) : (
             <Navigation className="h-5 w-5" />
           )}
-        </Button>
-        <Button
-          variant={isEditMode ? "destructive" : "outline"}
-          size="icon"
-          className="h-12 w-12 rounded-full shadow-lg"
-          onClick={() => {
-            setIsEditMode(!isEditMode);
-            if (isEditMode) {
-              toast.success("Edit mode disabled");
-            } else {
-              toast.info("Edit mode enabled - drag pins to adjust locations");
-            }
-          }}
-          title={isEditMode ? "Done Editing" : "Edit Locations"}
-        >
-          <Edit3 className="h-5 w-5" />
         </Button>
         {!isEditMode && (
           <AddSpotForm
