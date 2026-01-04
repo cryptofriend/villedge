@@ -6,7 +6,7 @@ import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
 import { PopupTimeline } from "./PopupTimeline";
-import { MapPin, Loader2, Check, X, Edit3, Plus } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { Button } from "@/components/ui/button";
@@ -182,6 +182,9 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const [activeVillage, setActiveVillage] = useState<PopupVillage>(POPUP_VILLAGES[0]);
   const [isZoomedIn, setIsZoomedIn] = useState(true); // Start zoomed in since initial zoom is 15
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   
   const CLUSTER_ZOOM_THRESHOLD = 9;
 
@@ -563,6 +566,126 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     });
   };
 
+  // Create/update user location marker
+  const updateUserLocationMarker = useCallback((coords: [number, number]) => {
+    if (!map.current) return;
+
+    // Remove existing marker
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove();
+    }
+
+    // Create pulsing blue dot marker
+    const el = document.createElement("div");
+    el.innerHTML = `
+      <div style="position: relative; width: 24px; height: 24px;">
+        <div style="
+          position: absolute;
+          width: 24px;
+          height: 24px;
+          background: rgba(59, 130, 246, 0.3);
+          border-radius: 50%;
+          animation: pulse 2s ease-out infinite;
+        "></div>
+        <div style="
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 14px;
+          height: 14px;
+          background: #3b82f6;
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+        "></div>
+      </div>
+      <style>
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+      </style>
+    `;
+
+    const marker = new mapboxgl.Marker({ element: el })
+      .setLngLat(coords)
+      .addTo(map.current);
+
+    userMarkerRef.current = marker;
+  }, []);
+
+  // Get user location
+  const handleGetUserLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords: [number, number] = [position.coords.longitude, position.coords.latitude];
+        setUserLocation(coords);
+        updateUserLocationMarker(coords);
+        setIsLocating(false);
+        
+        // Fly to user location
+        map.current?.flyTo({
+          center: coords,
+          zoom: 15,
+          duration: 1000,
+        });
+        
+        toast.success("Found your location!");
+      },
+      (error) => {
+        setIsLocating(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            toast.error("Location access denied. Please enable location permissions.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            toast.error("Location information unavailable.");
+            break;
+          case error.TIMEOUT:
+            toast.error("Location request timed out.");
+            break;
+          default:
+            toast.error("Unable to get your location.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+    );
+  }, [updateUserLocationMarker]);
+
+  // Watch user location for updates
+  useEffect(() => {
+    if (!navigator.geolocation || !userLocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const coords: [number, number] = [position.coords.longitude, position.coords.latitude];
+        setUserLocation(coords);
+        updateUserLocationMarker(coords);
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [userLocation, updateUserLocationMarker]);
+
+  // Cleanup user marker on unmount
+  useEffect(() => {
+    return () => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+      }
+    };
+  }, []);
+
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-lg">
@@ -734,6 +857,20 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
       {/* Floating Action Buttons - bottom right */}
       <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 md:bottom-6 md:right-6">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-12 w-12 rounded-full shadow-lg bg-card"
+          onClick={handleGetUserLocation}
+          disabled={isLocating}
+          title="Find my location"
+        >
+          {isLocating ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Navigation className="h-5 w-5" />
+          )}
+        </Button>
         <Button
           variant={isEditMode ? "destructive" : "outline"}
           size="icon"
