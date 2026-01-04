@@ -1,19 +1,51 @@
 import { useState } from "react";
 import { Spot, categoryColors } from "@/data/spots";
 import { SpotUpdate } from "@/hooks/useSpots";
-import { X, Trash2, Pencil, ExternalLink, MapPin } from "lucide-react";
+import { X, Trash2, Pencil, ExternalLink, MapPin, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { EditSpotDialog } from "./EditSpotDialog";
+
+// Haversine formula to calculate distance between two coordinates
+const calculateDistance = (
+  coord1: [number, number],
+  coord2: [number, number]
+): number => {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371; // Earth's radius in km
+  
+  const dLat = toRad(coord2[1] - coord1[1]);
+  const dLon = toRad(coord2[0] - coord1[0]);
+  
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(coord1[1])) * Math.cos(toRad(coord2[1])) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const formatDistance = (km: number): string => {
+  if (km < 1) {
+    return `${Math.round(km * 1000)}m`;
+  }
+  return `${km.toFixed(1)}km`;
+};
 
 interface SpotCardProps {
   spot: Spot & { google_maps_url?: string | null };
   onClose: () => void;
   onDelete?: (spotId: string) => Promise<boolean>;
   onUpdate?: (spotId: string, updates: SpotUpdate) => Promise<any>;
+  userLocation?: [number, number] | null;
 }
 
-export const SpotCard = ({ spot, onClose, onDelete, onUpdate }: SpotCardProps) => {
+export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: SpotCardProps) => {
   const [isEditOpen, setIsEditOpen] = useState(false);
+  
+  const distance = userLocation
+    ? calculateDistance(userLocation, spot.coordinates)
+    : null;
 
   const handleDelete = async () => {
     if (!onDelete) return;
@@ -77,11 +109,19 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate }: SpotCardProps) =
           )}
 
           {/* Category badge */}
-          <div
-            className="absolute bottom-3 left-3 rounded-full px-3 py-1 text-xs font-medium text-primary-foreground"
-            style={{ backgroundColor: categoryColors[spot.category] }}
-          >
-            {spot.category.charAt(0).toUpperCase() + spot.category.slice(1)}
+          <div className="absolute bottom-3 left-3 flex items-center gap-2">
+            <div
+              className="rounded-full px-3 py-1 text-xs font-medium text-primary-foreground"
+              style={{ backgroundColor: categoryColors[spot.category] }}
+            >
+              {spot.category.charAt(0).toUpperCase() + spot.category.slice(1)}
+            </div>
+            {distance !== null && (
+              <div className="flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground backdrop-blur-sm">
+                <Navigation className="h-3 w-3" />
+                {formatDistance(distance)}
+              </div>
+            )}
           </div>
         </div>
 
