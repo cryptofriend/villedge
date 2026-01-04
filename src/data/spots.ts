@@ -7,7 +7,7 @@ export interface Spot {
   name: string;
   description: string;
   image: string;
-  category: "accommodation" | "food" | "activity" | "work" | "atm";
+  category: "accommodation" | "food" | "activity" | "work" | "atm" | "shopping";
   coordinates: [number, number]; // [lng, lat]
   tags?: string[];
 }
@@ -57,6 +57,7 @@ export const categoryColors: Record<Spot["category"], string> = {
   activity: "#6E956E",
   work: "#8E9456",
   atm: "#7B8A6E",
+  shopping: "#9E8B7D",
 };
 
 export const categoryLabels: Record<Spot["category"], string> = {
@@ -65,4 +66,5 @@ export const categoryLabels: Record<Spot["category"], string> = {
   activity: "Activities",
   work: "Work",
   atm: "ATMs",
+  shopping: "Shopping",
 };
