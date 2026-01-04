@@ -21,7 +21,7 @@ interface EditSpotDialogProps {
   onUpdate: (spotId: string, updates: SpotUpdate) => Promise<any>;
 }
 
-const categories: Spot["category"][] = ["accommodation", "food", "activity", "work", "atm"];
+const categories: Spot["category"][] = ["accommodation", "food", "activity", "work", "atm", "shopping"];
 
 export const EditSpotDialog = ({ spot, open, onOpenChange, onUpdate }: EditSpotDialogProps) => {
   const [name, setName] = useState(spot.name);

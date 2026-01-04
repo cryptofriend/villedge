@@ -7,7 +7,7 @@ export interface DbSpot {
   name: string;
   description: string;
   image_url: string | null;
-  category: "accommodation" | "food" | "activity" | "work" | "atm";
+  category: "accommodation" | "food" | "activity" | "work" | "atm" | "shopping";
   coordinates: [number, number];
   tags: string[] | null;
   google_maps_url: string | null;
@@ -27,7 +27,7 @@ export interface SpotUpdate {
   name?: string;
   description?: string;
   image_url?: string;
-  category?: "accommodation" | "food" | "activity" | "work" | "atm";
+  category?: "accommodation" | "food" | "activity" | "work" | "atm" | "shopping";
   tags?: string[];
   google_maps_url?: string;
 }
