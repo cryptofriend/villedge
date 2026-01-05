@@ -399,6 +399,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       const el = document.createElement("div");
       el.className = "custom-marker";
       el.style.position = "relative";
+      el.style.width = "36px";
+      el.style.height = "36px";
       el.innerHTML = `
         <div class="marker-container" style="
           width: 36px;
@@ -452,7 +454,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         }
       });
 
-      const marker = new mapboxgl.Marker({ element: el, draggable: isEditMode })
+      const marker = new mapboxgl.Marker({ element: el, draggable: isEditMode, anchor: 'center' })
         .setLngLat(spot.coordinates)
         .addTo(map.current!);
 
