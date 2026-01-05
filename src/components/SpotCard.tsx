@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Spot, categoryColors } from "@/data/spots";
 import { SpotUpdate } from "@/hooks/useSpots";
-import { X, Trash2, Pencil, ExternalLink, MapPin, Navigation } from "lucide-react";
+import { X, Trash2, Pencil, ExternalLink, MapPin, Navigation, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { EditSpotDialog } from "./EditSpotDialog";
-
+import { CommentsSection } from "./CommentsSection";
 // Haversine formula to calculate distance between two coordinates
 const calculateDistance = (
   coord1: [number, number],
@@ -38,9 +38,11 @@ interface SpotCardProps {
   onDelete?: (spotId: string) => Promise<boolean>;
   onUpdate?: (spotId: string, updates: SpotUpdate) => Promise<any>;
   userLocation?: [number, number] | null;
+  commentCount?: number;
+  onCommentAdded?: () => void;
 }
 
-export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: SpotCardProps) => {
+export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation, commentCount = 0, onCommentAdded }: SpotCardProps) => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   
   const distance = userLocation
@@ -161,6 +163,13 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
             </a>
           )}
         </div>
+
+        {/* Comments Section */}
+        <CommentsSection
+          spotId={spot.id}
+          commentCount={commentCount}
+          onCommentAdded={onCommentAdded}
+        />
       </div>
 
       {onUpdate && (
