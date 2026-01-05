@@ -398,9 +398,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       // Create custom marker element
       const el = document.createElement("div");
       el.className = "custom-marker";
-      el.style.position = "relative";
-      el.style.width = "36px";
-      el.style.height = "36px";
+      el.style.cssText = "width: 36px; height: 36px; position: relative;";
       el.innerHTML = `
         <div class="marker-container" style="
           width: 36px;
@@ -412,8 +410,9 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           align-items: center;
           justify-content: center;
           cursor: ${isEditMode ? 'grab' : 'pointer'};
-          transition: all 0.3s ease;
+          transition: transform 0.2s ease;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          transform-origin: center center;
         ">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
             ${getIconPath(spot.category)}
@@ -436,6 +435,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             color: hsl(var(--primary-foreground));
             padding: 0 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            pointer-events: none;
           ">${count > 99 ? '99+' : count}</div>
         ` : ''}
       `;
@@ -454,7 +454,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         }
       });
 
-      const marker = new mapboxgl.Marker({ element: el, draggable: isEditMode, anchor: 'center' })
+      const marker = new mapboxgl.Marker({ 
+        element: el, 
+        draggable: isEditMode, 
+        anchor: 'center'
+      })
         .setLngLat(spot.coordinates)
         .addTo(map.current!);
 
