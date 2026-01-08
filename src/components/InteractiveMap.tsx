@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { format, isSameDay, startOfDay } from "date-fns";
 import { categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
@@ -193,7 +194,15 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [activeView, setActiveView] = useState<"map" | "events">("map");
   const [selectedEventDate, setSelectedEventDate] = useState<Date>(new Date());
   
-  const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents(activeVillage?.id);
+  const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents();
+  
+  // Filter events by selected date
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      const eventDate = startOfDay(new Date(event.start_time));
+      return isSameDay(eventDate, startOfDay(selectedEventDate));
+    });
+  }, [events, selectedEventDate]);
   
   const CLUSTER_ZOOM_THRESHOLD = 9;
 
@@ -875,16 +884,16 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       )}
 
       {/* Events view - shows when in events mode */}
-      {activeView === "events" && isZoomedIn && (
-        <div className="absolute bottom-4 left-4 right-4 z-20 md:bottom-6 md:left-6 md:right-auto">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[60vh] flex flex-col">
+      {activeView === "events" && (
+        <div className="absolute bottom-20 left-4 right-4 z-20 md:bottom-24 md:left-6 md:right-auto">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[50vh] flex flex-col">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div>
                 <h3 className="font-display text-lg font-semibold text-foreground">
                   Events
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  {events.length} event{events.length !== 1 ? "s" : ""} at {activeVillage.name}
+                  {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} on {format(selectedEventDate, 'MMM d, yyyy')}
                 </p>
               </div>
               <AddEventForm onAddEvent={addEvent} villageId={activeVillage.id} />
@@ -894,18 +903,18 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              ) : events.length === 0 ? (
+              ) : filteredEvents.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-muted-foreground mb-2">
-                    No events yet
+                    No events on this date
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Add an event by pasting a Luma link
+                    Select another date or add a new event
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {events.map((event) => (
+                  {filteredEvents.map((event) => (
                     <EventCard
                       key={event.id}
                       event={event}

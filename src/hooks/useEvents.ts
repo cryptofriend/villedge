@@ -39,16 +39,11 @@ export const useEvents = (villageId?: string) => {
 
   const fetchEvents = async () => {
     try {
-      let query = supabase
+      // Fetch all events - don't filter by village_id to include imported Luma events
+      const { data, error } = await supabase
         .from("events")
         .select("*")
         .order("start_time", { ascending: true });
-
-      if (villageId) {
-        query = query.eq("village_id", villageId);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -68,7 +63,7 @@ export const useEvents = (villageId?: string) => {
 
   useEffect(() => {
     fetchEvents();
-  }, [villageId]);
+  }, []);
 
   const addEvent = async (event: EventInput): Promise<DbEvent | null> => {
     try {
