@@ -56,6 +56,57 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          coordinates: Json | null
+          created_at: string
+          description: string | null
+          end_time: string | null
+          host_avatar: string | null
+          host_name: string | null
+          id: string
+          image_url: string | null
+          location: string | null
+          luma_url: string | null
+          name: string
+          start_time: string
+          updated_at: string
+          village_id: string | null
+        }
+        Insert: {
+          coordinates?: Json | null
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          host_avatar?: string | null
+          host_name?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          luma_url?: string | null
+          name: string
+          start_time: string
+          updated_at?: string
+          village_id?: string | null
+        }
+        Update: {
+          coordinates?: Json | null
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          host_avatar?: string | null
+          host_name?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          luma_url?: string | null
+          name?: string
+          start_time?: string
+          updated_at?: string
+          village_id?: string | null
+        }
+        Relationships: []
+      }
       spots: {
         Row: {
           category: string
