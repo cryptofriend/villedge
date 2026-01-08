@@ -174,6 +174,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const clusterMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const eventMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
@@ -574,12 +575,22 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           const el = marker.getElement();
           el.style.display = 'none';
         });
+        // Hide event markers when clustered
+        eventMarkersRef.current.forEach((marker) => {
+          const el = marker.getElement();
+          el.style.display = 'none';
+        });
         createClusterMarkers();
       } else {
         // Show individual markers only if in map view, hide cluster markers
         markersRef.current.forEach((marker) => {
           const el = marker.getElement();
           el.style.display = activeView === "map" ? 'block' : 'none';
+        });
+        // Show event markers only if in events view
+        eventMarkersRef.current.forEach((marker) => {
+          const el = marker.getElement();
+          el.style.display = activeView === "events" ? 'block' : 'none';
         });
         removeClusterMarkers();
       }
@@ -588,6 +599,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       markersRef.current.forEach((marker) => {
         const el = marker.getElement();
         el.style.display = activeView === "map" ? 'block' : 'none';
+      });
+      eventMarkersRef.current.forEach((marker) => {
+        const el = marker.getElement();
+        el.style.display = activeView === "events" ? 'block' : 'none';
       });
     }
   }, [createClusterMarkers, removeClusterMarkers, activeView]);
@@ -613,6 +628,105 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       m.off("load", onLoad);
     };
   }, [selectedCategory, spots, isEditMode, addMarkers, updateMarkersVisibility]);
+
+  // Add event markers for events with coordinates
+  const addEventMarkers = useCallback(() => {
+    if (!map.current || !mapReady) return;
+
+    // Remove existing event markers
+    eventMarkersRef.current.forEach((marker) => marker.remove());
+    eventMarkersRef.current.clear();
+
+    // Filter events with coordinates
+    const eventsWithCoords = events.filter(event => event.coordinates);
+
+    eventsWithCoords.forEach((event) => {
+      const coords = event.coordinates as [number, number];
+      
+      const el = document.createElement("div");
+      el.className = "event-marker";
+      el.innerHTML = `
+        <div class="marker-container" style="
+          width: 36px;
+          height: 36px;
+          background: linear-gradient(135deg, hsl(142, 40%, 45%) 0%, hsl(142, 35%, 55%) 100%);
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          border: 2px solid white;
+        ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="transform: rotate(45deg);">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+      `;
+
+      el.addEventListener("mouseenter", () => {
+        const container = el.querySelector(".marker-container") as HTMLElement;
+        if (container) {
+          container.style.transform = "rotate(-45deg) scale(1.15)";
+        }
+      });
+
+      el.addEventListener("mouseleave", () => {
+        const container = el.querySelector(".marker-container") as HTMLElement;
+        if (container) {
+          container.style.transform = "rotate(-45deg) scale(1)";
+        }
+      });
+
+      // Create popup for event
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
+        .setHTML(`
+          <div style="padding: 8px; max-width: 200px;">
+            <strong style="font-size: 14px;">${event.name}</strong>
+            ${event.location ? `<p style="font-size: 12px; color: #666; margin: 4px 0 0;">${event.location}</p>` : ''}
+            <p style="font-size: 11px; color: #888; margin: 4px 0 0;">${format(new Date(event.start_time), 'MMM d, h:mm a')}</p>
+          </div>
+        `);
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(coords)
+        .setPopup(popup)
+        .addTo(map.current!);
+
+      el.addEventListener("click", () => {
+        // Select the date of this event
+        setSelectedEventDate(startOfDay(new Date(event.start_time)));
+        // Switch to events view
+        setActiveView("events");
+      });
+
+      eventMarkersRef.current.set(event.id, marker);
+    });
+  }, [events, mapReady]);
+
+  // Update event markers visibility based on active view
+  const updateEventMarkersVisibility = useCallback(() => {
+    const shouldShow = activeView === "events" && !isClusteredRef.current;
+    eventMarkersRef.current.forEach((marker) => {
+      const el = marker.getElement();
+      el.style.display = shouldShow ? 'block' : 'none';
+    });
+  }, [activeView]);
+
+  // Render event markers when events change
+  useEffect(() => {
+    addEventMarkers();
+  }, [addEventMarkers]);
+
+  // Update event markers visibility when view changes
+  useEffect(() => {
+    updateEventMarkersVisibility();
+  }, [updateEventMarkersVisibility, activeView]);
 
   // Listen to zoom changes for clustering and view changes
   useEffect(() => {
