@@ -36,9 +36,9 @@ export const EventCard = ({ event, onDelete }: EventCardProps) => {
         </div>
       )}
 
-      <div className="p-4 space-y-3">
+      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-display text-lg font-semibold text-foreground line-clamp-2">
+          <h3 className="font-display text-base sm:text-lg font-semibold text-foreground line-clamp-2">
             {event.name}
           </h3>
           {onDelete && (
@@ -53,31 +53,31 @@ export const EventCard = ({ event, onDelete }: EventCardProps) => {
           )}
         </div>
 
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 flex-shrink-0" />
-            <span>{formatEventTime()}</span>
+        <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-muted-foreground">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="truncate">{formatEventTime()}</span>
           </div>
 
           {event.location && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="line-clamp-1">{event.location}</span>
             </div>
           )}
 
           {event.host_name && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {event.host_avatar ? (
                 <img
                   src={event.host_avatar}
                   alt={event.host_name}
-                  className="h-4 w-4 rounded-full object-cover"
+                  className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-full object-cover"
                 />
               ) : (
-                <User className="h-4 w-4 flex-shrink-0" />
+                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
               )}
-              <span>Hosted by {event.host_name}</span>
+              <span className="truncate">Hosted by {event.host_name}</span>
             </div>
           )}
         </div>

@@ -54,11 +54,11 @@ export const EventTimeline = ({ events, onDateSelect, selectedDate }: EventTimel
   
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
-      <div className="bg-white/95 backdrop-blur-sm shadow-lg border-t border-border">
-        <div className="flex items-center">
+      <div className="bg-card/95 backdrop-blur-sm shadow-lg border-t border-border">
+        <div className="flex items-center h-[64px] sm:h-[72px]">
           {/* Calendar icon */}
-          <div className="flex-shrink-0 px-4 py-3 border-r border-border">
-            <Calendar className="w-6 h-6 text-muted-foreground" />
+          <div className="flex-shrink-0 px-2 sm:px-4 py-2 sm:py-3 border-r border-border">
+            <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
           </div>
           
           {/* Scrollable date timeline */}
@@ -67,7 +67,7 @@ export const EventTimeline = ({ events, onDateSelect, selectedDate }: EventTimel
             className="flex-1 overflow-x-auto scrollbar-hide"
             style={{ scrollBehavior: 'smooth' }}
           >
-            <div className="flex items-center py-2 px-2 min-w-max">
+            <div className="flex items-center py-1.5 sm:py-2 px-1 sm:px-2 min-w-max">
               {dates.map((date, index) => {
                 const eventsOnDate = getEventsForDate(date);
                 const hasEvents = eventsOnDate.length > 0;
@@ -80,8 +80,8 @@ export const EventTimeline = ({ events, onDateSelect, selectedDate }: EventTimel
                     ref={dayIsToday ? todayRef : undefined}
                     onClick={() => handleDateClick(date)}
                     className={`
-                      flex flex-col items-center justify-center px-3 py-2 mx-1 rounded-lg
-                      transition-all duration-200 min-w-[60px]
+                      flex flex-col items-center justify-center px-2 sm:px-3 py-1.5 sm:py-2 mx-0.5 sm:mx-1 rounded-lg
+                      transition-all duration-200 min-w-[48px] sm:min-w-[60px]
                       ${dayIsSelected 
                         ? 'bg-primary text-primary-foreground shadow-md' 
                         : dayIsToday 
@@ -90,18 +90,18 @@ export const EventTimeline = ({ events, onDateSelect, selectedDate }: EventTimel
                       }
                     `}
                   >
-                    <span className="text-[10px] uppercase tracking-wide opacity-70">
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-wide opacity-70">
                       {format(date, 'EEE')}
                     </span>
-                    <span className={`text-lg font-medium ${dayIsSelected ? 'font-bold' : ''}`}>
+                    <span className={`text-base sm:text-lg font-medium ${dayIsSelected ? 'font-bold' : ''}`}>
                       {format(date, 'd')}
                     </span>
-                    <span className="text-[10px] opacity-70">
+                    <span className="text-[9px] sm:text-[10px] opacity-70">
                       {format(date, 'MMM')}
                     </span>
                     {hasEvents && (
                       <div className={`
-                        w-1.5 h-1.5 rounded-full mt-1
+                        w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full mt-0.5 sm:mt-1
                         ${dayIsSelected ? 'bg-primary-foreground' : 'bg-primary'}
                       `} />
                     )}

@@ -1076,8 +1076,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
       {/* Events view - shows when in events mode */}
       {activeView === "events" && (
-        <div className="absolute bottom-20 left-4 right-4 z-20 md:bottom-24 md:left-6 md:right-auto">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[50vh] flex flex-col">
+        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-auto">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[40vh] sm:max-h-[50vh] flex flex-col">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div>
                 <h3 className="font-display text-lg font-semibold text-foreground">
@@ -1178,7 +1178,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       </div>
 
       {/* Floating Action Buttons - bottom right */}
-      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 md:bottom-6 md:right-6">
+      <div className="absolute bottom-[80px] right-2 z-20 flex flex-col gap-2 sm:right-4 md:bottom-[88px] md:right-6">
         <Button
           variant="outline"
           size="icon"
