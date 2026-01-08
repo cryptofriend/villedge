@@ -188,8 +188,8 @@ export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onV
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
-      {/* Collapsed state */}
-      {!isExpanded && (
+      {/* Collapsed state - hide button when zoomed in */}
+      {!isExpanded && !isZoomedIn && (
         <div className="flex items-center justify-center px-4 pb-3">
           <Button
             variant="secondary"
