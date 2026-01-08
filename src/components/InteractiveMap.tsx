@@ -194,6 +194,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [activeView, setActiveView] = useState<"map" | "events">("map");
   const [selectedEventDate, setSelectedEventDate] = useState<Date>(new Date());
   
+  // Event pin selection mode
+  const [isSelectingEventPin, setIsSelectingEventPin] = useState(false);
+  const [pendingEventCoords, setPendingEventCoords] = useState<[number, number] | null>(null);
+  const eventPinMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  
   const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents();
   
   // Filter events by selected date
@@ -204,6 +209,78 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     });
   }, [events, selectedEventDate]);
   
+  // Handle event pin map click
+  const handleEventPinMapClick = useCallback((e: mapboxgl.MapMouseEvent) => {
+    if (!isSelectingEventPin || !map.current) return;
+    
+    const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+    setPendingEventCoords(coords);
+    setIsSelectingEventPin(false);
+    
+    // Remove click listener
+    map.current.off('click', handleEventPinMapClick);
+    
+    // Create a marker at the selected location
+    if (eventPinMarkerRef.current) {
+      eventPinMarkerRef.current.remove();
+    }
+    
+    const el = document.createElement("div");
+    el.innerHTML = `
+      <div style="
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, hsl(142, 40%, 45%) 0%, hsl(142, 35%, 55%) 100%);
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="transform: rotate(45deg);">
+          <path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+        </svg>
+      </div>
+    `;
+    
+    eventPinMarkerRef.current = new mapboxgl.Marker({ element: el })
+      .setLngLat(coords)
+      .addTo(map.current);
+    
+    toast.success("Pin placed! Return to the form to complete adding the event.");
+  }, [isSelectingEventPin]);
+  
+  // Set up event pin click listener
+  useEffect(() => {
+    if (!map.current || !mapReady) return;
+    
+    if (isSelectingEventPin) {
+      map.current.getCanvas().style.cursor = 'crosshair';
+      map.current.on('click', handleEventPinMapClick);
+    } else {
+      map.current.getCanvas().style.cursor = '';
+    }
+    
+    return () => {
+      if (map.current) {
+        map.current.off('click', handleEventPinMapClick);
+      }
+    };
+  }, [isSelectingEventPin, mapReady, handleEventPinMapClick]);
+  
+  const handleRequestEventPin = useCallback(() => {
+    setIsSelectingEventPin(true);
+  }, []);
+  
+  const handleClearEventCoords = useCallback(() => {
+    setPendingEventCoords(null);
+    if (eventPinMarkerRef.current) {
+      eventPinMarkerRef.current.remove();
+      eventPinMarkerRef.current = null;
+    }
+  }, []);
   const CLUSTER_ZOOM_THRESHOLD = 9;
 
   // Create/update the draggable selection marker
@@ -896,7 +973,13 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
                   {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} on {format(selectedEventDate, 'MMM d, yyyy')}
                 </p>
               </div>
-              <AddEventForm onAddEvent={addEvent} villageId={activeVillage.id} />
+              <AddEventForm 
+                onAddEvent={addEvent} 
+                villageId={activeVillage.id}
+                onRequestMapPin={handleRequestEventPin}
+                pendingCoordinates={pendingEventCoords}
+                onClearCoordinates={handleClearEventCoords}
+              />
             </div>
             <ScrollArea className="flex-1 p-4">
               {eventsLoading ? (
@@ -1004,6 +1087,22 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           />
         )}
       </div>
+
+      {/* Event pin selection mode indicator */}
+      {isSelectingEventPin && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-sage-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+          <MapPin className="h-4 w-4" />
+          <span className="text-sm font-medium">Click on the map to set event location</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 text-white hover:bg-sage-700"
+            onClick={() => setIsSelectingEventPin(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Timeline - show PopupTimeline for map view, EventTimeline for events view */}
       {activeView === "events" ? (
