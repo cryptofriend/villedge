@@ -185,6 +185,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const [activeView, setActiveView] = useState<"map" | "events">("map");
   
   const CLUSTER_ZOOM_THRESHOLD = 9;
 
@@ -461,7 +462,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     });
   }, [selectedCategory, spots, isEditMode, updateSpotCoordinates]);
 
-  // Handle zoom-based clustering
+  // Handle zoom-based clustering and view-based visibility
   const updateMarkersVisibility = useCallback(() => {
     if (!map.current) return;
     
@@ -481,15 +482,21 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         });
         createClusterMarkers();
       } else {
-        // Show individual markers, hide cluster markers
+        // Show individual markers only if in map view, hide cluster markers
         markersRef.current.forEach((marker) => {
           const el = marker.getElement();
-          el.style.display = 'block';
+          el.style.display = activeView === "map" ? 'block' : 'none';
         });
         removeClusterMarkers();
       }
+    } else if (!shouldCluster) {
+      // Update visibility based on view when not clustered
+      markersRef.current.forEach((marker) => {
+        const el = marker.getElement();
+        el.style.display = activeView === "map" ? 'block' : 'none';
+      });
     }
-  }, [createClusterMarkers, removeClusterMarkers]);
+  }, [createClusterMarkers, removeClusterMarkers, activeView]);
 
   // Update markers when dependencies change
   useEffect(() => {
@@ -513,7 +520,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     };
   }, [selectedCategory, spots, isEditMode, addMarkers, updateMarkersVisibility]);
 
-  // Listen to zoom changes for clustering
+  // Listen to zoom changes for clustering and view changes
   useEffect(() => {
     if (!map.current || !mapReady) return;
     
@@ -525,13 +532,13 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     
     m.on("zoom", handleZoom);
     
-    // Initial check
+    // Update visibility when view changes
     updateMarkersVisibility();
     
     return () => {
       m.off("zoom", handleZoom);
     };
-  }, [mapReady, updateMarkersVisibility]);
+  }, [mapReady, updateMarkersVisibility, activeView]);
 
   const handleAddSpot = async (spotInput: SpotInput) => {
     const result = await addSpot(spotInput);
@@ -798,19 +805,46 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           </div>
         </div>
 
-        {/* Category filter - only show when zoomed in */}
+        {/* View switcher and category filter - only show when zoomed in */}
         {isZoomedIn && (
-          <div className="mt-4 pointer-events-auto w-fit">
-            <CategoryLegend
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-            />
+          <div className="mt-4 flex items-center gap-4 pointer-events-auto w-fit">
+            {/* Map / Events Toggle */}
+            <div className="flex rounded-lg bg-card/90 p-1 shadow-sm backdrop-blur-sm">
+              <button
+                onClick={() => setActiveView("map")}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeView === "map"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Map
+              </button>
+              <button
+                onClick={() => setActiveView("events")}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeView === "events"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Events
+              </button>
+            </div>
+            
+            {/* Category filter - only show in map view */}
+            {activeView === "map" && (
+              <CategoryLegend
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+              />
+            )}
           </div>
         )}
       </div>
 
-      {/* Selected spot card */}
-      {selectedSpot && (
+      {/* Selected spot card - only show in map view */}
+      {selectedSpot && activeView === "map" && (
         <div className="absolute bottom-4 left-4 z-20 md:bottom-6 md:left-6">
           <SpotCard 
             spot={{
@@ -828,6 +862,20 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             onUpdate={updateSpot}
             userLocation={userLocation}
           />
+        </div>
+      )}
+
+      {/* Events view placeholder - shows when in events mode */}
+      {activeView === "events" && isZoomedIn && (
+        <div className="absolute bottom-4 left-4 z-20 md:bottom-6 md:left-6">
+          <div className="w-80 rounded-xl bg-card/95 p-6 shadow-lg backdrop-blur-sm md:w-96">
+            <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+              Events at {activeVillage.name}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Event cards will appear here. Filter by date and time to find activities.
+            </p>
+          </div>
         </div>
       )}
 
