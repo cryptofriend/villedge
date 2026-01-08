@@ -21,7 +21,13 @@ async function extractEventFromPage(eventUrl: string): Promise<EventData | null>
   try {
     console.log('Fetching event:', eventUrl);
     
-    const response = await fetch(eventUrl, {
+    // Normalize URL
+    let normalizedUrl = eventUrl;
+    if (normalizedUrl.includes('lu.ma/')) {
+      normalizedUrl = normalizedUrl.replace('lu.ma/', 'luma.com/');
+    }
+    
+    const response = await fetch(normalizedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -144,34 +150,69 @@ Deno.serve(async (req) => {
       normalizedUrl = normalizedUrl.replace('lu.ma/', 'luma.com/');
     }
 
-    // Fetch the calendar page
-    const calendarResponse = await fetch(normalizedUrl, {
+    // Use Firecrawl to scrape the calendar page (handles JS rendering)
+    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!firecrawlApiKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Firecrawl API key not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Using Firecrawl to scrape calendar page...');
+    
+    const firecrawlResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
+        'Authorization': `Bearer ${firecrawlApiKey}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        url: normalizedUrl,
+        formats: ['links', 'html'],
+        waitFor: 3000, // Wait for JS to render
+      }),
     });
 
-    if (!calendarResponse.ok) {
+    if (!firecrawlResponse.ok) {
+      const errorText = await firecrawlResponse.text();
+      console.error('Firecrawl error:', errorText);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to fetch calendar page' }),
+        JSON.stringify({ success: false, error: 'Failed to scrape calendar page' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const calendarHtml = await calendarResponse.text();
+    const firecrawlData = await firecrawlResponse.json();
+    console.log('Firecrawl response success:', firecrawlData.success);
     
-    // Extract event links - look for lu.ma or luma.com short URLs
-    const eventLinkPattern = /href=["'](https?:\/\/(?:lu\.ma|luma\.com)\/([a-zA-Z0-9]{6,12}))["']/gi;
+    // Extract event links from Firecrawl response
     const eventLinks = new Set<string>();
-    let match;
     
-    while ((match = eventLinkPattern.exec(calendarHtml)) !== null) {
-      const url = match[1];
-      // Filter out calendar links, user links, etc.
-      if (!url.includes('/calendar/') && !url.includes('/user/') && !url.includes('/manage/')) {
-        eventLinks.add(url);
+    // Check links array from Firecrawl
+    const links = firecrawlData.data?.links || firecrawlData.links || [];
+    console.log('Found links from Firecrawl:', links.length);
+    
+    for (const link of links) {
+      // Filter for event links (short codes, not calendar/user/manage pages)
+      if (typeof link === 'string') {
+        const match = link.match(/https?:\/\/(?:lu\.ma|luma\.com)\/([a-zA-Z0-9]{6,12})$/);
+        if (match && !link.includes('/calendar/') && !link.includes('/user/') && !link.includes('/manage/')) {
+          eventLinks.add(link);
+        }
+      }
+    }
+    
+    // Also try to extract from HTML if available
+    const html = firecrawlData.data?.html || firecrawlData.html || '';
+    if (html) {
+      const eventLinkPattern = /href=["'](https?:\/\/(?:lu\.ma|luma\.com)\/([a-zA-Z0-9]{6,12}))["']/gi;
+      let match;
+      while ((match = eventLinkPattern.exec(html)) !== null) {
+        const url = match[1];
+        if (!url.includes('/calendar/') && !url.includes('/user/') && !url.includes('/manage/')) {
+          eventLinks.add(url);
+        }
       }
     }
 
@@ -179,7 +220,11 @@ Deno.serve(async (req) => {
 
     if (eventLinks.size === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: 'No events found on calendar page' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'No events found on calendar page',
+          debug: { linksCount: links.length, htmlLength: html.length }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -221,7 +266,11 @@ Deno.serve(async (req) => {
             if (insertError) {
               console.error('Insert error for', eventData.name, ':', insertError);
               errors.push(`${eventData.name}: ${insertError.message}`);
+            } else {
+              console.log('Inserted event:', eventData.name);
             }
+          } else {
+            console.log('Skipping event without start_time:', eventData.name);
           }
         }
       } catch (e) {
@@ -230,7 +279,7 @@ Deno.serve(async (req) => {
       }
       
       // Small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
 
     console.log(`Successfully processed ${events.length} events`);
@@ -238,7 +287,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        imported: events.length,
+        imported: events.filter(e => e.start_time).length,
+        total_found: events.length,
         events: events.map(e => ({ name: e.name, start_time: e.start_time, luma_url: e.luma_url })),
         errors: errors.length > 0 ? errors : undefined,
       }),
