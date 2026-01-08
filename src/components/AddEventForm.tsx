@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Loader2, Calendar, MapPin, User } from "lucide-react";
+import { Plus, Loader2, Calendar, MapPin, User, Crosshair, X } from "lucide-react";
 import { toast } from "sonner";
 import { EventInput } from "@/hooks/useEvents";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,9 +29,18 @@ interface LumaEventData {
 interface AddEventFormProps {
   onAddEvent: (event: EventInput) => Promise<unknown>;
   villageId?: string;
+  onRequestMapPin?: () => void;
+  pendingCoordinates?: [number, number] | null;
+  onClearCoordinates?: () => void;
 }
 
-export const AddEventForm = ({ onAddEvent, villageId }: AddEventFormProps) => {
+export const AddEventForm = ({ 
+  onAddEvent, 
+  villageId, 
+  onRequestMapPin, 
+  pendingCoordinates, 
+  onClearCoordinates 
+}: AddEventFormProps) => {
   const [open, setOpen] = useState(false);
   const [lumaUrl, setLumaUrl] = useState("");
   const [name, setName] = useState("");
@@ -101,6 +110,14 @@ export const AddEventForm = ({ onAddEvent, villageId }: AddEventFormProps) => {
     }
   };
 
+  const handleSetPin = () => {
+    if (onRequestMapPin) {
+      onRequestMapPin();
+      setOpen(false);
+      toast.info("Click on the map to set the event location");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -122,6 +139,7 @@ export const AddEventForm = ({ onAddEvent, villageId }: AddEventFormProps) => {
       start_time: new Date(startTime).toISOString(),
       end_time: endTime ? new Date(endTime).toISOString() : undefined,
       location: location.trim() || undefined,
+      coordinates: pendingCoordinates || undefined,
       image_url: eventData?.imageUrl || undefined,
       luma_url: eventData?.lumaUrl || lumaUrl.trim() || undefined,
       host_name: eventData?.hostName || undefined,
@@ -142,12 +160,21 @@ export const AddEventForm = ({ onAddEvent, villageId }: AddEventFormProps) => {
       setEndTime("");
       setLocation("");
       setEventData(null);
+      onClearCoordinates?.();
       setOpen(false);
     }
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      // Clear coordinates when closing dialog without submitting
+      onClearCoordinates?.();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="sage" size="sm" className="gap-2">
           <Plus className="h-4 w-4" />
@@ -250,12 +277,46 @@ export const AddEventForm = ({ onAddEvent, villageId }: AddEventFormProps) => {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Map Pin</Label>
+            {pendingCoordinates ? (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-sage-100 border border-sage-200">
+                <Crosshair className="h-4 w-4 text-sage-600" />
+                <span className="text-sm text-sage-700 flex-1">
+                  {pendingCoordinates[1].toFixed(5)}, {pendingCoordinates[0].toFixed(5)}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={onClearCoordinates}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={handleSetPin}
+              >
+                <Crosshair className="h-4 w-4" />
+                Set Pin on Map
+              </Button>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Click to place a marker on the map for this event
+            </p>
+          </div>
+
           <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => setOpen(false)}
+              onClick={() => handleOpenChange(false)}
             >
               Cancel
             </Button>
