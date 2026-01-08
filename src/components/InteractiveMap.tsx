@@ -5,11 +5,15 @@ import { categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
+import { AddEventForm } from "./AddEventForm";
+import { EventCard } from "./EventCard";
 import { PopupTimeline } from "./PopupTimeline";
 import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
+import { useEvents } from "@/hooks/useEvents";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import popupVillageLogo from "@/assets/popup-village-logo.png";
 import networkStateLogo from "@/assets/network-state-logo.png";
 import edgeCityLogo from "@/assets/edge-city-logo.png";
@@ -186,6 +190,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [isLocating, setIsLocating] = useState(false);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [activeView, setActiveView] = useState<"map" | "events">("map");
+  
+  const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents(activeVillage?.id);
   
   const CLUSTER_ZOOM_THRESHOLD = 9;
 
@@ -866,16 +872,47 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         </div>
       )}
 
-      {/* Events view placeholder - shows when in events mode */}
+      {/* Events view - shows when in events mode */}
       {activeView === "events" && isZoomedIn && (
-        <div className="absolute bottom-4 left-4 z-20 md:bottom-6 md:left-6">
-          <div className="w-80 rounded-xl bg-card/95 p-6 shadow-lg backdrop-blur-sm md:w-96">
-            <h3 className="font-display text-lg font-semibold text-foreground mb-2">
-              Events at {activeVillage.name}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Event cards will appear here. Filter by date and time to find activities.
-            </p>
+        <div className="absolute bottom-4 left-4 right-4 z-20 md:bottom-6 md:left-6 md:right-auto">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[60vh] flex flex-col">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div>
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  Events
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {events.length} event{events.length !== 1 ? "s" : ""} at {activeVillage.name}
+                </p>
+              </div>
+              <AddEventForm onAddEvent={addEvent} villageId={activeVillage.id} />
+            </div>
+            <ScrollArea className="flex-1 p-4">
+              {eventsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : events.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    No events yet
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Add an event by pasting a Luma link
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {events.map((event) => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      onDelete={deleteEvent}
+                    />
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
           </div>
         </div>
       )}
