@@ -769,47 +769,56 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
       {/* Header overlay */}
       <div className="absolute left-0 right-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background/90 via-background/60 to-transparent p-4 pb-16 md:p-6 md:pb-20">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between pointer-events-auto w-fit">
-          <div className="flex items-center gap-3">
-            {isZoomedIn ? (
-              <>
-                <img 
-                  src={activeVillage.logo} 
-                  alt={activeVillage.name} 
-                  className="h-10 w-10 rounded md:h-12 md:w-12"
-                />
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
-                      {activeVillage.name}
-                    </h1>
-                    <span className="font-body text-sm text-muted-foreground">
-                      {activeVillage.dates}
-                    </span>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-4 pointer-events-auto w-fit">
+            <div className="flex items-center gap-3">
+              {isZoomedIn ? (
+                <>
+                  <img 
+                    src={activeVillage.logo} 
+                    alt={activeVillage.name} 
+                    className="h-10 w-10 rounded md:h-12 md:w-12"
+                  />
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
+                        {activeVillage.name}
+                      </h1>
+                      <span className="font-body text-sm text-muted-foreground">
+                        {activeVillage.dates}
+                      </span>
+                    </div>
+                    <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
+                      {activeVillage.location} · {activeVillage.description}
+                    </p>
                   </div>
+                </>
+              ) : (
+                <div>
+                  <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
+                    Popup Villages
+                  </h1>
                   <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
-                    {activeVillage.location} · {activeVillage.description}
+                    Explore communities around the world
                   </p>
                 </div>
-              </>
-            ) : (
-              <div>
-                <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
-                  Popup Villages
-                </h1>
-                <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
-                  Explore communities around the world
-                </p>
+              )}
+            </div>
+
+            {/* Category filter - only show in map view when zoomed in */}
+            {isZoomedIn && activeView === "map" && (
+              <div className="pointer-events-auto w-fit">
+                <CategoryLegend
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={setSelectedCategory}
+                />
               </div>
             )}
           </div>
-        </div>
 
-        {/* View switcher and category filter - only show when zoomed in */}
-        {isZoomedIn && (
-          <div className="mt-4 flex items-center gap-4 pointer-events-auto w-fit">
-            {/* Map / Events Toggle */}
-            <div className="flex rounded-lg bg-card/90 p-1 shadow-sm backdrop-blur-sm">
+          {/* Map / Events Toggle - right side */}
+          {isZoomedIn && (
+            <div className="flex rounded-lg bg-card/90 p-1 shadow-sm backdrop-blur-sm pointer-events-auto mr-14">
               <button
                 onClick={() => setActiveView("map")}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
@@ -831,16 +840,8 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
                 Events
               </button>
             </div>
-            
-            {/* Category filter - only show in map view */}
-            {activeView === "map" && (
-              <CategoryLegend
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-              />
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Selected spot card - only show in map view */}
