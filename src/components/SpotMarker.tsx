@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { Spot, categoryColors, categoryLabels } from "@/data/spots";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface SpotMarkerProps {
   spot: Spot;
   isSelected: boolean;
   onClick: () => void;
-  commentCount?: number;
 }
 
-export const SpotMarker = ({ spot, isSelected, onClick, commentCount = 0 }: SpotMarkerProps) => {
+export const SpotMarker = ({ spot, isSelected, onClick }: SpotMarkerProps) => {
   return (
     <button
       onClick={onClick}
@@ -39,29 +38,16 @@ export const SpotMarker = ({ spot, isSelected, onClick, commentCount = 0 }: Spot
         <MarkerIcon category={spot.category} />
       </div>
 
-      {/* Comment count badge */}
-      {commentCount > 0 && (
-        <div className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-sm">
-          {commentCount > 99 ? "99+" : commentCount}
-        </div>
-      )}
-
       {/* Label on hover or selected */}
       <div
         className={cn(
-          "absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-card px-2 py-1 text-xs font-medium text-foreground shadow-soft transition-all duration-200 flex items-center gap-1.5",
+          "absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-card px-2 py-1 text-xs font-medium text-foreground shadow-soft transition-all duration-200",
           isSelected
             ? "opacity-100"
             : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100"
         )}
       >
         {spot.name}
-        {commentCount > 0 && (
-          <span className="flex items-center gap-0.5 text-muted-foreground">
-            <MessageCircle className="h-3 w-3" />
-            {commentCount}
-          </span>
-        )}
       </div>
     </button>
   );

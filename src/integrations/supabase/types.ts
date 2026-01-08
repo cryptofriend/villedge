@@ -14,48 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      comments: {
-        Row: {
-          author_name: string
-          content: string
-          created_at: string
-          id: string
-          parent_id: string | null
-          spot_id: string
-        }
-        Insert: {
-          author_name: string
-          content: string
-          created_at?: string
-          id?: string
-          parent_id?: string | null
-          spot_id: string
-        }
-        Update: {
-          author_name?: string
-          content?: string
-          created_at?: string
-          id?: string
-          parent_id?: string | null
-          spot_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comments_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "comments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comments_spot_id_fkey"
-            columns: ["spot_id"]
-            isOneToOne: false
-            referencedRelation: "spots"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       spots: {
         Row: {
           category: string

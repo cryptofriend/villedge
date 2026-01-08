@@ -6,10 +6,9 @@ import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
 import { PopupTimeline } from "./PopupTimeline";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, MessageCircle } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
-import { useCommentCounts } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import popupVillageLogo from "@/assets/popup-village-logo.png";
 import networkStateLogo from "@/assets/network-state-logo.png";
@@ -171,7 +170,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const clusterMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
-  const { counts: commentCounts, refetch: refetchCommentCounts } = useCommentCounts();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
@@ -393,12 +391,9 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       : spots;
 
     filteredSpots.forEach((spot) => {
-      const count = commentCounts[spot.id] || 0;
-      
       // Create custom marker element
       const el = document.createElement("div");
       el.className = "custom-marker";
-      el.style.position = "relative";
       el.innerHTML = `
         <div class="marker-container" style="
           width: 36px;
@@ -417,25 +412,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             ${getIconPath(spot.category)}
           </svg>
         </div>
-        ${count > 0 ? `
-          <div style="
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            min-width: 18px;
-            height: 18px;
-            background-color: hsl(var(--primary));
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: 700;
-            color: hsl(var(--primary-foreground));
-            padding: 0 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          ">${count > 99 ? '99+' : count}</div>
-        ` : ''}
       `;
 
       el.addEventListener("mouseenter", () => {
@@ -483,7 +459,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       markersRef.current.push(marker);
       spotMarkersRef.current.set(spot.id, marker);
     });
-  }, [selectedCategory, spots, isEditMode, updateSpotCoordinates, commentCounts]);
+  }, [selectedCategory, spots, isEditMode, updateSpotCoordinates]);
 
   // Handle zoom-based clustering
   const updateMarkersVisibility = useCallback(() => {
@@ -851,8 +827,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             onDelete={deleteSpot}
             onUpdate={updateSpot}
             userLocation={userLocation}
-            commentCount={commentCounts[selectedSpot.id] || 0}
-            onCommentAdded={refetchCommentCounts}
           />
         </div>
       )}
