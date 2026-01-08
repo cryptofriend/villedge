@@ -7,6 +7,7 @@ import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
 import { AddEventForm } from "./AddEventForm";
 import { EventCard } from "./EventCard";
+import { EventTimeline } from "./EventTimeline";
 import { PopupTimeline } from "./PopupTimeline";
 import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation } from "lucide-react";
 import { toast } from "sonner";
@@ -190,6 +191,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [isLocating, setIsLocating] = useState(false);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [activeView, setActiveView] = useState<"map" | "events">("map");
+  const [selectedEventDate, setSelectedEventDate] = useState<Date>(new Date());
   
   const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents(activeVillage?.id);
   
@@ -994,20 +996,28 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         )}
       </div>
 
-      {/* Timeline */}
-      <PopupTimeline
-        villages={POPUP_VILLAGES}
-        activeVillage={activeVillage}
-        isZoomedIn={isZoomedIn}
-        onVillageClick={(village) => {
-          setActiveVillage(village);
-          map.current?.flyTo({
-            center: village.center,
-            zoom: 15,
-            duration: 800,
-          });
-        }}
-      />
+      {/* Timeline - show PopupTimeline for map view, EventTimeline for events view */}
+      {activeView === "events" ? (
+        <EventTimeline
+          events={events}
+          selectedDate={selectedEventDate}
+          onDateSelect={setSelectedEventDate}
+        />
+      ) : (
+        <PopupTimeline
+          villages={POPUP_VILLAGES}
+          activeVillage={activeVillage}
+          isZoomedIn={isZoomedIn}
+          onVillageClick={(village) => {
+            setActiveVillage(village);
+            map.current?.flyTo({
+              center: village.center,
+              zoom: 15,
+              duration: 800,
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
