@@ -997,7 +997,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
                       </span>
                     </div>
                     <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
-                      {activeVillage.location} · {activeVillage.description}
+                      {activeVillage.location}
                     </p>
                   </div>
                 </>
@@ -1141,6 +1141,9 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
                   {activeVillage.name}
                 </h3>
                 <p className="text-xs text-muted-foreground">{activeVillage.dates}</p>
+                {activeVillage.description && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{activeVillage.description}</p>
+                )}
               </div>
             </>
           ) : (
@@ -1157,7 +1160,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         {isZoomedIn && (
           <div className="mb-3 text-xs">
             <p className="text-muted-foreground">Location</p>
-            <p className="font-medium text-foreground">{activeVillage.location} · {activeVillage.description}</p>
+            <p className="font-medium text-foreground">{activeVillage.location}</p>
           </div>
         )}
         
