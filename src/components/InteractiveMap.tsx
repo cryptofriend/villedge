@@ -1160,7 +1160,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         {isZoomedIn && (
           <div className="mb-3 text-xs">
             <p className="text-muted-foreground">Location</p>
-            <p className="font-medium text-foreground">{activeVillage.location}</p>
+            <p className="font-medium text-foreground">{activeVillage.location} · Famous kitesurfing spot</p>
           </div>
         )}
         
