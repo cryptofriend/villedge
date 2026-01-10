@@ -976,37 +976,37 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       )}
 
       {/* Header overlay */}
-      <div className="absolute left-0 right-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background/90 via-background/60 to-transparent p-4 pb-16 md:p-6 md:pb-20">
+      <div className="absolute left-0 right-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background/90 via-background/60 to-transparent p-3 pb-12 sm:p-4 sm:pb-16 md:p-6 md:pb-20">
         <div className="flex items-start justify-between">
-          <div className="flex flex-col gap-4 pointer-events-auto w-fit">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2 sm:gap-4 pointer-events-auto w-fit max-w-[65%] sm:max-w-none">
+            <div className="flex items-center gap-2 sm:gap-3">
               {isZoomedIn ? (
                 <>
                   <img 
                     src={activeVillage.logo} 
                     alt={activeVillage.name} 
-                    className="h-10 w-10 rounded md:h-12 md:w-12"
+                    className="h-8 w-8 rounded sm:h-10 sm:w-10 md:h-12 md:w-12 shrink-0"
                   />
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
+                  <div className="min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                      <h1 className="font-display text-lg font-semibold text-foreground sm:text-2xl md:text-3xl truncate">
                         {activeVillage.name}
                       </h1>
-                      <span className="font-body text-sm text-muted-foreground">
+                      <span className="font-body text-xs text-muted-foreground sm:text-sm">
                         {activeVillage.dates}
                       </span>
                     </div>
-                    <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
+                    <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base truncate">
                       {activeVillage.location}
                     </p>
                   </div>
                 </>
               ) : (
                 <div>
-                  <h1 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
+                  <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
                     Popup Villages
                   </h1>
-                  <p className="mt-1 font-body text-sm text-muted-foreground md:text-base">
+                  <p className="mt-1 font-body text-xs text-muted-foreground sm:text-sm md:text-base">
                     Explore communities around the world
                   </p>
                 </div>
@@ -1026,10 +1026,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
           {/* Map / Events Toggle - right side */}
           {isZoomedIn && (
-            <div className="flex rounded-lg bg-card/90 p-1 shadow-sm backdrop-blur-sm pointer-events-auto mr-14">
+            <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm pointer-events-auto mr-12 sm:mr-14">
               <button
                 onClick={() => setActiveView("map")}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-3 py-1 text-xs sm:px-4 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all ${
                   activeView === "map"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -1039,7 +1039,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
               </button>
               <button
                 onClick={() => setActiveView("events")}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-3 py-1 text-xs sm:px-4 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all ${
                   activeView === "events"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -1181,11 +1181,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       </div>
 
       {/* Floating Action Buttons - bottom right */}
-      <div className="absolute bottom-[80px] right-2 z-20 flex flex-col gap-2 sm:right-4 md:bottom-[88px] md:right-6">
+      <div className="absolute bottom-24 right-3 z-20 flex flex-col gap-2 sm:bottom-20 sm:right-4 md:bottom-[88px] md:right-6">
         <Button
           variant="outline"
           size="icon"
-          className="h-12 w-12 rounded-full shadow-lg bg-card"
+          className="h-11 w-11 rounded-full shadow-lg bg-card sm:h-12 sm:w-12"
           onClick={handleGetUserLocation}
           disabled={isLocating}
           title="Find my location"
