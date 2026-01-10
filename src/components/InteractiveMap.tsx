@@ -71,7 +71,7 @@ const POPUP_VILLAGES: PopupVillage[] = [
     center: MAP_CENTER,
     dates: "Dec 1, 2025 – Apr 1, 2026",
     location: "Mũi Né, Vietnam",
-    description: "One of the world's great kitesurf spots",
+    description: "One-month pop-up village and a long-form hacker house",
     participants: "50+ builders",
     focus: "Web3 & Deep Tech",
   },
