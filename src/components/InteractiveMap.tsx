@@ -10,11 +10,14 @@ import { AddEventForm } from "./AddEventForm";
 import { EventCard } from "./EventCard";
 import { EventTimeline } from "./EventTimeline";
 import { PopupTimeline } from "./PopupTimeline";
+import { createFloatingCommentHTML } from "./FloatingCommentBubble";
 import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEvents } from "@/hooks/useEvents";
+import { supabase } from "@/integrations/supabase/client";
+import { Comment } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import popupVillageLogo from "@/assets/popup-village-logo.png";
@@ -177,6 +180,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const clusterMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const eventMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const commentMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
@@ -196,6 +200,9 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [activeView, setActiveView] = useState<"map" | "events">("map");
   const [selectedEventDate, setSelectedEventDate] = useState<Date>(new Date());
+  
+  // Comments for floating bubbles
+  const [allComments, setAllComments] = useState<Comment[]>([]);
   
   // Event pin selection mode
   const [isSelectingEventPin, setIsSelectingEventPin] = useState(false);
@@ -586,6 +593,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           const el = marker.getElement();
           el.style.display = 'none';
         });
+        // Hide comment bubbles when clustered
+        commentMarkersRef.current.forEach((marker) => {
+          const el = marker.getElement();
+          el.style.display = 'none';
+        });
         createClusterMarkers();
       } else {
         // Show individual markers only if in map view, hide cluster markers
@@ -598,6 +610,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           const el = marker.getElement();
           el.style.display = activeView === "events" ? 'block' : 'none';
         });
+        // Show comment bubbles only in map view
+        commentMarkersRef.current.forEach((marker) => {
+          const el = marker.getElement();
+          el.style.display = activeView === "map" ? 'block' : 'none';
+        });
         removeClusterMarkers();
       }
     } else if (!shouldCluster) {
@@ -609,6 +626,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       eventMarkersRef.current.forEach((marker) => {
         const el = marker.getElement();
         el.style.display = activeView === "events" ? 'block' : 'none';
+      });
+      commentMarkersRef.current.forEach((marker) => {
+        const el = marker.getElement();
+        el.style.display = activeView === "map" ? 'block' : 'none';
       });
     }
   }, [createClusterMarkers, removeClusterMarkers, activeView]);
@@ -733,6 +754,124 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   useEffect(() => {
     updateEventMarkersVisibility();
   }, [updateEventMarkersVisibility, activeView]);
+
+  // Fetch all comments for floating bubbles
+  useEffect(() => {
+    const fetchComments = async () => {
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (!error && data) {
+        setAllComments(data as Comment[]);
+      }
+    };
+    
+    fetchComments();
+    
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('comments-map')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        () => fetchComments()
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Group comments by spot and get latest for each
+  const latestCommentBySpot = useMemo(() => {
+    const map = new Map<string, Comment>();
+    allComments.forEach((comment) => {
+      if (!map.has(comment.spot_id)) {
+        map.set(comment.spot_id, comment);
+      }
+    });
+    return map;
+  }, [allComments]);
+
+  // Add floating comment bubbles
+  const addCommentBubbles = useCallback(() => {
+    if (!map.current || !mapReady) return;
+
+    // Remove existing comment markers
+    commentMarkersRef.current.forEach((marker) => marker.remove());
+    commentMarkersRef.current.clear();
+
+    spots.forEach((spot) => {
+      const latestComment = latestCommentBySpot.get(spot.id);
+      if (!latestComment) return;
+
+      const el = document.createElement("div");
+      el.className = "comment-bubble";
+      el.innerHTML = createFloatingCommentHTML(latestComment);
+      
+      // Add hover effect
+      el.addEventListener("mouseenter", () => {
+        const container = el.firstChild?.firstChild as HTMLElement;
+        if (container) {
+          container.style.transform = "scale(1.02)";
+          container.style.boxShadow = "0 4px 12px rgba(0,0,0,0.18)";
+        }
+      });
+      
+      el.addEventListener("mouseleave", () => {
+        const container = el.firstChild?.firstChild as HTMLElement;
+        if (container) {
+          container.style.transform = "scale(1)";
+          container.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)";
+        }
+      });
+
+      el.addEventListener("click", () => {
+        setSelectedSpot(spot);
+        setIsZoomedIn(true);
+        const bottomPadding = isMobile ? 350 : 0;
+        map.current?.flyTo({
+          center: spot.coordinates,
+          zoom: 15,
+          duration: 800,
+          padding: { top: 80, bottom: bottomPadding, left: 0, right: 0 },
+        });
+      });
+
+      // Position the bubble offset from the spot marker
+      const marker = new mapboxgl.Marker({ 
+        element: el,
+        anchor: 'bottom-right',
+        offset: [-25, -30]
+      })
+        .setLngLat(spot.coordinates)
+        .addTo(map.current!);
+
+      commentMarkersRef.current.set(spot.id, marker);
+    });
+  }, [spots, latestCommentBySpot, mapReady, isMobile]);
+
+  // Update comment bubbles visibility
+  const updateCommentBubblesVisibility = useCallback(() => {
+    const shouldShow = activeView === "map" && !isClusteredRef.current;
+    commentMarkersRef.current.forEach((marker) => {
+      const el = marker.getElement();
+      el.style.display = shouldShow ? 'block' : 'none';
+    });
+  }, [activeView]);
+
+  // Render comment bubbles when data changes
+  useEffect(() => {
+    addCommentBubbles();
+  }, [addCommentBubbles]);
+
+  // Update comment bubbles visibility
+  useEffect(() => {
+    updateCommentBubblesVisibility();
+  }, [updateCommentBubblesVisibility, activeView]);
 
   // Listen to zoom changes for clustering and view changes
   useEffect(() => {
