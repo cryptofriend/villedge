@@ -8,6 +8,9 @@
 
 @layer base {
   :root {
+    /* Dynamic viewport height for mobile compatibility */
+    --viewport-height: 100dvh;
+    
     /* Cream/paper background */
     --background: 45 30% 96%;
     --foreground: 140 25% 20%;

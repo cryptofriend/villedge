@@ -4,7 +4,7 @@ const MAPBOX_TOKEN = "pk.eyJ1IjoiZXVkYWZvcm0iLCJhIjoiY21lczgwdndsMDZlczJqcXo3Y2g
 
 const Embed = () => {
   return (
-    <main className="h-screen w-screen overflow-hidden bg-background">
+    <main className="w-screen overflow-hidden bg-background" style={{ height: 'var(--viewport-height, 100dvh)' }}>
       <EmbedMap mapboxToken={MAPBOX_TOKEN} />
     </main>
   );
