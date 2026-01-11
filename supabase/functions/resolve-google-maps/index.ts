@@ -92,6 +92,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Format: /search/lat,+lng or /search/lat,lng - coordinates in search path
+    if (!placeData.coordinates) {
+      const searchMatch = finalUrl.match(/\/search\/(-?\d+\.?\d*),\+?(-?\d+\.?\d*)/);
+      if (searchMatch) {
+        const lat = parseFloat(searchMatch[1]);
+        const lng = parseFloat(searchMatch[2]);
+        if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+          placeData.coordinates = [lng, lat];
+          console.log('Extracted coordinates from /search/ path:', lat, lng);
+        }
+      }
+    }
+
     // Extract place name from /place/Name/ format
     const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
     if (placeMatch) {
