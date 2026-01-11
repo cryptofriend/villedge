@@ -1060,7 +1060,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
       {/* Selected spot card - only show in map view */}
       {selectedSpot && activeView === "map" && (
-        <div className="absolute bottom-0 left-0 right-0 z-30 p-2 md:bottom-6 md:left-6 md:right-auto md:p-0">
+        <div className="absolute bottom-4 left-4 z-20 md:bottom-6 md:left-6">
           <SpotCard 
             spot={{
               id: selectedSpot.id,
