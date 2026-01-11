@@ -1,7 +1,20 @@
 import { useState } from "react";
 import { Comment, CommentInput } from "@/hooks/useComments";
-import { Plus, Send, X } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Plus, Send, X, Navigation } from "lucide-react";
+
+// Compact time format: "1min ago", "2h ago", "3d ago"
+const formatCompactTime = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "now";
+  if (diffMins < 60) return `${diffMins}min ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${diffDays}d ago`;
+};
 
 // Generate a consistent avatar color based on name
 const getAvatarColor = (name: string): string => {
@@ -24,6 +37,7 @@ interface SpotCommentsProps {
   comments: Comment[];
   loading: boolean;
   onAddComment: (input: CommentInput) => Promise<Comment | null>;
+  googleMapsUrl?: string | null;
 }
 
 export const SpotComments = ({
@@ -31,6 +45,7 @@ export const SpotComments = ({
   comments,
   loading,
   onAddComment,
+  googleMapsUrl,
 }: SpotCommentsProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [authorName, setAuthorName] = useState(() => 
@@ -69,29 +84,27 @@ export const SpotComments = ({
     <div className="border-t border-border/50">
       {/* Comments list */}
       {comments.length > 0 && (
-        <div className="max-h-[180px] overflow-y-auto px-4 py-3">
-          <div className="space-y-3">
+        <div className="max-h-[140px] overflow-y-auto px-4 py-2">
+          <div className="space-y-1.5">
             {comments.slice(0, 5).map((comment) => (
-              <div key={comment.id} className="flex items-start gap-3">
+              <div key={comment.id} className="flex items-center gap-2">
                 <div
-                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-white text-xs font-medium ${getAvatarColor(comment.author_name)}`}
+                  className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-white text-[10px] font-medium ${getAvatarColor(comment.author_name)}`}
                 >
                   {comment.author_name.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground leading-snug">
-                    {comment.content}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {comment.author_name} · {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                  </p>
-                </div>
+                <p className="flex-1 truncate text-sm text-foreground">
+                  {comment.content}
+                </p>
+                <span className="flex-shrink-0 text-xs text-muted-foreground">
+                  {formatCompactTime(new Date(comment.created_at))}
+                </span>
               </div>
             ))}
           </div>
           {comments.length > 5 && (
-            <p className="mt-2 text-xs text-muted-foreground text-center">
-              +{comments.length - 5} more notes
+            <p className="mt-1.5 text-xs text-muted-foreground text-center">
+              +{comments.length - 5} more
             </p>
           )}
         </div>
@@ -139,14 +152,25 @@ export const SpotComments = ({
           </div>
         </div>
       ) : (
-        <div className="p-3">
+        <div className="flex gap-2 p-3">
           <button
             onClick={() => setIsAdding(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-dashed border-border py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
           >
             <Plus className="h-4 w-4" />
             Add note
           </button>
+          {googleMapsUrl && (
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <Navigation className="h-4 w-4" />
+              Directions
+            </a>
+          )}
         </div>
       )}
     </div>
