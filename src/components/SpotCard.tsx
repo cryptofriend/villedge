@@ -58,7 +58,7 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
 
   return (
     <>
-      <div className="animate-fade-in-up w-full sm:w-[320px] overflow-hidden rounded-lg bg-card shadow-elevated">
+      <div className="animate-fade-in-up w-full md:w-[320px] overflow-hidden rounded-lg bg-card shadow-elevated">
         {/* Image */}
         <div className="relative h-48 overflow-hidden bg-muted">
           {spot.image ? (
