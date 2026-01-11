@@ -14,7 +14,6 @@ import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation } from "lucide-react
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { useEvents } from "@/hooks/useEvents";
-import { useComments } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import popupVillageLogo from "@/assets/popup-village-logo.png";
@@ -178,7 +177,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const eventMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
-  const { commentsBySpot, spotCommentData, addComment } = useComments();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
@@ -189,7 +187,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const isClusteredRef = useRef(false);
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const whisperElementsRef = useRef<Map<string, HTMLElement>>(new Map());
   const [activeVillage, setActiveVillage] = useState<PopupVillage>(POPUP_VILLAGES[0]);
   const [isZoomedIn, setIsZoomedIn] = useState(true); // Start zoomed in since initial zoom is 15
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -204,10 +201,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const eventPinMarkerRef = useRef<mapboxgl.Marker | null>(null);
   
   const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents();
-  
-  // Whisper zoom threshold - only show at medium+ zoom
-  const WHISPER_ZOOM_THRESHOLD = 13;
-  const MAX_WHISPERS_VISIBLE = 3;
   
   // Filter events by selected date
   const filteredEvents = useMemo(() => {
@@ -484,7 +477,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
     spotMarkersRef.current.clear();
-    whisperElementsRef.current.clear();
     
     // Also remove cluster markers when re-adding markers
     removeClusterMarkers();
@@ -495,17 +487,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       : spots;
 
     filteredSpots.forEach((spot) => {
-      const commentData = spotCommentData.get(spot.id);
-      const hasComments = commentData && commentData.count > 0;
-      const isRecent = commentData?.isRecent || false;
-      const whisper = commentData?.latestWhisper || null;
-      
-      // Create custom marker element with whisper wrapper
+      // Create custom marker element
       const el = document.createElement("div");
-      el.className = "custom-marker whisper-wrapper";
-      el.dataset.spotId = spot.id;
+      el.className = "custom-marker";
       el.innerHTML = `
-        ${isRecent ? '<div class="activity-halo recent"></div>' : (hasComments ? '<div class="activity-halo"></div>' : '')}
         <div class="marker-container" style="
           width: 36px;
           height: 36px;
@@ -518,21 +503,12 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           cursor: ${isEditMode ? 'grab' : 'pointer'};
           transition: all 0.3s ease;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          position: relative;
-          z-index: 2;
         ">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
             ${getIconPath(spot.category)}
           </svg>
         </div>
-        ${whisper ? `<div class="whisper-label" data-whisper="${spot.id}">"${whisper}"</div>` : ''}
       `;
-      
-      // Store whisper element reference
-      const whisperEl = el.querySelector('.whisper-label') as HTMLElement;
-      if (whisperEl) {
-        whisperElementsRef.current.set(spot.id, whisperEl);
-      }
 
       el.addEventListener("mouseenter", () => {
         const container = el.querySelector(".marker-container") as HTMLElement;
@@ -579,57 +555,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       markersRef.current.push(marker);
       spotMarkersRef.current.set(spot.id, marker);
     });
-  }, [selectedCategory, spots, isEditMode, updateSpotCoordinates, spotCommentData]);
-
-  // Update whisper visibility based on viewport and zoom
-  const updateWhisperVisibility = useCallback(() => {
-    if (!map.current) return;
-    
-    const zoom = map.current.getZoom();
-    const shouldShowWhispers = zoom >= WHISPER_ZOOM_THRESHOLD && activeView === "map";
-    
-    if (!shouldShowWhispers) {
-      // Hide all whispers at low zoom or in events view
-      whisperElementsRef.current.forEach((el) => {
-        el.classList.remove('visible');
-      });
-      return;
-    }
-    
-    // Get viewport bounds
-    const bounds = map.current.getBounds();
-    
-    // Score spots by recency and visibility
-    const visibleSpots: Array<{ spotId: string; score: number }> = [];
-    
-    spots.forEach((spot) => {
-      const [lng, lat] = spot.coordinates;
-      if (bounds.contains([lng, lat])) {
-        const commentData = spotCommentData.get(spot.id);
-        if (commentData && commentData.latestWhisper) {
-          // Score: recent comments get higher priority
-          let score = 1;
-          if (commentData.isRecent) score = 3;
-          else if (commentData.count > 3) score = 2;
-          
-          visibleSpots.push({ spotId: spot.id, score });
-        }
-      }
-    });
-    
-    // Sort by score and take top MAX_WHISPERS_VISIBLE
-    visibleSpots.sort((a, b) => b.score - a.score);
-    const topSpotIds = new Set(visibleSpots.slice(0, MAX_WHISPERS_VISIBLE).map(s => s.spotId));
-    
-    // Update whisper visibility
-    whisperElementsRef.current.forEach((el, spotId) => {
-      if (topSpotIds.has(spotId)) {
-        el.classList.add('visible');
-      } else {
-        el.classList.remove('visible');
-      }
-    });
-  }, [spots, spotCommentData, activeView]);
+  }, [selectedCategory, spots, isEditMode, updateSpotCoordinates]);
 
   // Handle zoom-based clustering and view-based visibility
   const updateMarkersVisibility = useCallback(() => {
@@ -679,10 +605,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         el.style.display = activeView === "events" ? 'block' : 'none';
       });
     }
-    
-    // Update whisper visibility
-    updateWhisperVisibility();
-  }, [createClusterMarkers, removeClusterMarkers, activeView, updateWhisperVisibility]);
+  }, [createClusterMarkers, removeClusterMarkers, activeView]);
 
   // Update markers when dependencies change
   useEffect(() => {
@@ -805,25 +728,23 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     updateEventMarkersVisibility();
   }, [updateEventMarkersVisibility, activeView]);
 
-  // Listen to zoom and move changes for clustering and whisper visibility
+  // Listen to zoom changes for clustering and view changes
   useEffect(() => {
     if (!map.current || !mapReady) return;
     
     const m = map.current;
     
-    const handleMapChange = () => {
+    const handleZoom = () => {
       updateMarkersVisibility();
     };
     
-    m.on("zoom", handleMapChange);
-    m.on("moveend", handleMapChange);
+    m.on("zoom", handleZoom);
     
     // Update visibility when view changes
     updateMarkersVisibility();
     
     return () => {
-      m.off("zoom", handleMapChange);
-      m.off("moveend", handleMapChange);
+      m.off("zoom", handleZoom);
     };
   }, [mapReady, updateMarkersVisibility, activeView]);
 
@@ -1149,9 +1070,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             onDelete={deleteSpot}
             onUpdate={updateSpot}
             userLocation={userLocation}
-            comments={commentsBySpot[selectedSpot.id] || []}
-            commentCount={spotCommentData.get(selectedSpot.id)?.count || 0}
-            onAddComment={addComment}
           />
         </div>
       )}
