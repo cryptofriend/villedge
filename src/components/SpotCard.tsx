@@ -4,6 +4,8 @@ import { SpotUpdate } from "@/hooks/useSpots";
 import { X, Trash2, Pencil, ExternalLink, MapPin, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { EditSpotDialog } from "./EditSpotDialog";
+import { SpotComments } from "./SpotComments";
+import { Comment } from "@/hooks/useComments";
 
 // Haversine formula to calculate distance between two coordinates
 const calculateDistance = (
@@ -38,9 +40,21 @@ interface SpotCardProps {
   onDelete?: (spotId: string) => Promise<boolean>;
   onUpdate?: (spotId: string, updates: SpotUpdate) => Promise<any>;
   userLocation?: [number, number] | null;
+  comments?: Comment[];
+  commentCount?: number;
+  onAddComment?: (spotId: string, authorName: string, content: string) => Promise<Comment | null>;
 }
 
-export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: SpotCardProps) => {
+export const SpotCard = ({ 
+  spot, 
+  onClose, 
+  onDelete, 
+  onUpdate, 
+  userLocation,
+  comments = [],
+  commentCount = 0,
+  onAddComment,
+}: SpotCardProps) => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   
   const distance = userLocation
@@ -159,6 +173,18 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
               <ExternalLink className="h-3.5 w-3.5" />
               Open in Google Maps
             </a>
+          )}
+
+          {/* Comments Section */}
+          {onAddComment && (
+            <div className="mt-4">
+              <SpotComments
+                spotId={spot.id}
+                comments={comments}
+                commentCount={commentCount}
+                onAddComment={onAddComment}
+              />
+            </div>
           )}
         </div>
       </div>
