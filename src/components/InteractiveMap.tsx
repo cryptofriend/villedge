@@ -13,6 +13,7 @@ import { PopupTimeline } from "./PopupTimeline";
 import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useEvents } from "@/hooks/useEvents";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -170,6 +171,7 @@ interface InteractiveMapProps {
 }
 
 export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
+  const isMobile = useIsMobile();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -544,10 +546,14 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         if (!isEditMode) {
           setSelectedSpot(spot);
           setIsZoomedIn(true); // Hide timeline when spot is clicked
+          // On mobile, offset the center upward to account for the SpotCard at the bottom
+          // SpotCard is approximately 350px tall on mobile
+          const bottomPadding = isMobile ? 350 : 0;
           map.current?.flyTo({
             center: spot.coordinates,
             zoom: 15,
             duration: 800,
+            padding: { top: 80, bottom: bottomPadding, left: 0, right: 0 },
           });
         }
       });
