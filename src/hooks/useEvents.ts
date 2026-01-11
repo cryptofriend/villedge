@@ -96,6 +96,17 @@ export const useEvents = (villageId?: string) => {
         new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
       ));
 
+      // Send Telegram notification (fire and forget)
+      supabase.functions.invoke("notify-telegram", {
+        body: {
+          type: "event",
+          name: newEvent.name,
+          description: newEvent.description,
+          location: newEvent.location,
+          startTime: newEvent.start_time,
+        },
+      }).catch((err) => console.error("Failed to send Telegram notification:", err));
+
       return newEvent;
     } catch (err) {
       console.error("Error adding event:", err);

@@ -89,6 +89,17 @@ export const useSpots = () => {
       };
 
       setSpots((prev) => [...prev, newSpot]);
+
+      // Send Telegram notification (fire and forget)
+      supabase.functions.invoke("notify-telegram", {
+        body: {
+          type: "spot",
+          name: newSpot.name,
+          description: newSpot.description,
+          category: newSpot.category,
+        },
+      }).catch((err) => console.error("Failed to send Telegram notification:", err));
+
       return newSpot;
     } catch (err) {
       console.error("Error adding spot:", err);
