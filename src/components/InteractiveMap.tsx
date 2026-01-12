@@ -496,14 +496,14 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       : spots;
 
     filteredSpots.forEach((spot) => {
-      // Create custom marker element with thumbnail and category indicator
+      // Create custom marker element
       const el = document.createElement("div");
       el.className = "custom-marker";
       
-      // Use spot image or a placeholder
-      const imageUrl = spot.image_url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=100&h=100&fit=crop';
+      const hasImage = !!spot.image_url;
       
-      el.innerHTML = `
+      // Thumbnail with category badge if image exists, otherwise just icon
+      el.innerHTML = hasImage ? `
         <div class="marker-container" style="
           position: relative;
           width: 44px;
@@ -519,11 +519,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             border: 3px solid ${isEditMode ? '#c45c3e' : '#faf8f5'};
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
           ">
-            <img src="${imageUrl}" alt="${spot.name}" style="
+            <img src="${spot.image_url}" alt="${spot.name}" style="
               width: 100%;
               height: 100%;
               object-fit: cover;
-            " onerror="this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?w=100&h=100&fit=crop'" />
+            " />
           </div>
           <div style="
             position: absolute;
@@ -543,6 +543,24 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
               ${getIconPath(spot.category)}
             </svg>
           </div>
+        </div>
+      ` : `
+        <div class="marker-container" style="
+          width: 44px;
+          height: 44px;
+          background-color: ${categoryColors[spot.category]};
+          border: 3px solid ${isEditMode ? '#c45c3e' : '#faf8f5'};
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: ${isEditMode ? 'grab' : 'pointer'};
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        ">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            ${getIconPath(spot.category)}
+          </svg>
         </div>
       `;
 
@@ -873,11 +891,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         });
       });
 
-      // Position bubble so its arrow tip touches the top of the pin
+      // Position bubble so its arrow tip touches the top of the pin (marker is 44px tall)
       const marker = new mapboxgl.Marker({ 
         element: el,
         anchor: 'bottom',
-        offset: [0, -18]
+        offset: [0, -24]
       })
         .setLngLat(spot.coordinates)
         .addTo(map.current!);
