@@ -804,7 +804,12 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     commentMarkersRef.current.forEach((marker) => marker.remove());
     commentMarkersRef.current.clear();
 
-    spots.forEach((spot) => {
+    // Filter spots based on selected category (same as spot markers)
+    const filteredSpots = selectedCategory
+      ? spots.filter((s) => s.category === selectedCategory)
+      : spots;
+
+    filteredSpots.forEach((spot) => {
       const latestComment = latestCommentBySpot.get(spot.id);
       if (!latestComment) return;
 
@@ -852,7 +857,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
       commentMarkersRef.current.set(spot.id, marker);
     });
-  }, [spots, latestCommentBySpot, mapReady, isMobile]);
+  }, [spots, latestCommentBySpot, mapReady, isMobile, selectedCategory]);
 
   // Update comment bubbles visibility
   const updateCommentBubblesVisibility = useCallback(() => {
