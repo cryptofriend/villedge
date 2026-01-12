@@ -496,26 +496,53 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       : spots;
 
     filteredSpots.forEach((spot) => {
-      // Create custom marker element
+      // Create custom marker element with thumbnail and category indicator
       const el = document.createElement("div");
       el.className = "custom-marker";
+      
+      // Use spot image or a placeholder
+      const imageUrl = spot.image_url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=100&h=100&fit=crop';
+      
       el.innerHTML = `
         <div class="marker-container" style="
-          width: 36px;
-          height: 36px;
-          background-color: ${categoryColors[spot.category]};
-          border: 3px solid ${isEditMode ? '#c45c3e' : '#faf8f5'};
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          position: relative;
+          width: 44px;
+          height: 44px;
           cursor: ${isEditMode ? 'grab' : 'pointer'};
           transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-            ${getIconPath(spot.category)}
-          </svg>
+          <div style="
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid ${isEditMode ? '#c45c3e' : '#faf8f5'};
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          ">
+            <img src="${imageUrl}" alt="${spot.name}" style="
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            " onerror="this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?w=100&h=100&fit=crop'" />
+          </div>
+          <div style="
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 18px;
+            height: 18px;
+            background-color: ${categoryColors[spot.category]};
+            border: 2px solid #faf8f5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+          ">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+              ${getIconPath(spot.category)}
+            </svg>
+          </div>
         </div>
       `;
 
