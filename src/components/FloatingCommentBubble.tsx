@@ -43,51 +43,60 @@ export const createFloatingCommentHTML = (comment: Comment): string => {
   return `
     <div style="
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 6px;
-      background: rgba(250, 248, 245, 0.95);
-      padding: 6px 10px 6px 6px;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-      cursor: pointer;
-      max-width: 220px;
       pointer-events: auto;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
     ">
       <div style="
-        width: 22px;
-        height: 22px;
-        min-width: 22px;
-        background: ${avatarColor};
-        border-radius: 50%;
         display: flex;
         align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 11px;
-        font-weight: 500;
-      ">${initial}</div>
-      <div style="flex: 1; min-width: 0;">
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.97);
+        padding: 4px 8px 4px 4px;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        cursor: pointer;
+        max-width: 200px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      ">
         <div style="
-          font-size: 12px;
-          color: #1a1a1a;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          line-height: 1.3;
-        ">${truncatedContent}</div>
-        <div style="
-          font-size: 10px;
-          color: #888;
+          width: 20px;
+          height: 20px;
+          min-width: 20px;
+          background: ${avatarColor};
+          border-radius: 50%;
           display: flex;
           align-items: center;
-          gap: 4px;
-        ">
-          <span style="font-weight: 500;">${comment.author_name}</span>
-          <span>·</span>
-          <span>${timeAgo}</span>
+          justify-content: center;
+          color: white;
+          font-size: 10px;
+          font-weight: 500;
+        ">${initial}</div>
+        <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 3px;">
+          <span style="
+            font-size: 11px;
+            color: #1a1a1a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100px;
+            line-height: 1.2;
+          ">${truncatedContent}</span>
+          <span style="
+            font-size: 9px;
+            color: #999;
+            white-space: nowrap;
+          ">· ${timeAgo}</span>
         </div>
       </div>
+      <div style="
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid rgba(255, 255, 255, 0.97);
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+      "></div>
     </div>
   `;
 };
