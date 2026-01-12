@@ -841,11 +841,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         });
       });
 
-      // Position bubble so its arrow tip points directly at the pin
+      // Position bubble so its arrow tip touches the top of the pin
       const marker = new mapboxgl.Marker({ 
         element: el,
         anchor: 'bottom',
-        offset: [0, -38]
+        offset: [0, -18]
       })
         .setLngLat(spot.coordinates)
         .addTo(map.current!);
