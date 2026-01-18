@@ -67,21 +67,25 @@ export const useEvents = (villageId?: string) => {
 
   const addEvent = async (event: EventInput): Promise<DbEvent | null> => {
     try {
+      // Use upsert to handle duplicate luma_url (update existing event)
       const { data, error } = await supabase
         .from("events")
-        .insert({
-          name: event.name,
-          description: event.description || null,
-          start_time: event.start_time,
-          end_time: event.end_time || null,
-          location: event.location || null,
-          coordinates: event.coordinates || null,
-          image_url: event.image_url || null,
-          luma_url: event.luma_url || null,
-          host_name: event.host_name || null,
-          host_avatar: event.host_avatar || null,
-          village_id: event.village_id || null,
-        })
+        .upsert(
+          {
+            name: event.name,
+            description: event.description || null,
+            start_time: event.start_time,
+            end_time: event.end_time || null,
+            location: event.location || null,
+            coordinates: event.coordinates || null,
+            image_url: event.image_url || null,
+            luma_url: event.luma_url || null,
+            host_name: event.host_name || null,
+            host_avatar: event.host_avatar || null,
+            village_id: event.village_id || null,
+          },
+          { onConflict: 'luma_url', ignoreDuplicates: false }
+        )
         .select()
         .single();
 
