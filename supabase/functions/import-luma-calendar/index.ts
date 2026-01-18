@@ -5,6 +5,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface LumaApiEvent {
+  api_id: string;
+  name: string;
+  description?: string;
+  cover_url?: string;
+  url?: string;
+  timezone?: string;
+  start_at?: string;
+  end_at?: string;
+  geo_latitude?: number;
+  geo_longitude?: number;
+  geo_address_info?: {
+    full_address?: string;
+    city?: string;
+    country?: string;
+    place_id?: string;
+  };
+}
+
+interface LumaApiHost {
+  name?: string;
+  avatar_url?: string;
+}
+
+interface LumaApiEntry {
+  event: LumaApiEvent;
+  hosts?: LumaApiHost[];
+}
+
 interface EventData {
   name: string;
   description?: string;
@@ -15,116 +44,7 @@ interface EventData {
   host_name?: string;
   host_avatar?: string;
   luma_url: string;
-}
-
-async function extractEventFromPage(eventUrl: string): Promise<EventData | null> {
-  try {
-    console.log('Fetching event:', eventUrl);
-    
-    // Normalize URL
-    let normalizedUrl = eventUrl;
-    if (normalizedUrl.includes('lu.ma/')) {
-      normalizedUrl = normalizedUrl.replace('lu.ma/', 'luma.com/');
-    }
-    
-    const response = await fetch(normalizedUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      },
-    });
-    
-    if (!response.ok) {
-      console.log('Failed to fetch event page:', response.status);
-      return null;
-    }
-    
-    const html = await response.text();
-    
-    const eventData: EventData = {
-      name: '',
-      luma_url: eventUrl,
-    };
-    
-    // Extract title from og:title
-    const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
-    if (ogTitleMatch) {
-      eventData.name = ogTitleMatch[1];
-    } else {
-      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-      if (titleMatch) {
-        eventData.name = titleMatch[1].replace(/\s*\|\s*Luma$/i, '').trim();
-      }
-    }
-    
-    if (!eventData.name) {
-      return null;
-    }
-    
-    // Extract description
-    const ogDescMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
-    if (ogDescMatch) {
-      eventData.description = ogDescMatch[1];
-    }
-    
-    // Extract image
-    const ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
-    if (ogImgMatch && ogImgMatch[1]) {
-      eventData.image_url = ogImgMatch[1];
-    }
-    
-    // Try to find JSON-LD structured data
-    const jsonLdMatches = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
-    if (jsonLdMatches) {
-      for (const match of jsonLdMatches) {
-        try {
-          const jsonContent = match.replace(/<script[^>]*>/i, '').replace(/<\/script>/i, '');
-          const parsed = JSON.parse(jsonContent);
-          
-          if (parsed.startDate) {
-            eventData.start_time = parsed.startDate;
-          }
-          if (parsed.endDate) {
-            eventData.end_time = parsed.endDate;
-          }
-          if (parsed.location?.name) {
-            eventData.location = parsed.location.name;
-          } else if (parsed.location?.address?.streetAddress) {
-            eventData.location = parsed.location.address.streetAddress;
-          }
-          if (parsed.name && !eventData.name) {
-            eventData.name = parsed.name;
-          }
-          if (parsed.description && !eventData.description) {
-            eventData.description = parsed.description;
-          }
-        } catch (e) {
-          // JSON parse failed, continue
-        }
-      }
-    }
-    
-    // Extract host info
-    const hostedByMatch = html.match(/Hosted By[\s\S]*?<a[^>]*href=["'][^"']*\/user\/[^"']*["'][^>]*>([^<]+)<\/a>/i);
-    if (hostedByMatch) {
-      eventData.host_name = hostedByMatch[1].trim();
-    }
-    
-    // Try to get location from Google Maps link
-    if (!eventData.location) {
-      const mapsLinkMatch = html.match(/google\.com\/maps\/search\/\?[^"']*query=([^"'&]+)/i);
-      if (mapsLinkMatch) {
-        eventData.location = decodeURIComponent(mapsLinkMatch[1].replace(/\+/g, ' '));
-      }
-    }
-    
-    console.log('Extracted event:', eventData.name);
-    return eventData;
-  } catch (error) {
-    console.error('Error extracting event:', error);
-    return null;
-  }
+  coordinates?: { lng: number; lat: number } | null;
 }
 
 Deno.serve(async (req) => {
@@ -133,99 +53,111 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { calendarUrl } = await req.json();
+    const { calendarUrl, apiKey } = await req.json();
     
-    if (!calendarUrl) {
+    if (!calendarUrl && !apiKey) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Calendar URL is required' }),
+        JSON.stringify({ success: false, error: 'Calendar URL or API key is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Importing from calendar:', calendarUrl);
-
-    // Normalize URL
-    let normalizedUrl = calendarUrl.trim();
-    if (normalizedUrl.includes('lu.ma/')) {
-      normalizedUrl = normalizedUrl.replace('lu.ma/', 'luma.com/');
-    }
-
-    // Use Firecrawl to scrape the calendar page (handles JS rendering)
-    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-    if (!firecrawlApiKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Firecrawl API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Using Firecrawl to scrape calendar page...');
-    
-    const firecrawlResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: normalizedUrl,
-        formats: ['links', 'html'],
-        waitFor: 3000, // Wait for JS to render
-      }),
-    });
-
-    if (!firecrawlResponse.ok) {
-      const errorText = await firecrawlResponse.text();
-      console.error('Firecrawl error:', errorText);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to scrape calendar page' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const firecrawlData = await firecrawlResponse.json();
-    console.log('Firecrawl response success:', firecrawlData.success);
-    
-    // Extract event links from Firecrawl response
-    const eventLinks = new Set<string>();
-    
-    // Check links array from Firecrawl
-    const links = firecrawlData.data?.links || firecrawlData.links || [];
-    console.log('Found links from Firecrawl:', links.length);
-    
-    for (const link of links) {
-      // Filter for event links (short codes, not calendar/user/manage pages)
-      if (typeof link === 'string') {
-        const match = link.match(/https?:\/\/(?:lu\.ma|luma\.com)\/([a-zA-Z0-9]{6,12})$/);
-        if (match && !link.includes('/calendar/') && !link.includes('/user/') && !link.includes('/manage/')) {
-          eventLinks.add(link);
-        }
-      }
-    }
-    
-    // Also try to extract from HTML if available
-    const html = firecrawlData.data?.html || firecrawlData.html || '';
-    if (html) {
-      const eventLinkPattern = /href=["'](https?:\/\/(?:lu\.ma|luma\.com)\/([a-zA-Z0-9]{6,12}))["']/gi;
-      let match;
-      while ((match = eventLinkPattern.exec(html)) !== null) {
-        const url = match[1];
-        if (!url.includes('/calendar/') && !url.includes('/user/') && !url.includes('/manage/')) {
-          eventLinks.add(url);
-        }
+    // Extract calendar ID from URL if provided
+    let calendarId = '';
+    if (calendarUrl) {
+      // Support formats like:
+      // https://luma.com/calendar/manage/cal-xxx
+      // https://lu.ma/calendar/cal-xxx
+      // cal-xxx (direct ID)
+      const calIdMatch = calendarUrl.match(/cal-[a-zA-Z0-9]+/);
+      if (calIdMatch) {
+        calendarId = calIdMatch[0];
       }
     }
 
-    console.log(`Found ${eventLinks.size} event links`);
-
-    if (eventLinks.size === 0) {
+    // Get Luma API key from secrets or request
+    const lumaApiKey = apiKey || Deno.env.get('LUMA_API_KEY');
+    
+    if (!lumaApiKey) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'No events found on calendar page',
-          debug: { linksCount: links.length, htmlLength: html.length }
+          error: 'Luma API key is required. Add it in Settings → Secrets as LUMA_API_KEY, or pass it in the request.',
+          requiresApiKey: true
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Importing from Luma calendar:', calendarId || 'using API key');
+
+    // Fetch events from Luma API
+    const allEvents: LumaApiEntry[] = [];
+    let cursor: string | null = null;
+    let hasMore = true;
+
+    while (hasMore) {
+      const url = new URL('https://api.lu.ma/public/v2/calendar/list-events');
+      if (cursor) {
+        url.searchParams.set('pagination_cursor', cursor);
+      }
+      url.searchParams.set('pagination_limit', '50');
+      
+      console.log('Fetching from Luma API:', url.toString());
+      
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'x-luma-api-key': lumaApiKey,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Luma API error:', response.status, errorText);
+        
+        if (response.status === 401) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Invalid Luma API key' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        return new Response(
+          JSON.stringify({ success: false, error: `Luma API error: ${response.status}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+      console.log('Luma API response:', JSON.stringify(data).substring(0, 500));
+      
+      const entries = data.entries || [];
+      allEvents.push(...entries);
+      
+      // Check for pagination
+      cursor = data.next_cursor || null;
+      hasMore = data.has_more === true && cursor !== null;
+      
+      console.log(`Fetched ${entries.length} events, total: ${allEvents.length}, has_more: ${hasMore}`);
+      
+      // Small delay between pages
+      if (hasMore) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+
+    console.log(`Total events from API: ${allEvents.length}`);
+
+    if (allEvents.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          imported: 0,
+          message: 'No events found in calendar'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -234,62 +166,94 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Process each event
+    // Process events
     const events: EventData[] = [];
     const errors: string[] = [];
-    
-    for (const eventUrl of eventLinks) {
-      try {
-        const eventData = await extractEventFromPage(eventUrl);
-        if (eventData) {
-          events.push(eventData);
-          
-          // Insert into database if it has required fields
-          if (eventData.name && eventData.start_time) {
-            const { error: insertError } = await supabase
-              .from('events')
-              .upsert({
-                name: eventData.name,
-                start_time: eventData.start_time,
-                end_time: eventData.end_time,
-                location: eventData.location,
-                description: eventData.description,
-                image_url: eventData.image_url,
-                host_name: eventData.host_name,
-                host_avatar: eventData.host_avatar,
-                luma_url: eventData.luma_url,
-              }, {
-                onConflict: 'luma_url',
-                ignoreDuplicates: false,
-              });
-            
-            if (insertError) {
-              console.error('Insert error for', eventData.name, ':', insertError);
-              errors.push(`${eventData.name}: ${insertError.message}`);
-            } else {
-              console.log('Inserted event:', eventData.name);
-            }
-          } else {
-            console.log('Skipping event without start_time:', eventData.name);
-          }
-        }
-      } catch (e) {
-        console.error('Error processing event:', eventUrl, e);
-        errors.push(`Failed to process ${eventUrl}`);
+
+    for (const entry of allEvents) {
+      const event = entry.event;
+      const host = entry.hosts?.[0];
+      
+      // Build event URL
+      const eventUrl = event.url || `https://lu.ma/${event.api_id}`;
+      
+      // Build coordinates if available
+      let coordinates: { lng: number; lat: number } | null = null;
+      if (event.geo_latitude && event.geo_longitude) {
+        coordinates = {
+          lat: event.geo_latitude,
+          lng: event.geo_longitude,
+        };
       }
       
-      // Small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Build location string
+      let location = event.geo_address_info?.full_address || 
+                     event.geo_address_info?.city || 
+                     null;
+      
+      const eventData: EventData = {
+        name: event.name,
+        description: event.description || undefined,
+        start_time: event.start_at,
+        end_time: event.end_at || undefined,
+        location: location || undefined,
+        image_url: event.cover_url || undefined,
+        host_name: host?.name || undefined,
+        host_avatar: host?.avatar_url || undefined,
+        luma_url: eventUrl,
+        coordinates,
+      };
+      
+      events.push(eventData);
+      
+      // Insert into database
+      if (eventData.name && eventData.start_time) {
+        try {
+          const { error: insertError } = await supabase
+            .from('events')
+            .upsert({
+              name: eventData.name,
+              start_time: eventData.start_time,
+              end_time: eventData.end_time,
+              location: eventData.location,
+              description: eventData.description,
+              image_url: eventData.image_url,
+              host_name: eventData.host_name,
+              host_avatar: eventData.host_avatar,
+              luma_url: eventData.luma_url,
+              coordinates: eventData.coordinates,
+            }, {
+              onConflict: 'luma_url',
+              ignoreDuplicates: false,
+            });
+          
+          if (insertError) {
+            console.error('Insert error for', eventData.name, ':', insertError);
+            errors.push(`${eventData.name}: ${insertError.message}`);
+          } else {
+            console.log('Upserted event:', eventData.name);
+          }
+        } catch (e) {
+          console.error('Error upserting event:', eventData.name, e);
+          errors.push(`${eventData.name}: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+      }
     }
 
-    console.log(`Successfully processed ${events.length} events`);
+    const importedCount = events.filter(e => e.start_time).length - errors.length;
+    console.log(`Successfully processed ${importedCount} events`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        imported: events.filter(e => e.start_time).length,
+        imported: importedCount,
         total_found: events.length,
-        events: events.map(e => ({ name: e.name, start_time: e.start_time, luma_url: e.luma_url })),
+        events: events.map(e => ({ 
+          name: e.name, 
+          start_time: e.start_time, 
+          luma_url: e.luma_url,
+          has_coordinates: !!e.coordinates 
+        })),
         errors: errors.length > 0 ? errors : undefined,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
