@@ -1,0 +1,179 @@
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+export interface Stay {
+  id: string;
+  village_id: string;
+  nickname: string;
+  villa: string;
+  start_date: string;
+  end_date: string;
+  intention: string | null;
+  social_profile: string | null;
+  offerings: string | null;
+  asks: string | null;
+  secret_hash: string;
+  is_host: boolean;
+  created_at: string;
+}
+
+export interface StayInput {
+  village_id: string;
+  nickname: string;
+  villa: string;
+  start_date: string;
+  end_date: string;
+  intention?: string;
+  social_profile?: string;
+  offerings?: string;
+  asks?: string;
+  secret_hash?: string;
+  is_host?: boolean;
+}
+
+// Simple hash function for secret codes
+export const hashSecret = async (secret: string): Promise<string> => {
+  if (!secret) return "";
+  const encoder = new TextEncoder();
+  const data = encoder.encode(secret);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+
+export const useStays = (villageId?: string) => {
+  const [stays, setStays] = useState<Stay[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchStays = useCallback(async () => {
+    if (!villageId) {
+      setStays([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("stays")
+        .select("*")
+        .eq("village_id", villageId)
+        .order("start_date", { ascending: true });
+
+      if (error) throw error;
+      setStays((data as Stay[]) || []);
+    } catch (err) {
+      console.error("Error fetching stays:", err);
+      toast.error("Failed to load stays");
+    } finally {
+      setLoading(false);
+    }
+  }, [villageId]);
+
+  useEffect(() => {
+    fetchStays();
+
+    if (!villageId) return;
+
+    // Set up realtime subscription
+    const channel = supabase
+      .channel(`stays-${villageId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "stays",
+          filter: `village_id=eq.${villageId}`,
+        },
+        () => fetchStays()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [villageId, fetchStays]);
+
+  const addStay = async (stay: StayInput): Promise<Stay | null> => {
+    try {
+      const { data, error } = await supabase
+        .from("stays")
+        .insert(stay)
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success("Stay added successfully!");
+      return data as Stay;
+    } catch (err) {
+      console.error("Error adding stay:", err);
+      toast.error("Failed to add stay");
+      return null;
+    }
+  };
+
+  const updateStay = async (
+    id: string,
+    updates: Partial<StayInput>,
+    secretCode: string
+  ): Promise<boolean> => {
+    try {
+      // First verify the secret hash
+      const { data: existingStay } = await supabase
+        .from("stays")
+        .select("secret_hash")
+        .eq("id", id)
+        .single();
+
+      if (existingStay) {
+        const inputHash = await hashSecret(secretCode);
+        if (existingStay.secret_hash && existingStay.secret_hash !== inputHash) {
+          toast.error("Invalid secret code");
+          return false;
+        }
+      }
+
+      const { error } = await supabase.from("stays").update(updates).eq("id", id);
+
+      if (error) throw error;
+      toast.success("Stay updated successfully!");
+      return true;
+    } catch (err) {
+      console.error("Error updating stay:", err);
+      toast.error("Failed to update stay");
+      return false;
+    }
+  };
+
+  const deleteStay = async (id: string, secretCode: string): Promise<boolean> => {
+    try {
+      // First verify the secret hash
+      const { data: existingStay } = await supabase
+        .from("stays")
+        .select("secret_hash")
+        .eq("id", id)
+        .single();
+
+      if (existingStay) {
+        const inputHash = await hashSecret(secretCode);
+        if (existingStay.secret_hash && existingStay.secret_hash !== inputHash) {
+          toast.error("Invalid secret code");
+          return false;
+        }
+      }
+
+      const { error } = await supabase.from("stays").delete().eq("id", id);
+
+      if (error) throw error;
+      toast.success("Stay deleted successfully!");
+      return true;
+    } catch (err) {
+      console.error("Error deleting stay:", err);
+      toast.error("Failed to delete stay");
+      return false;
+    }
+  };
+
+  return { stays, loading, addStay, updateStay, deleteStay, refetch: fetchStays };
+};
