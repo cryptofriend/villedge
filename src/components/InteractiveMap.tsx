@@ -7,14 +7,13 @@ import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
 import { PopupTimeline } from "./PopupTimeline";
-import { ResidentsList } from "./ResidentsList";
+import { StayCalendar } from "./stays/StayCalendar";
 import { SceniusList } from "./SceniusList";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { useVillages, Village } from "@/hooks/useVillages";
-import { useResidents } from "@/hooks/useResidents";
 import { useSceniusProjects } from "@/hooks/useSceniusProjects";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,8 +63,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
   // Comments for floating bubbles
   const [allComments, setAllComments] = useState<Comment[]>([]);
   
-  // Residents and Scenius for the active village
-  const { residents, loading: residentsLoading } = useResidents(activeVillage?.id);
+  // Scenius for the active village
   const { projects, loading: projectsLoading } = useSceniusProjects(activeVillage?.id);
   
   const CLUSTER_ZOOM_THRESHOLD = 9;
@@ -794,8 +792,8 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Users className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Residents</span>
+                <CalendarDays className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Stays</span>
               </button>
               <button
                 onClick={() => setActiveView("scenius")}
@@ -835,22 +833,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
         </div>
       )}
 
-      {/* Residents view */}
-      {activeView === "residents" && isZoomedIn && (
-        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-auto">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[50vh] sm:max-h-[60vh] flex flex-col">
-            <div className="p-4 border-b border-border">
-              <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Residents
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {residents.length} member{residents.length !== 1 ? "s" : ""} in this village
-              </p>
-            </div>
-            <div className="flex-1 overflow-hidden p-4">
-              <ResidentsList residents={residents} loading={residentsLoading} />
-            </div>
+      {/* Stays Calendar view */}
+      {activeView === "residents" && isZoomedIn && activeVillage && (
+        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
+            <StayCalendar villageId={activeVillage.id} />
           </div>
         </div>
       )}

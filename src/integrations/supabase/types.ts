@@ -218,6 +218,62 @@ export type Database = {
           },
         ]
       }
+      stays: {
+        Row: {
+          asks: string | null
+          created_at: string
+          end_date: string
+          id: string
+          intention: string | null
+          is_host: boolean | null
+          nickname: string
+          offerings: string | null
+          secret_hash: string | null
+          social_profile: string | null
+          start_date: string
+          villa: string
+          village_id: string
+        }
+        Insert: {
+          asks?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          intention?: string | null
+          is_host?: boolean | null
+          nickname: string
+          offerings?: string | null
+          secret_hash?: string | null
+          social_profile?: string | null
+          start_date: string
+          villa: string
+          village_id: string
+        }
+        Update: {
+          asks?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          intention?: string | null
+          is_host?: boolean | null
+          nickname?: string
+          offerings?: string | null
+          secret_hash?: string | null
+          social_profile?: string | null
+          start_date?: string
+          villa?: string
+          village_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stays_village_id_fkey"
+            columns: ["village_id"]
+            isOneToOne: false
+            referencedRelation: "villages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       villages: {
         Row: {
           center: Json
