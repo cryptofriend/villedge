@@ -844,8 +844,8 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
 
       {/* Scenius view */}
       {activeView === "scenius" && isZoomedIn && (
-        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-auto">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[50vh] sm:max-h-[60vh] flex flex-col">
+        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
