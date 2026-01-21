@@ -153,7 +153,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
             <Label htmlFor="name">Village Name *</Label>
             <Input
               id="name"
-              placeholder="e.g., Zuzalu Montenegro"
+              placeholder="e.g., Proof of Retreat"
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={100}
