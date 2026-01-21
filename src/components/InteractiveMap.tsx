@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { categoryColors } from "@/data/spots";
@@ -9,7 +10,7 @@ import { PopupTimeline } from "./PopupTimeline";
 import { ResidentsList } from "./ResidentsList";
 import { SceniusList } from "./SceniusList";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { useVillages, Village } from "@/hooks/useVillages";
@@ -26,9 +27,11 @@ const DEFAULT_CENTER: [number, number] = [108.1885, 10.9355];
 
 interface InteractiveMapProps {
   mapboxToken: string;
+  initialVillageId?: string;
 }
 
-export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
+export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMapProps) => {
+  const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -70,9 +73,29 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   // Set initial active village when villages load
   useEffect(() => {
     if (villages.length > 0 && !activeVillage) {
+      if (initialVillageId) {
+        const targetVillage = villages.find(v => v.id === initialVillageId);
+        if (targetVillage) {
+          setActiveVillage(targetVillage);
+          return;
+        }
+      }
       setActiveVillage(villages[0]);
     }
-  }, [villages, activeVillage]);
+  }, [villages, activeVillage, initialVillageId]);
+
+  // Fly to active village when map is ready (for village-specific routes)
+  useEffect(() => {
+    if (mapReady && map.current && activeVillage && initialVillageId) {
+      map.current.flyTo({
+        center: activeVillage.center,
+        zoom: 15,
+        duration: 0, // Instant on initial load
+      });
+      setIsZoomedIn(true);
+      isClusteredRef.current = false;
+    }
+  }, [mapReady, activeVillage, initialVillageId]);
 
   // Create/update the draggable selection marker
   useEffect(() => {
@@ -704,7 +727,17 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-2 sm:gap-4 pointer-events-auto w-fit max-w-[65%] sm:max-w-none">
             <div className="flex items-center gap-2 sm:gap-3">
-              {isZoomedIn && activeVillage ? (
+              {initialVillageId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 pointer-events-auto"
+                  onClick={() => navigate("/")}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              )}
+              {activeVillage && (
                 <>
                   <img 
                     src={activeVillage.logo_url || '/placeholder.svg'} 
@@ -725,15 +758,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
                     </p>
                   </div>
                 </>
-              ) : (
-                <div>
-                  <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
-                    Popup Villages
-                  </h1>
-                  <p className="mt-1 font-body text-xs text-muted-foreground sm:text-sm md:text-base">
-                    Explore communities around the world
-                  </p>
-                </div>
               )}
             </div>
 
