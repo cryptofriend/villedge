@@ -8,21 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { StayInput, hashSecret } from "@/hooks/useStays";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const VILLA_OPTIONS = [
-  "Villa A",
-  "Villa B", 
-  "Villa C",
-  "Villa D",
-  "Main House",
-  "Guest House",
-  "Other",
-];
 
 interface AddStayFormProps {
   villageId: string;
@@ -34,7 +25,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [nickname, setNickname] = useState("");
-  const [villa, setVilla] = useState("");
+  
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [intention, setIntention] = useState("");
@@ -47,7 +38,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
 
   const resetForm = () => {
     setNickname("");
-    setVilla("");
+    
     setStartDate(undefined);
     setEndDate(undefined);
     setIntention("");
@@ -62,7 +53,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!nickname.trim() || !villa || !startDate || !endDate) {
+    if (!nickname.trim() || !startDate || !endDate) {
       return;
     }
 
@@ -78,7 +69,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
       const stay: StayInput = {
         village_id: villageId,
         nickname: nickname.trim().slice(0, 30),
-        villa,
+        villa: "Default",
         start_date: format(startDate, "yyyy-MM-dd"),
         end_date: format(endDate, "yyyy-MM-dd"),
         intention: intention.trim() || undefined,
@@ -148,25 +139,6 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
             <p className="text-xs text-muted-foreground">{nickname.length}/30 characters</p>
           </div>
 
-          {/* Villa */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              Villa <span className="text-destructive">*</span>
-            </Label>
-            <Select value={villa} onValueChange={setVilla} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your accommodation" />
-              </SelectTrigger>
-              <SelectContent>
-                {VILLA_OPTIONS.map((v) => (
-                  <SelectItem key={v} value={v}>
-                    {v}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Date Range */}
           <div className="grid grid-cols-2 gap-3">
