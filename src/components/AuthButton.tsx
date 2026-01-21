@@ -34,15 +34,13 @@ export function AuthButton() {
 
   if (!isAuthenticated) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
         onClick={() => navigate('/auth')}
-        className="gap-2"
+        className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+        title="Sign In"
       >
         <LogIn className="h-4 w-4" />
-        <span className="hidden sm:inline">Sign In</span>
-      </Button>
+      </button>
     );
   }
 
