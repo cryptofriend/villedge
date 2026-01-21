@@ -7,22 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Fingerprint, Mail, User, Loader2 } from 'lucide-react';
+import { Fingerprint, User, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { startRegistration, startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import { supabase } from '@/integrations/supabase/client';
 
-const emailSchema = z.string().email('Please enter a valid email address');
-const displayNameSchema = z.string().min(2, 'Display name must be at least 2 characters').optional();
+const usernameSchema = z.string().min(2, 'Username must be at least 2 characters').max(30, 'Username must be at most 30 characters').regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores and hyphens');
 
 export default function Auth() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   
-  const [email, setEmail] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; displayName?: string }>({});
+  const [errors, setErrors] = useState<{ username?: string }>({});
   const [supportsPasskey, setSupportsPasskey] = useState(false);
 
   useEffect(() => {
@@ -36,19 +34,12 @@ export default function Auth() {
     }
   }, [user, loading, navigate]);
 
-  const validateForm = (isSignUp: boolean) => {
+  const validateForm = () => {
     const newErrors: typeof errors = {};
     
-    const emailResult = emailSchema.safeParse(email);
-    if (!emailResult.success) {
-      newErrors.email = emailResult.error.errors[0].message;
-    }
-    
-    if (isSignUp && displayName) {
-      const displayNameResult = displayNameSchema.safeParse(displayName);
-      if (!displayNameResult.success) {
-        newErrors.displayName = displayNameResult.error.errors[0].message;
-      }
+    const usernameResult = usernameSchema.safeParse(username);
+    if (!usernameResult.success) {
+      newErrors.username = usernameResult.error.errors[0].message;
     }
     
     setErrors(newErrors);
@@ -63,14 +54,14 @@ export default function Auth() {
       return;
     }
     
-    if (!validateForm(false)) return;
+    if (!validateForm()) return;
     
     setIsSubmitting(true);
     
     try {
       // Get authentication options from our edge function
       const { data: optionsData, error: optionsError } = await supabase.functions.invoke('webauthn-authenticate', {
-        body: { step: 'options', email }
+        body: { step: 'options', username }
       });
 
       if (optionsError || optionsData?.error) {
@@ -82,7 +73,7 @@ export default function Auth() {
 
       // Verify with our edge function
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('webauthn-authenticate', {
-        body: { step: 'verify', email, credential: authResponse }
+        body: { step: 'verify', username, credential: authResponse }
       });
 
       if (verifyError || verifyData?.error) {
@@ -125,14 +116,14 @@ export default function Auth() {
       return;
     }
     
-    if (!validateForm(true)) return;
+    if (!validateForm()) return;
     
     setIsSubmitting(true);
     
     try {
       // Get registration options from our edge function
       const { data: optionsData, error: optionsError } = await supabase.functions.invoke('webauthn-register', {
-        body: { step: 'options', email, displayName: displayName || email }
+        body: { step: 'options', username }
       });
 
       if (optionsError || optionsData?.error) {
@@ -144,7 +135,7 @@ export default function Auth() {
 
       // Verify with our edge function
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('webauthn-register', {
-        body: { step: 'verify', email, displayName: displayName || email, credential: regResponse }
+        body: { step: 'verify', username, credential: regResponse }
       });
 
       if (verifyError || verifyData?.error) {
@@ -213,7 +204,7 @@ export default function Auth() {
             <Fingerprint className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl font-display">Welcome to OurMap</CardTitle>
-          <CardDescription>Sign in with your passkey or create an account using biometrics</CardDescription>
+          <CardDescription>Sign in with your passkey using biometrics</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="space-y-4">
@@ -225,19 +216,19 @@ export default function Auth() {
             <TabsContent value="signin">
               <form onSubmit={handlePasskeySignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-username">Username</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="signin-username"
+                      type="text"
+                      placeholder="your_username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       className="pl-10"
                     />
                   </div>
-                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                  {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
                 </div>
                 
                 <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
@@ -263,35 +254,22 @@ export default function Auth() {
             <TabsContent value="signup">
               <form onSubmit={handlePasskeySignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Display Name</Label>
+                  <Label htmlFor="signup-username">Choose a Username</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="signup-name"
+                      id="signup-username"
                       type="text"
-                      placeholder="Your name"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="your_username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       className="pl-10"
                     />
                   </div>
-                  {errors.displayName && <p className="text-sm text-destructive">{errors.displayName}</p>}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                  {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    Letters, numbers, underscores and hyphens only
+                  </p>
                 </div>
                 
                 <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
