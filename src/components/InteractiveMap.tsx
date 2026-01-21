@@ -1,188 +1,47 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { format, isSameDay, startOfDay } from "date-fns";
 import { categoryColors } from "@/data/spots";
 import { SpotCard } from "./SpotCard";
 import { CategoryLegend } from "./SpotMarker";
 import { AddSpotForm } from "./AddSpotForm";
-import { AddEventForm } from "./AddEventForm";
-import { EventCard } from "./EventCard";
-import { EventTimeline } from "./EventTimeline";
 import { PopupTimeline } from "./PopupTimeline";
+import { ResidentsList } from "./ResidentsList";
+import { SceniusList } from "./SceniusList";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
+import { useVillages, Village } from "@/hooks/useVillages";
+import { useResidents } from "@/hooks/useResidents";
+import { useSceniusProjects } from "@/hooks/useSceniusProjects";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEvents } from "@/hooks/useEvents";
 import { supabase } from "@/integrations/supabase/client";
 import { Comment } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import popupVillageLogo from "@/assets/popup-village-logo.png";
-import networkStateLogo from "@/assets/network-state-logo.png";
-import edgeCityLogo from "@/assets/edge-city-logo.png";
-import marsCollegeLogo from "@/assets/mars-college-logo.webp";
-import ipeVillageLogo from "@/assets/ipe-village-logo.webp";
-import zuafriqueLogo from "@/assets/zuafrique-logo.webp";
 
-// SeaLinks Golf Club coordinates (Proof of Retreat)
-const MAP_CENTER: [number, number] = [108.1885, 10.9355];
-
-// Forest City coordinates (Network State / Network School v2)
-const FOREST_CITY_CENTER: [number, number] = [103.5710, 1.4050];
-
-// Healdsburg, CA coordinates (Edge Esmeralda)
-const HEALDSBURG_CENTER: [number, number] = [-122.8697, 38.6107];
-
-// Austin, TX coordinates (Edge City Austin)
-const AUSTIN_CENTER: [number, number] = [-97.7431, 30.2672];
-
-// Chiang Mai, Thailand coordinates (ETHChiangmai)
-const CHIANG_MAI_CENTER: [number, number] = [98.9853, 18.7883];
-
-// California desert coordinates (Mars College)
-const BOMBAY_BEACH_CENTER: [number, number] = [-115.7294, 33.3511];
-
-// Santa Catarina, Brazil coordinates (Ipê Village II)
-const SANTA_CATARINA_CENTER: [number, number] = [-48.5482, -27.5954];
-
-// Kilifi, Kenya coordinates (ZuAfrique 2.0)
-const KILIFI_CENTER: [number, number] = [39.8499, -3.6305];
-
-// Luštica Bay, Montenegro coordinates (Ārc Montenegro)
-const LUSTICA_CENTER: [number, number] = [18.6833, 42.3833];
-
-// Define popup villages configuration
-interface PopupVillage {
-  id: string;
-  name: string;
-  logo: string;
-  center: [number, number];
-  dates: string;
-  location: string;
-  description: string;
-  participants?: string;
-  focus?: string;
-}
-
-const POPUP_VILLAGES: PopupVillage[] = [
-  {
-    id: "proof-of-retreat",
-    name: "Proof of Retreat",
-    logo: popupVillageLogo,
-    center: MAP_CENTER,
-    dates: "Dec 1, 2025 – Apr 1, 2026",
-    location: "Mũi Né, Vietnam",
-    description: "One-month pop-up village and a long-form hacker house",
-    participants: "50+ builders",
-    focus: "Web3 & Deep Tech",
-  },
-  {
-    id: "network-school-v2",
-    name: "Network School v2",
-    logo: networkStateLogo,
-    center: FOREST_CITY_CENTER,
-    dates: "Mar 1, 2025 – Mar 1, 2026",
-    location: "Forest City, Malaysia",
-    description: "Year-long Web3 community residency",
-    participants: "100-500 pioneers",
-    focus: "Crypto & Governance",
-  },
-  {
-    id: "ethchiangmai",
-    name: "ETHChiangmai",
-    logo: networkStateLogo,
-    center: CHIANG_MAI_CENTER,
-    dates: "Dec 8, 2025 – Mar 2, 2026",
-    location: "Chiang Mai, Thailand",
-    description: "Web3 Unconference, Bootcamp & Summit",
-    participants: "100-500 builders",
-    focus: "Crypto & Tech",
-  },
-  {
-    id: "mars-college",
-    name: "Mars College",
-    logo: marsCollegeLogo,
-    center: BOMBAY_BEACH_CENTER,
-    dates: "May 1 – Apr 27, 2026",
-    location: "California, USA",
-    description: "Off-grid solarpunk campus in the desert",
-    participants: "25-100 Martians",
-    focus: "Tech, Governance & AI",
-  },
-  {
-    id: "arc-montenegro",
-    name: "Ārc Montenegro",
-    logo: networkStateLogo,
-    center: LUSTICA_CENTER,
-    dates: "Coming 2026",
-    location: "Luštica Bay, Montenegro",
-    description: "Straight after EthCC. Two months.",
-    participants: "500-2500",
-    focus: "Crypto & Governance",
-  },
-  {
-    id: "ipe-village-ii",
-    name: "Ipê Village II",
-    logo: ipeVillageLogo,
-    center: SANTA_CATARINA_CENTER,
-    dates: "Apr 6 – May 1, 2026",
-    location: "Santa Catarina, Brazil",
-    description: "Brazil's first ever pop-up village",
-    participants: "100-500 builders",
-    focus: "Crypto & Governance",
-  },
-  {
-    id: "zuafrique-2",
-    name: "ZuAfrique 2.0",
-    logo: zuafriqueLogo,
-    center: KILIFI_CENTER,
-    dates: "Apr 12 – May 3, 2026",
-    location: "Kilifi, Kenya",
-    description: "Africa's largest onchain movement",
-    participants: "100-500 builders",
-    focus: "Crypto & Culture",
-  },
-  {
-    id: "edge-esmeralda",
-    name: "Edge Esmeralda",
-    logo: edgeCityLogo,
-    center: HEALDSBURG_CENTER,
-    dates: "May 30 – Jun 27, 2026",
-    location: "Healdsburg, CA",
-    description: "Prototyping new ways of living",
-    participants: "500-2500 innovators",
-    focus: "Culture, Science & Tech",
-  },
-  {
-    id: "edge-city-austin",
-    name: "Edge City Austin",
-    logo: edgeCityLogo,
-    center: AUSTIN_CENTER,
-    dates: "Mar 2 – 7, 2025",
-    location: "Austin, TX",
-    description: "Pop-up village during SXSW",
-    participants: "100-500 creators",
-    focus: "Culture & Technology",
-  },
-];
+// Default center (first village or fallback)
+const DEFAULT_CENTER: [number, number] = [108.1885, 10.9355];
 
 interface InteractiveMapProps {
   mapboxToken: string;
 }
 
 export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
-  const isMobile = useIsMobile();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const clusterMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const eventMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const commentMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const isMobile = useIsMobile();
 
-  const { spots, loading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
+  // Data hooks
+  const { villages, loading: villagesLoading } = useVillages();
+  const { spots, loading: spotsLoading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
+  
+  // State
+  const [activeVillage, setActiveVillage] = useState<Village | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
@@ -193,105 +52,27 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const isClusteredRef = useRef(false);
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const [activeVillage, setActiveVillage] = useState<PopupVillage>(POPUP_VILLAGES[0]);
-  const [isZoomedIn, setIsZoomedIn] = useState(true); // Start zoomed in since initial zoom is 15
+  const [isZoomedIn, setIsZoomedIn] = useState(true);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const [activeView, setActiveView] = useState<"map" | "events">("map");
-  const [selectedEventDate, setSelectedEventDate] = useState<Date>(new Date());
+  const [activeView, setActiveView] = useState<"map" | "residents" | "scenius">("map");
   
   // Comments for floating bubbles
   const [allComments, setAllComments] = useState<Comment[]>([]);
   
-  // Event pin selection mode
-  const [isSelectingEventPin, setIsSelectingEventPin] = useState(false);
-  const [pendingEventCoords, setPendingEventCoords] = useState<[number, number] | null>(null);
-  const eventPinMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  // Residents and Scenius for the active village
+  const { residents, loading: residentsLoading } = useResidents(activeVillage?.id);
+  const { projects, loading: projectsLoading } = useSceniusProjects(activeVillage?.id);
   
-  const { events, loading: eventsLoading, addEvent, deleteEvent } = useEvents();
-  
-  // Filter events by selected date
-  const filteredEvents = useMemo(() => {
-    return events.filter(event => {
-      const eventDate = startOfDay(new Date(event.start_time));
-      return isSameDay(eventDate, startOfDay(selectedEventDate));
-    });
-  }, [events, selectedEventDate]);
-  
-  // Handle event pin map click
-  const handleEventPinMapClick = useCallback((e: mapboxgl.MapMouseEvent) => {
-    if (!isSelectingEventPin || !map.current) return;
-    
-    const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-    setPendingEventCoords(coords);
-    setIsSelectingEventPin(false);
-    
-    // Remove click listener
-    map.current.off('click', handleEventPinMapClick);
-    
-    // Create a marker at the selected location
-    if (eventPinMarkerRef.current) {
-      eventPinMarkerRef.current.remove();
-    }
-    
-    const el = document.createElement("div");
-    el.innerHTML = `
-      <div style="
-        width: 32px;
-        height: 32px;
-        background: linear-gradient(135deg, hsl(142, 40%, 45%) 0%, hsl(142, 35%, 55%) 100%);
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="transform: rotate(45deg);">
-          <path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/>
-        </svg>
-      </div>
-    `;
-    
-    eventPinMarkerRef.current = new mapboxgl.Marker({ element: el })
-      .setLngLat(coords)
-      .addTo(map.current);
-    
-    toast.success("Pin placed! Return to the form to complete adding the event.");
-  }, [isSelectingEventPin]);
-  
-  // Set up event pin click listener
-  useEffect(() => {
-    if (!map.current || !mapReady) return;
-    
-    if (isSelectingEventPin) {
-      map.current.getCanvas().style.cursor = 'crosshair';
-      map.current.on('click', handleEventPinMapClick);
-    } else {
-      map.current.getCanvas().style.cursor = '';
-    }
-    
-    return () => {
-      if (map.current) {
-        map.current.off('click', handleEventPinMapClick);
-      }
-    };
-  }, [isSelectingEventPin, mapReady, handleEventPinMapClick]);
-  
-  const handleRequestEventPin = useCallback(() => {
-    setIsSelectingEventPin(true);
-  }, []);
-  
-  const handleClearEventCoords = useCallback(() => {
-    setPendingEventCoords(null);
-    if (eventPinMarkerRef.current) {
-      eventPinMarkerRef.current.remove();
-      eventPinMarkerRef.current = null;
-    }
-  }, []);
   const CLUSTER_ZOOM_THRESHOLD = 9;
+
+  // Set initial active village when villages load
+  useEffect(() => {
+    if (villages.length > 0 && !activeVillage) {
+      setActiveVillage(villages[0]);
+    }
+  }, [villages, activeVillage]);
 
   // Create/update the draggable selection marker
   useEffect(() => {
@@ -300,13 +81,11 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     const m = map.current;
 
     if (isSelectingLocation) {
-      // Remove existing marker first
       if (selectionMarkerRef.current) {
         selectionMarkerRef.current.remove();
         selectionMarkerRef.current = null;
       }
 
-      // Create a draggable marker at center of map
       const center = m.getCenter();
       const initialCoords: [number, number] = [center.lng, center.lat];
       setSelectionCoords(initialCoords);
@@ -340,7 +119,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
       selectionMarkerRef.current = marker;
     } else {
-      // Remove selection marker when not selecting
       if (selectionMarkerRef.current) {
         selectionMarkerRef.current.remove();
         selectionMarkerRef.current = null;
@@ -359,15 +137,18 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     };
   }, []);
 
+  // Initialize map
   useEffect(() => {
     if (map.current || !mapContainer.current || !mapboxToken) return;
 
     mapboxgl.accessToken = mapboxToken;
 
+    const initialCenter = activeVillage?.center || DEFAULT_CENTER;
+
     const m = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
-      center: MAP_CENTER,
+      center: initialCenter,
       zoom: 15,
       pitch: 20,
     });
@@ -376,7 +157,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
     m.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
 
-    // Set mapReady when style is loaded (handles both immediate and async cases)
     if (m.isStyleLoaded()) {
       setMapReady(true);
     } else {
@@ -398,25 +178,14 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     };
   }, [mapboxToken]);
 
-  // Calculate center point of all spots for cluster marker
-  const getSpotsCenterPoint = useCallback((): [number, number] => {
-    if (spots.length === 0) return MAP_CENTER;
-    
-    const sumLng = spots.reduce((sum, spot) => sum + spot.coordinates[0], 0);
-    const sumLat = spots.reduce((sum, spot) => sum + spot.coordinates[1], 0);
-    
-    return [sumLng / spots.length, sumLat / spots.length];
-  }, [spots]);
-
-  // Create cluster markers for all popup villages
+  // Create cluster markers for all villages
   const createClusterMarkers = useCallback(() => {
-    if (!map.current) return;
+    if (!map.current || villages.length === 0) return;
     
-    // Remove existing cluster markers
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
     
-    POPUP_VILLAGES.forEach((village) => {
+    villages.forEach((village) => {
       const el = document.createElement("div");
       el.className = "cluster-marker";
       el.innerHTML = `
@@ -431,31 +200,34 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           cursor: pointer;
           transition: all 0.3s ease;
         ">
-          <img src="${village.logo}" alt="${village.name}" style="width: 32px; height: 32px; border-radius: 4px;" />
-          <span style="
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 600;
-            color: #3d4a3f;
-            white-space: nowrap;
-          ">${village.name}</span>
+          <img 
+            src="${village.logo_url || '/placeholder.svg'}" 
+            alt="${village.name}" 
+            style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;"
+          />
+          <div style="display: flex; flex-direction: column; line-height: 1.2;">
+            <span style="font-weight: 600; font-size: 12px; color: #333;">${village.name}</span>
+            <span style="font-size: 10px; color: #666;">${village.location}</span>
+          </div>
         </div>
       `;
-      
+
       el.addEventListener("mouseenter", () => {
-        const container = el.firstChild as HTMLElement;
+        const container = el.firstElementChild as HTMLElement;
         if (container) {
           container.style.transform = "scale(1.05)";
+          container.style.boxShadow = "0 6px 20px rgba(0,0,0,0.2)";
         }
       });
-      
+
       el.addEventListener("mouseleave", () => {
-        const container = el.firstChild as HTMLElement;
+        const container = el.firstElementChild as HTMLElement;
         if (container) {
           container.style.transform = "scale(1)";
+          container.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
         }
       });
-      
+
       el.addEventListener("click", () => {
         setActiveVillage(village);
         map.current?.flyTo({
@@ -464,101 +236,54 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
           duration: 800,
         });
       });
-      
-      const marker = new mapboxgl.Marker({ element: el })
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat(village.center)
         .addTo(map.current!);
-      
+
       clusterMarkersRef.current.set(village.id, marker);
     });
-  }, []);
+  }, [villages]);
 
-  // Remove all cluster markers
+  // Remove cluster markers
   const removeClusterMarkers = useCallback(() => {
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
   }, []);
 
+  // Add spot markers
   const addMarkers = useCallback(() => {
     if (!map.current) return;
 
-    // Clear existing markers
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
     spotMarkersRef.current.clear();
-    
-    // Also remove cluster markers when re-adding markers
-    removeClusterMarkers();
-    isClusteredRef.current = false;
 
     const filteredSpots = selectedCategory
-      ? spots.filter((s) => s.category === selectedCategory)
+      ? spots.filter((spot) => spot.category === selectedCategory)
       : spots;
 
     filteredSpots.forEach((spot) => {
-      // Create custom marker element
+      const color = categoryColors[spot.category] || categoryColors.activity;
+
       const el = document.createElement("div");
-      el.className = "custom-marker";
-      
-      const hasImage = !!spot.image_url;
-      
-      // Thumbnail with category badge if image exists, otherwise just icon
-      el.innerHTML = hasImage ? `
+      el.className = "marker";
+      el.innerHTML = `
         <div class="marker-container" style="
-          position: relative;
-          width: 44px;
-          height: 44px;
-          cursor: ${isEditMode ? 'grab' : 'pointer'};
-          transition: all 0.3s ease;
-        ">
-          <div style="
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid ${isEditMode ? '#c45c3e' : '#faf8f5'};
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-          ">
-            <img src="${spot.image_url}" alt="${spot.name}" style="
-              width: 100%;
-              height: 100%;
-              object-fit: cover;
-            " />
-          </div>
-          <div style="
-            position: absolute;
-            bottom: -2px;
-            right: -2px;
-            width: 18px;
-            height: 18px;
-            background-color: ${categoryColors[spot.category]};
-            border: 2px solid #faf8f5;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-          ">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-              ${getIconPath(spot.category)}
-            </svg>
-          </div>
-        </div>
-      ` : `
-        <div class="marker-container" style="
-          width: 44px;
-          height: 44px;
-          background-color: ${categoryColors[spot.category]};
-          border: 3px solid ${isEditMode ? '#c45c3e' : '#faf8f5'};
-          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, ${color} 0%, ${color}cc 100%);
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: ${isEditMode ? 'grab' : 'pointer'};
           transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          border: 2px solid white;
         ">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="transform: rotate(45deg);">
             ${getIconPath(spot.category)}
           </svg>
         </div>
@@ -566,23 +291,18 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
       el.addEventListener("mouseenter", () => {
         const container = el.querySelector(".marker-container") as HTMLElement;
-        if (container) {
-          container.style.transform = "scale(1.15)";
-        }
+        if (container) container.style.transform = "rotate(-45deg) scale(1.15)";
       });
 
       el.addEventListener("mouseleave", () => {
         const container = el.querySelector(".marker-container") as HTMLElement;
-        if (container) {
-          container.style.transform = "scale(1)";
-        }
+        if (container) container.style.transform = "rotate(-45deg) scale(1)";
       });
 
       const marker = new mapboxgl.Marker({ element: el, draggable: isEditMode })
         .setLngLat(spot.coordinates)
         .addTo(map.current!);
 
-      // Handle drag end for edit mode
       if (isEditMode) {
         marker.on("dragend", async () => {
           const lngLat = marker.getLngLat();
@@ -597,9 +317,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       el.addEventListener("click", () => {
         if (!isEditMode) {
           setSelectedSpot(spot);
-          setIsZoomedIn(true); // Hide timeline when spot is clicked
-          // On mobile, offset the center upward to account for the SpotCard at the bottom
-          // SpotCard is approximately 350px tall on mobile
+          setIsZoomedIn(true);
           const bottomPadding = isMobile ? 350 : 0;
           map.current?.flyTo({
             center: spot.coordinates,
@@ -613,7 +331,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       markersRef.current.push(marker);
       spotMarkersRef.current.set(spot.id, marker);
     });
-  }, [selectedCategory, spots, isEditMode, updateSpotCoordinates]);
+  }, [selectedCategory, spots, isEditMode, updateSpotCoordinates, isMobile]);
 
   // Handle zoom-based clustering and view-based visibility
   const updateMarkersVisibility = useCallback(() => {
@@ -627,54 +345,29 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       setIsZoomedIn(!shouldCluster);
       
       if (shouldCluster) {
-        // Hide individual markers, show cluster markers, and clear selected spot
         setSelectedSpot(null);
         markersRef.current.forEach((marker) => {
-          const el = marker.getElement();
-          el.style.display = 'none';
+          marker.getElement().style.display = 'none';
         });
-        // Hide event markers when clustered
-        eventMarkersRef.current.forEach((marker) => {
-          const el = marker.getElement();
-          el.style.display = 'none';
-        });
-        // Hide comment bubbles when clustered
         commentMarkersRef.current.forEach((marker) => {
-          const el = marker.getElement();
-          el.style.display = 'none';
+          marker.getElement().style.display = 'none';
         });
         createClusterMarkers();
       } else {
-        // Show individual markers only if in map view, hide cluster markers
         markersRef.current.forEach((marker) => {
-          const el = marker.getElement();
-          el.style.display = activeView === "map" ? 'block' : 'none';
+          marker.getElement().style.display = activeView === "map" ? 'block' : 'none';
         });
-        // Show event markers only if in events view
-        eventMarkersRef.current.forEach((marker) => {
-          const el = marker.getElement();
-          el.style.display = activeView === "events" ? 'block' : 'none';
-        });
-        // Show comment bubbles only in map view
         commentMarkersRef.current.forEach((marker) => {
-          const el = marker.getElement();
-          el.style.display = activeView === "map" ? 'block' : 'none';
+          marker.getElement().style.display = activeView === "map" ? 'block' : 'none';
         });
         removeClusterMarkers();
       }
     } else if (!shouldCluster) {
-      // Update visibility based on view when not clustered
       markersRef.current.forEach((marker) => {
-        const el = marker.getElement();
-        el.style.display = activeView === "map" ? 'block' : 'none';
-      });
-      eventMarkersRef.current.forEach((marker) => {
-        const el = marker.getElement();
-        el.style.display = activeView === "events" ? 'block' : 'none';
+        marker.getElement().style.display = activeView === "map" ? 'block' : 'none';
       });
       commentMarkersRef.current.forEach((marker) => {
-        const el = marker.getElement();
-        el.style.display = activeView === "map" ? 'block' : 'none';
+        marker.getElement().style.display = activeView === "map" ? 'block' : 'none';
       });
     }
   }, [createClusterMarkers, removeClusterMarkers, activeView]);
@@ -701,105 +394,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     };
   }, [selectedCategory, spots, isEditMode, addMarkers, updateMarkersVisibility]);
 
-  // Add event markers for events with coordinates
-  const addEventMarkers = useCallback(() => {
-    if (!map.current || !mapReady) return;
-
-    // Remove existing event markers
-    eventMarkersRef.current.forEach((marker) => marker.remove());
-    eventMarkersRef.current.clear();
-
-    // Filter events with coordinates
-    const eventsWithCoords = events.filter(event => event.coordinates);
-
-    eventsWithCoords.forEach((event) => {
-      const coords = event.coordinates as [number, number];
-      
-      const el = document.createElement("div");
-      el.className = "event-marker";
-      el.innerHTML = `
-        <div class="marker-container" style="
-          width: 36px;
-          height: 36px;
-          background: linear-gradient(135deg, hsl(142, 40%, 45%) 0%, hsl(142, 35%, 55%) 100%);
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-          border: 2px solid white;
-        ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="transform: rotate(45deg);">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-        </div>
-      `;
-
-      el.addEventListener("mouseenter", () => {
-        const container = el.querySelector(".marker-container") as HTMLElement;
-        if (container) {
-          container.style.transform = "rotate(-45deg) scale(1.15)";
-        }
-      });
-
-      el.addEventListener("mouseleave", () => {
-        const container = el.querySelector(".marker-container") as HTMLElement;
-        if (container) {
-          container.style.transform = "rotate(-45deg) scale(1)";
-        }
-      });
-
-      // Create popup for event
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
-        .setHTML(`
-          <div style="padding: 8px; max-width: 200px;">
-            <strong style="font-size: 14px;">${event.name}</strong>
-            ${event.location ? `<p style="font-size: 12px; color: #666; margin: 4px 0 0;">${event.location}</p>` : ''}
-            <p style="font-size: 11px; color: #888; margin: 4px 0 0;">${format(new Date(event.start_time), 'MMM d, h:mm a')}</p>
-          </div>
-        `);
-
-      const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat(coords)
-        .setPopup(popup)
-        .addTo(map.current!);
-
-      el.addEventListener("click", () => {
-        // Select the date of this event
-        setSelectedEventDate(startOfDay(new Date(event.start_time)));
-        // Switch to events view
-        setActiveView("events");
-      });
-
-      eventMarkersRef.current.set(event.id, marker);
-    });
-  }, [events, mapReady]);
-
-  // Update event markers visibility based on active view
-  const updateEventMarkersVisibility = useCallback(() => {
-    const shouldShow = activeView === "events" && !isClusteredRef.current;
-    eventMarkersRef.current.forEach((marker) => {
-      const el = marker.getElement();
-      el.style.display = shouldShow ? 'block' : 'none';
-    });
-  }, [activeView]);
-
-  // Render event markers when events change
-  useEffect(() => {
-    addEventMarkers();
-  }, [addEventMarkers]);
-
-  // Update event markers visibility when view changes
-  useEffect(() => {
-    updateEventMarkersVisibility();
-  }, [updateEventMarkersVisibility, activeView]);
-
   // Fetch all comments for floating bubbles
   useEffect(() => {
     const fetchComments = async () => {
@@ -815,7 +409,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     
     fetchComments();
     
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('comments-map')
       .on(
@@ -845,39 +438,18 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const addCommentBubbles = useCallback(() => {
     if (!map.current || !mapReady) return;
 
-    // Remove existing comment markers
     commentMarkersRef.current.forEach((marker) => marker.remove());
     commentMarkersRef.current.clear();
 
-    // Filter spots based on selected category (same as spot markers)
-    const filteredSpots = selectedCategory
-      ? spots.filter((s) => s.category === selectedCategory)
-      : spots;
-
-    filteredSpots.forEach((spot) => {
+    spots.forEach((spot) => {
       const latestComment = latestCommentBySpot.get(spot.id);
       if (!latestComment) return;
 
+      if (selectedCategory && spot.category !== selectedCategory) return;
+
       const el = document.createElement("div");
-      el.className = "comment-bubble";
-      el.innerHTML = createFloatingCommentHTML(latestComment);
-      
-      // Add hover effect
-      el.addEventListener("mouseenter", () => {
-        const container = el.firstChild?.firstChild as HTMLElement;
-        if (container) {
-          container.style.transform = "scale(1.02)";
-          container.style.boxShadow = "0 4px 12px rgba(0,0,0,0.18)";
-        }
-      });
-      
-      el.addEventListener("mouseleave", () => {
-        const container = el.firstChild?.firstChild as HTMLElement;
-        if (container) {
-          container.style.transform = "scale(1)";
-          container.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)";
-        }
-      });
+      el.innerHTML = createFloatingCommentHTML(latestComment, isMobile);
+      el.style.pointerEvents = 'none';
 
       el.addEventListener("click", () => {
         setSelectedSpot(spot);
@@ -891,11 +463,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         });
       });
 
-      // Position bubble so its arrow tip touches the top of the pin (marker is 44px tall)
       const marker = new mapboxgl.Marker({ 
-        element: el,
+        element: el, 
         anchor: 'bottom',
-        offset: [0, -24]
+        offset: [isMobile ? 30 : 40, -25]
       })
         .setLngLat(spot.coordinates)
         .addTo(map.current!);
@@ -908,8 +479,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   const updateCommentBubblesVisibility = useCallback(() => {
     const shouldShow = activeView === "map" && !isClusteredRef.current;
     commentMarkersRef.current.forEach((marker) => {
-      const el = marker.getElement();
-      el.style.display = shouldShow ? 'block' : 'none';
+      marker.getElement().style.display = shouldShow ? 'block' : 'none';
     });
   }, [activeView]);
 
@@ -923,19 +493,14 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     updateCommentBubblesVisibility();
   }, [updateCommentBubblesVisibility, activeView]);
 
-  // Listen to zoom changes for clustering and view changes
+  // Listen to zoom changes
   useEffect(() => {
     if (!map.current || !mapReady) return;
     
     const m = map.current;
-    
-    const handleZoom = () => {
-      updateMarkersVisibility();
-    };
+    const handleZoom = () => updateMarkersVisibility();
     
     m.on("zoom", handleZoom);
-    
-    // Update visibility when view changes
     updateMarkersVisibility();
     
     return () => {
@@ -949,10 +514,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       setPendingCoordinates(null);
     }
     return result;
-  };
-
-  const handleSelectLocation = () => {
-    setIsSelectingLocation(true);
   };
 
   const handleConfirmLocation = () => {
@@ -969,23 +530,23 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
 
   const handleCloseSpot = () => {
     setSelectedSpot(null);
-    map.current?.flyTo({
-      center: MAP_CENTER,
-      zoom: 15,
-      duration: 800,
-    });
+    if (activeVillage) {
+      map.current?.flyTo({
+        center: activeVillage.center,
+        zoom: 15,
+        duration: 800,
+      });
+    }
   };
 
-  // Create/update user location marker
+  // User location marker
   const updateUserLocationMarker = useCallback((coords: [number, number]) => {
     if (!map.current) return;
 
-    // Remove existing marker
     if (userMarkerRef.current) {
       userMarkerRef.current.remove();
     }
 
-    // Create pulsing blue dot marker with high z-index
     const el = document.createElement("div");
     el.style.zIndex = "9999";
     el.innerHTML = `
@@ -1026,7 +587,6 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     userMarkerRef.current = marker;
   }, []);
 
-  // Get user location
   const handleGetUserLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser");
@@ -1041,127 +601,89 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       updateUserLocationMarker(coords);
       setIsLocating(false);
       
-      // Fly to user location
       map.current?.flyTo({
         center: coords,
         zoom: 15,
         duration: 1000,
       });
       
-      toast.success("Found your location!");
+      toast.success("Location found!");
     };
 
     const onError = (error: GeolocationPositionError) => {
-      // If high accuracy fails, try with low accuracy
-      if (error.code === error.POSITION_UNAVAILABLE) {
-        navigator.geolocation.getCurrentPosition(
-          onSuccess,
-          (fallbackError) => {
-            setIsLocating(false);
-            switch (fallbackError.code) {
-              case fallbackError.PERMISSION_DENIED:
-                toast.error("Location access denied. Please enable location permissions.");
-                break;
-              case fallbackError.POSITION_UNAVAILABLE:
-                toast.error("Location unavailable. Try opening in a new tab.");
-                break;
-              case fallbackError.TIMEOUT:
-                toast.error("Location request timed out.");
-                break;
-              default:
-                toast.error("Unable to get your location.");
-            }
-          },
-          { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 }
-        );
-        return;
-      }
-      
       setIsLocating(false);
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          toast.error("Location access denied. Please enable location permissions.");
-          break;
-        case error.TIMEOUT:
-          toast.error("Location request timed out.");
-          break;
-        default:
-          toast.error("Unable to get your location.");
-      }
+      console.error("Geolocation error:", error);
+      toast.error("Unable to get your location");
     };
 
-    navigator.geolocation.getCurrentPosition(
-      onSuccess,
-      onError,
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-    );
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    });
   }, [updateUserLocationMarker]);
 
-  // Watch user location for updates
-  useEffect(() => {
-    if (!navigator.geolocation || !userLocation) return;
+  // Convert villages to PopupTimeline format
+  const villagesForTimeline = useMemo(() => {
+    return villages.map(v => ({
+      id: v.id,
+      name: v.name,
+      logo: v.logo_url || '/placeholder.svg',
+      center: v.center,
+      dates: v.dates,
+      location: v.location,
+      description: v.description,
+      participants: v.participants || undefined,
+      focus: v.focus || undefined,
+    }));
+  }, [villages]);
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const coords: [number, number] = [position.coords.longitude, position.coords.latitude];
-        setUserLocation(coords);
-        updateUserLocationMarker(coords);
-      },
-      () => {},
-      { enableHighAccuracy: true, maximumAge: 10000 }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [userLocation, updateUserLocationMarker]);
-
-  // Cleanup user marker on unmount
-  useEffect(() => {
-    return () => {
-      if (userMarkerRef.current) {
-        userMarkerRef.current.remove();
-      }
+  const activeVillageForTimeline = useMemo(() => {
+    if (!activeVillage) return villagesForTimeline[0];
+    return {
+      id: activeVillage.id,
+      name: activeVillage.name,
+      logo: activeVillage.logo_url || '/placeholder.svg',
+      center: activeVillage.center,
+      dates: activeVillage.dates,
+      location: activeVillage.location,
+      description: activeVillage.description,
+      participants: activeVillage.participants || undefined,
+      focus: activeVillage.focus || undefined,
     };
-  }, []);
+  }, [activeVillage, villagesForTimeline]);
 
+  const loading = villagesLoading || spotsLoading;
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-lg">
-      {/* Map container */}
+    <div className="relative h-full w-full overflow-hidden" style={{ touchAction: 'manipulation', overscrollBehavior: 'contain' }}>
       <div ref={mapContainer} className="h-full w-full" />
-
-      {/* Loading overlay */}
+      
       {loading && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="font-body text-muted-foreground">Loading spots...</p>
+            <p className="font-body text-sm text-muted-foreground">Loading map...</p>
           </div>
         </div>
       )}
 
       {/* Location selection UI */}
-      {isSelectingLocation && (
-        <div className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 transform">
-          <div className="flex items-center gap-3 rounded-lg bg-card px-4 py-3 shadow-lg">
-            <p className="font-body text-sm text-foreground">
-              Drag the pin to select location
+      {isSelectingLocation && selectionCoords && (
+        <div className="absolute inset-x-0 top-4 z-30 flex justify-center px-4">
+          <div className="rounded-xl bg-card/95 p-4 shadow-lg backdrop-blur-sm">
+            <p className="mb-3 text-center text-sm font-medium text-foreground">
+              Drag the pin to set the spot location
             </p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCancelSelection}
-                className="gap-1"
-              >
+            <p className="mb-3 text-center text-xs text-muted-foreground">
+              {selectionCoords[1].toFixed(5)}, {selectionCoords[0].toFixed(5)}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button size="sm" variant="outline" onClick={handleCancelSelection} className="gap-1">
                 <X className="h-4 w-4" />
                 Cancel
               </Button>
-              <Button
-                size="sm"
-                variant="sage"
-                onClick={handleConfirmLocation}
-                className="gap-1"
-              >
+              <Button size="sm" variant="sage" onClick={handleConfirmLocation} className="gap-1">
                 <Check className="h-4 w-4" />
                 Confirm
               </Button>
@@ -1175,10 +697,10 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-2 sm:gap-4 pointer-events-auto w-fit max-w-[65%] sm:max-w-none">
             <div className="flex items-center gap-2 sm:gap-3">
-              {isZoomedIn ? (
+              {isZoomedIn && activeVillage ? (
                 <>
                   <img 
-                    src={activeVillage.logo} 
+                    src={activeVillage.logo_url || '/placeholder.svg'} 
                     alt={activeVillage.name} 
                     className="h-8 w-8 rounded sm:h-10 sm:w-10 md:h-12 md:w-12 shrink-0"
                   />
@@ -1219,28 +741,41 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             )}
           </div>
 
-          {/* Map / Events Toggle - right side */}
+          {/* Map / Residents / Scenius Toggle */}
           {isZoomedIn && (
             <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm pointer-events-auto mr-12 sm:mr-14">
               <button
                 onClick={() => setActiveView("map")}
-                className={`px-3 py-1 text-xs sm:px-4 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all ${
+                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                   activeView === "map"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Map
+                <MapPin className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Map</span>
               </button>
               <button
-                onClick={() => setActiveView("events")}
-                className={`px-3 py-1 text-xs sm:px-4 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all ${
-                  activeView === "events"
+                onClick={() => setActiveView("residents")}
+                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                  activeView === "residents"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Events
+                <Users className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Residents</span>
+              </button>
+              <button
+                onClick={() => setActiveView("scenius")}
+                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                  activeView === "scenius"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Scenius</span>
               </button>
             </div>
           )}
@@ -1269,113 +804,102 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         </div>
       )}
 
-      {/* Events view - shows when in events mode */}
-      {activeView === "events" && (
+      {/* Residents view */}
+      {activeView === "residents" && isZoomedIn && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-auto">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[40vh] sm:max-h-[50vh] flex flex-col">
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <div>
-                <h3 className="font-display text-lg font-semibold text-foreground">
-                  Events
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""} on {format(selectedEventDate, 'MMM d, yyyy')}
-                </p>
-              </div>
-              <AddEventForm 
-                onAddEvent={addEvent} 
-                villageId={activeVillage.id}
-                onRequestMapPin={handleRequestEventPin}
-                pendingCoordinates={pendingEventCoords}
-                onClearCoordinates={handleClearEventCoords}
-              />
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[50vh] sm:max-h-[60vh] flex flex-col">
+            <div className="p-4 border-b border-border">
+              <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Residents
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {residents.length} member{residents.length !== 1 ? "s" : ""} in this village
+              </p>
             </div>
-            <ScrollArea className="flex-1 p-4">
-              {eventsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredEvents.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    No events on this date
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Select another date or add a new event
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      onDelete={deleteEvent}
-                    />
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+            <div className="flex-1 overflow-hidden p-4">
+              <ResidentsList residents={residents} loading={residentsLoading} />
+            </div>
           </div>
         </div>
       )}
 
-      {/* Spots list sidebar */}
-      <div className="absolute bottom-28 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:bottom-32 md:block">
-        {/* Village info header */}
-        <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
-          {isZoomedIn ? (
-            <>
-              <img 
-                src={activeVillage.logo} 
-                alt={activeVillage.name} 
-                className="h-10 w-10 rounded"
-              />
+      {/* Scenius view */}
+      {activeView === "scenius" && isZoomedIn && (
+        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-auto">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm md:w-96 max-h-[50vh] sm:max-h-[60vh] flex flex-col">
+            <div className="p-4 border-b border-border">
+              <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Scenius
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {projects.length} project{projects.length !== 1 ? "s" : ""} being built
+              </p>
+            </div>
+            <div className="flex-1 overflow-hidden p-4">
+              <SceniusList projects={projects} loading={projectsLoading} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Village info sidebar - only show in map view */}
+      {activeView === "map" && (
+        <div className="absolute bottom-28 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:bottom-32 md:block">
+          <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
+            {isZoomedIn && activeVillage ? (
+              <>
+                <img 
+                  src={activeVillage.logo_url || '/placeholder.svg'} 
+                  alt={activeVillage.name} 
+                  className="h-10 w-10 rounded"
+                />
+                <div>
+                  <h3 className="font-display text-sm font-semibold text-foreground">
+                    {activeVillage.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{activeVillage.dates}</p>
+                  {activeVillage.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{activeVillage.description}</p>
+                  )}
+                </div>
+              </>
+            ) : (
               <div>
                 <h3 className="font-display text-sm font-semibold text-foreground">
-                  {activeVillage.name}
+                  Popup Villages
                 </h3>
-                <p className="text-xs text-muted-foreground">{activeVillage.dates}</p>
-                {activeVillage.description && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{activeVillage.description}</p>
-                )}
+                <p className="text-xs text-muted-foreground">Click on a village to explore</p>
               </div>
-            </>
-          ) : (
-            <div>
-              <h3 className="font-display text-sm font-semibold text-foreground">
-                Popup Villages
-              </h3>
-              <p className="text-xs text-muted-foreground">Click on a village to explore</p>
-            </div>
-          )}
-        </div>
-        
-        {/* Village details - only show when zoomed in */}
-        {isZoomedIn && (
-          <div className="mb-3 text-xs">
-            <p className="text-muted-foreground">Location</p>
-            <p className="font-medium text-foreground">{activeVillage.location} · World's famous kitesurf spot</p>
+            )}
           </div>
-        )}
-        
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          {activeVillage.participants && (
-            <div className="rounded-md bg-secondary/50 p-2">
-              <p className="text-muted-foreground">Participants</p>
-              <p className="font-medium text-foreground">{activeVillage.participants}</p>
+          
+          {isZoomedIn && activeVillage && (
+            <div className="mb-3 text-xs">
+              <p className="text-muted-foreground">Location</p>
+              <p className="font-medium text-foreground">{activeVillage.location}</p>
             </div>
           )}
-          {activeVillage.focus && (
-            <div className="rounded-md bg-secondary/50 p-2">
-              <p className="text-muted-foreground">Focus</p>
-              <p className="font-medium text-foreground">{activeVillage.focus}</p>
-            </div>
-          )}
+          
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {activeVillage?.participants && (
+              <div className="rounded-md bg-secondary/50 p-2">
+                <p className="text-muted-foreground">Participants</p>
+                <p className="font-medium text-foreground">{activeVillage.participants}</p>
+              </div>
+            )}
+            {activeVillage?.focus && (
+              <div className="rounded-md bg-secondary/50 p-2">
+                <p className="text-muted-foreground">Focus</p>
+                <p className="font-medium text-foreground">{activeVillage.focus}</p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Floating Action Buttons - bottom right */}
+      {/* Floating Action Buttons */}
       <div className="absolute bottom-24 right-3 z-20 flex flex-col gap-2 sm:bottom-20 sm:right-4 md:bottom-[88px] md:right-6">
         <Button
           variant="outline"
@@ -1391,7 +915,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
             <Navigation className="h-5 w-5" />
           )}
         </Button>
-        {!isEditMode && (
+        {activeView === "map" && !isEditMode && (
           <AddSpotForm
             onAddSpot={handleAddSpot}
             pendingCoordinates={pendingCoordinates}
@@ -1400,41 +924,22 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         )}
       </div>
 
-      {/* Event pin selection mode indicator */}
-      {isSelectingEventPin && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-sage-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          <span className="text-sm font-medium">Click on the map to set event location</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 text-white hover:bg-sage-700"
-            onClick={() => setIsSelectingEventPin(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
-      {/* Timeline - show PopupTimeline for map view, EventTimeline for events view */}
-      {activeView === "events" ? (
-        <EventTimeline
-          events={events}
-          selectedDate={selectedEventDate}
-          onDateSelect={setSelectedEventDate}
-        />
-      ) : (
+      {/* Timeline */}
+      {villagesForTimeline.length > 0 && activeVillageForTimeline && (
         <PopupTimeline
-          villages={POPUP_VILLAGES}
-          activeVillage={activeVillage}
+          villages={villagesForTimeline}
+          activeVillage={activeVillageForTimeline}
           isZoomedIn={isZoomedIn}
           onVillageClick={(village) => {
-            setActiveVillage(village);
-            map.current?.flyTo({
-              center: village.center,
-              zoom: 15,
-              duration: 800,
-            });
+            const fullVillage = villages.find(v => v.id === village.id);
+            if (fullVillage) {
+              setActiveVillage(fullVillage);
+              map.current?.flyTo({
+                center: fullVillage.center,
+                zoom: 15,
+                duration: 800,
+              });
+            }
           }}
         />
       )}
