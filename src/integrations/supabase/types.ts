@@ -447,12 +447,87 @@ export type Database = {
         }
         Relationships: []
       }
+      webauthn_challenges: {
+        Row: {
+          challenge: string
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          challenge: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          challenge?: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      webauthn_credentials: {
+        Row: {
+          backup_state: string | null
+          created_at: string
+          credential_id: string
+          device_type: string | null
+          friendly_name: string | null
+          id: string
+          last_used_at: string | null
+          public_key: string
+          sign_count: number
+          transports: string[] | null
+          user_id: string
+          user_verification_status: string | null
+        }
+        Insert: {
+          backup_state?: string | null
+          created_at?: string
+          credential_id: string
+          device_type?: string | null
+          friendly_name?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key: string
+          sign_count?: number
+          transports?: string[] | null
+          user_id: string
+          user_verification_status?: string | null
+        }
+        Update: {
+          backup_state?: string | null
+          created_at?: string
+          credential_id?: string
+          device_type?: string | null
+          friendly_name?: string | null
+          id?: string
+          last_used_at?: string | null
+          public_key?: string
+          sign_count?: number
+          transports?: string[] | null
+          user_id?: string
+          user_verification_status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
