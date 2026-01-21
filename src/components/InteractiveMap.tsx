@@ -334,17 +334,20 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
   }, [selectedCategory, spots, isEditMode, updateSpotCoordinates, isMobile]);
 
   // Handle zoom-based clustering and view-based visibility
+  // Local map elements (spot markers, comment bubbles) only show when zoomed into a village
   const updateMarkersVisibility = useCallback(() => {
     if (!map.current) return;
     
     const zoom = map.current.getZoom();
     const shouldCluster = zoom < CLUSTER_ZOOM_THRESHOLD;
+    const zoomedIn = !shouldCluster;
     
     if (shouldCluster !== isClusteredRef.current) {
       isClusteredRef.current = shouldCluster;
-      setIsZoomedIn(!shouldCluster);
+      setIsZoomedIn(zoomedIn);
       
       if (shouldCluster) {
+        // Global view: hide all local markers
         setSelectedSpot(null);
         markersRef.current.forEach((marker) => {
           marker.getElement().style.display = 'none';
@@ -354,20 +357,24 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
         });
         createClusterMarkers();
       } else {
+        // Village view: show markers only when on map tab
+        const shouldShowMarkers = activeView === "map" && zoomedIn;
         markersRef.current.forEach((marker) => {
-          marker.getElement().style.display = activeView === "map" ? 'block' : 'none';
+          marker.getElement().style.display = shouldShowMarkers ? 'block' : 'none';
         });
         commentMarkersRef.current.forEach((marker) => {
-          marker.getElement().style.display = activeView === "map" ? 'block' : 'none';
+          marker.getElement().style.display = shouldShowMarkers ? 'block' : 'none';
         });
         removeClusterMarkers();
       }
     } else if (!shouldCluster) {
+      // Already in village view, update visibility based on active tab
+      const shouldShowMarkers = activeView === "map" && zoomedIn;
       markersRef.current.forEach((marker) => {
-        marker.getElement().style.display = activeView === "map" ? 'block' : 'none';
+        marker.getElement().style.display = shouldShowMarkers ? 'block' : 'none';
       });
       commentMarkersRef.current.forEach((marker) => {
-        marker.getElement().style.display = activeView === "map" ? 'block' : 'none';
+        marker.getElement().style.display = shouldShowMarkers ? 'block' : 'none';
       });
     }
   }, [createClusterMarkers, removeClusterMarkers, activeView]);
