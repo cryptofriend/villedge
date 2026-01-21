@@ -475,23 +475,23 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
     });
   }, [spots, latestCommentBySpot, mapReady, isMobile, selectedCategory]);
 
-  // Update comment bubbles visibility
+  // Update comment bubbles visibility - only show when zoomed into a village (not in global clustered view)
   const updateCommentBubblesVisibility = useCallback(() => {
-    const shouldShow = activeView === "map" && !isClusteredRef.current;
+    const shouldShow = activeView === "map" && isZoomedIn && !isClusteredRef.current;
     commentMarkersRef.current.forEach((marker) => {
       marker.getElement().style.display = shouldShow ? 'block' : 'none';
     });
-  }, [activeView]);
+  }, [activeView, isZoomedIn]);
 
   // Render comment bubbles when data changes
   useEffect(() => {
     addCommentBubbles();
   }, [addCommentBubbles]);
 
-  // Update comment bubbles visibility
+  // Update comment bubbles visibility when view or zoom state changes
   useEffect(() => {
     updateCommentBubblesVisibility();
-  }, [updateCommentBubblesVisibility, activeView]);
+  }, [updateCommentBubblesVisibility, activeView, isZoomedIn]);
 
   // Listen to zoom changes
   useEffect(() => {
