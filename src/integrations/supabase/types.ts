@@ -56,56 +56,117 @@ export type Database = {
           },
         ]
       }
-      events: {
+      residents: {
         Row: {
-          coordinates: Json | null
+          avatar_url: string | null
+          bio: string | null
           created_at: string
-          description: string | null
-          end_time: string | null
-          host_avatar: string | null
-          host_name: string | null
+          github_url: string | null
           id: string
-          image_url: string | null
-          location: string | null
-          luma_url: string | null
+          interests: string[] | null
+          looking_for: string | null
           name: string
-          start_time: string
+          offering: string | null
+          skills: string[] | null
+          twitter_url: string | null
           updated_at: string
-          village_id: string | null
+          village_id: string
+          website_url: string | null
         }
         Insert: {
-          coordinates?: Json | null
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
-          description?: string | null
-          end_time?: string | null
-          host_avatar?: string | null
-          host_name?: string | null
+          github_url?: string | null
           id?: string
-          image_url?: string | null
-          location?: string | null
-          luma_url?: string | null
+          interests?: string[] | null
+          looking_for?: string | null
           name: string
-          start_time: string
+          offering?: string | null
+          skills?: string[] | null
+          twitter_url?: string | null
           updated_at?: string
-          village_id?: string | null
+          village_id: string
+          website_url?: string | null
         }
         Update: {
-          coordinates?: Json | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          github_url?: string | null
+          id?: string
+          interests?: string[] | null
+          looking_for?: string | null
+          name?: string
+          offering?: string | null
+          skills?: string[] | null
+          twitter_url?: string | null
+          updated_at?: string
+          village_id?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "residents_village_id_fkey"
+            columns: ["village_id"]
+            isOneToOne: false
+            referencedRelation: "villages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenius: {
+        Row: {
+          contributors: string[] | null
+          created_at: string
+          description: string | null
+          github_url: string | null
+          id: string
+          image_url: string | null
+          name: string
+          project_url: string | null
+          status: string | null
+          tags: string[] | null
+          updated_at: string
+          village_id: string
+        }
+        Insert: {
+          contributors?: string[] | null
           created_at?: string
           description?: string | null
-          end_time?: string | null
-          host_avatar?: string | null
-          host_name?: string | null
+          github_url?: string | null
           id?: string
           image_url?: string | null
-          location?: string | null
-          luma_url?: string | null
-          name?: string
-          start_time?: string
+          name: string
+          project_url?: string | null
+          status?: string | null
+          tags?: string[] | null
           updated_at?: string
-          village_id?: string | null
+          village_id: string
         }
-        Relationships: []
+        Update: {
+          contributors?: string[] | null
+          created_at?: string
+          description?: string | null
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          project_url?: string | null
+          status?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          village_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenius_village_id_fkey"
+            columns: ["village_id"]
+            isOneToOne: false
+            referencedRelation: "villages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       spots: {
         Row: {
@@ -119,6 +180,7 @@ export type Database = {
           name: string
           tags: string[] | null
           updated_at: string
+          village_id: string | null
         }
         Insert: {
           category: string
@@ -131,6 +193,7 @@ export type Database = {
           name: string
           tags?: string[] | null
           updated_at?: string
+          village_id?: string | null
         }
         Update: {
           category?: string
@@ -142,6 +205,60 @@ export type Database = {
           image_url?: string | null
           name?: string
           tags?: string[] | null
+          updated_at?: string
+          village_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spots_village_id_fkey"
+            columns: ["village_id"]
+            isOneToOne: false
+            referencedRelation: "villages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      villages: {
+        Row: {
+          center: Json
+          created_at: string
+          dates: string
+          description: string
+          focus: string | null
+          id: string
+          location: string
+          logo_url: string | null
+          luma_calendar_id: string | null
+          name: string
+          participants: string | null
+          updated_at: string
+        }
+        Insert: {
+          center: Json
+          created_at?: string
+          dates: string
+          description: string
+          focus?: string | null
+          id: string
+          location: string
+          logo_url?: string | null
+          luma_calendar_id?: string | null
+          name: string
+          participants?: string | null
+          updated_at?: string
+        }
+        Update: {
+          center?: Json
+          created_at?: string
+          dates?: string
+          description?: string
+          focus?: string | null
+          id?: string
+          location?: string
+          logo_url?: string | null
+          luma_calendar_id?: string | null
+          name?: string
+          participants?: string | null
           updated_at?: string
         }
         Relationships: []
