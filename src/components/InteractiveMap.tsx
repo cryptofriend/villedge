@@ -10,8 +10,9 @@ import { PopupTimeline } from "./PopupTimeline";
 import { StayCalendar } from "./stays/StayCalendar";
 import { SceniusList } from "./SceniusList";
 import { BulletinList } from "./BulletinList";
+import { EventsList } from "./events/EventsList";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { useVillages, Village } from "@/hooks/useVillages";
@@ -59,7 +60,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const [activeView, setActiveView] = useState<"map" | "residents" | "scenius" | "bulletin">("map");
+  const [activeView, setActiveView] = useState<"map" | "residents" | "scenius" | "bulletin" | "events">("map");
   
   // Comments for floating bubbles
   const [allComments, setAllComments] = useState<Comment[]>([]);
@@ -819,6 +820,17 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <MessageSquare className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Bulletin</span>
               </button>
+              <button
+                onClick={() => setActiveView("events")}
+                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                  activeView === "events"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Events</span>
+              </button>
             </div>
           )}
         </div>
@@ -890,6 +902,26 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
             </div>
             <div className="flex-1 overflow-hidden">
               <BulletinList villageId={activeVillage.id} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Events view */}
+      {activeView === "events" && isZoomedIn && activeVillage && (
+        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Events
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Drop a Luma link to add events
+              </p>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <EventsList villageId={activeVillage.id} />
             </div>
           </div>
         </div>
