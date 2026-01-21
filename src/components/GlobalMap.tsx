@@ -155,7 +155,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             <div className="flex items-center gap-3">
               <div>
                 <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
-                  Villedge Is
+                  Villedge
                 </h1>
                 <p className="mt-1 font-body text-xs text-muted-foreground sm:text-sm md:text-base">
                   Explore communities around the world
@@ -172,7 +172,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">
-              Villedge Is
+              Villedge
             </h3>
             <p className="text-xs text-muted-foreground">Click on a village to explore</p>
           </div>
