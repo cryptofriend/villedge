@@ -34,9 +34,9 @@ serve(async (req) => {
     console.log('Processing Luma URL:', luma_url);
 
     // Extract event slug from URL
-    // Formats: https://lu.ma/event-slug or https://lu.ma/event/evt-xxxx
+    // Formats: https://lu.ma/event-slug or https://lu.ma/event/evt-xxxx or https://luma.com/event-slug
     let eventSlug: string;
-    const urlMatch = luma_url.match(/lu\.ma\/(?:event\/)?([a-zA-Z0-9\-]+)/);
+    const urlMatch = luma_url.match(/(?:lu\.ma|luma\.com)\/(?:event\/)?([a-zA-Z0-9\-]+)/);
     
     if (!urlMatch) {
       return new Response(

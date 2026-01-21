@@ -29,10 +29,10 @@ export const EventsList = ({ villageId }: EventsListProps) => {
       return;
     }
 
-    if (!lumaUrl.includes("lu.ma")) {
+    if (!lumaUrl.includes("lu.ma") && !lumaUrl.includes("luma.com")) {
       toast({
         title: "Invalid URL",
-        description: "Please enter a valid Luma URL (lu.ma/...)",
+        description: "Please enter a valid Luma URL (lu.ma/... or luma.com/...)",
         variant: "destructive",
       });
       return;
@@ -87,7 +87,7 @@ export const EventsList = ({ villageId }: EventsListProps) => {
       <form onSubmit={handleSubmit} className="p-4 border-b border-border">
         <div className="flex gap-2">
           <Input
-            placeholder="Paste Luma event URL (lu.ma/...)"
+            placeholder="Paste Luma event URL"
             value={lumaUrl}
             onChange={(e) => setLumaUrl(e.target.value)}
             className="text-sm flex-1"
