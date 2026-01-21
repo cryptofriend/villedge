@@ -856,7 +856,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
               </p>
             </div>
             <div className="flex-1 overflow-hidden p-4">
-              <SceniusList projects={projects} loading={projectsLoading} />
+              <SceniusList projects={projects} loading={projectsLoading} villageId={activeVillage?.id} />
             </div>
           </div>
         </div>
