@@ -38,6 +38,35 @@ export type Database = {
         }
         Relationships: []
       }
+      bulletin_reactions: {
+        Row: {
+          bulletin_id: string
+          created_at: string
+          id: string
+          reaction_type: string
+        }
+        Insert: {
+          bulletin_id: string
+          created_at?: string
+          id?: string
+          reaction_type: string
+        }
+        Update: {
+          bulletin_id?: string
+          created_at?: string
+          id?: string
+          reaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulletin_reactions_bulletin_id_fkey"
+            columns: ["bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "bulletin"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           author_name: string
