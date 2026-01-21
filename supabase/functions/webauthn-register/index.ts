@@ -4,7 +4,6 @@ import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from "https://esm.sh/@simplewebauthn/server@10.0.0";
-import { encode as base64Encode, decode as base64Decode } from "https://deno.land/std@0.168.0/encoding/base64url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,6 +16,12 @@ const RP_NAME = "OurMap";
 const RP_ID = "ourmap.lovable.app";
 const ORIGIN = `https://${RP_ID}`;
 
+// Generate a hidden email from username
+function generateHiddenEmail(username: string): string {
+  const uniqueId = crypto.randomUUID().split('-')[0];
+  return `${username.toLowerCase()}-${uniqueId}@passkey.ourmap.local`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -25,24 +30,28 @@ serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    const { step, email, displayName, credential } = await req.json();
+    const { step, username, credential } = await req.json();
     
-    console.log(`WebAuthn Register - Step: ${step}, Email: ${email}`);
+    console.log(`WebAuthn Register - Step: ${step}, Username: ${username}`);
 
     if (step === "options") {
-      if (!email) {
+      if (!username) {
         return new Response(
-          JSON.stringify({ error: "Email is required" }),
+          JSON.stringify({ error: "Username is required" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const { data: existingUser } = await supabase.auth.admin.listUsers();
-      const userExists = existingUser?.users?.find((u: { email?: string }) => u.email === email);
+      // Check if username already exists in credentials
+      const { data: existingCredential } = await supabase
+        .from("webauthn_credentials")
+        .select("id")
+        .eq("username", username.toLowerCase())
+        .single();
       
-      if (userExists) {
+      if (existingCredential) {
         return new Response(
-          JSON.stringify({ error: "An account with this email already exists. Please sign in instead." }),
+          JSON.stringify({ error: "This username is already taken. Please choose another or sign in." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -53,8 +62,8 @@ serve(async (req) => {
         rpName: RP_NAME,
         rpID: RP_ID,
         userID: new TextEncoder().encode(userId),
-        userName: email,
-        userDisplayName: displayName || email,
+        userName: username,
+        userDisplayName: username,
         attestationType: "none",
         authenticatorSelection: {
           residentKey: "preferred",
@@ -64,12 +73,12 @@ serve(async (req) => {
         supportedAlgorithmIDs: [-7, -257],
       });
 
-      // Store challenge
+      // Store challenge with username
       const { error: challengeError } = await supabase
         .from("webauthn_challenges")
         .insert({
           challenge: options.challenge,
-          email: email,
+          email: username.toLowerCase(), // Reuse email field for username lookup
           type: "registration",
         });
 
@@ -81,27 +90,27 @@ serve(async (req) => {
         );
       }
 
-      console.log("Registration options generated for:", email);
+      console.log("Registration options generated for:", username);
 
       return new Response(
-        JSON.stringify({ options, userId, email }),
+        JSON.stringify({ options, userId, username }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (step === "verify") {
-      if (!credential || !email) {
+      if (!credential || !username) {
         return new Response(
-          JSON.stringify({ error: "Credential and email are required" }),
+          JSON.stringify({ error: "Credential and username are required" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Get the stored challenge
+      // Get the stored challenge (using email field for username)
       const { data: challengeData, error: challengeError } = await supabase
         .from("webauthn_challenges")
         .select("*")
-        .eq("email", email)
+        .eq("email", username.toLowerCase())
         .eq("type", "registration")
         .order("created_at", { ascending: false })
         .limit(1)
@@ -115,7 +124,7 @@ serve(async (req) => {
         );
       }
 
-      console.log("Verifying registration for:", email);
+      console.log("Verifying registration for:", username);
 
       // Verify the registration response
       const verification = await verifyRegistrationResponse({
@@ -134,14 +143,18 @@ serve(async (req) => {
         );
       }
 
-      // Create the user in Supabase Auth
+      // Generate a hidden email for Supabase Auth
+      const hiddenEmail = generateHiddenEmail(username);
+
+      // Create the user in Supabase Auth with hidden email
       const password = crypto.randomUUID() + crypto.randomUUID();
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: email,
+        email: hiddenEmail,
         password: password,
         email_confirm: true,
         user_metadata: {
-          display_name: displayName || email,
+          display_name: username,
+          username: username.toLowerCase(),
           auth_method: "passkey",
         },
       });
@@ -169,7 +182,7 @@ serve(async (req) => {
             return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
           })();
 
-      // Store the credential
+      // Store the credential with username
       const { error: credentialError } = await supabase
         .from("webauthn_credentials")
         .insert({
@@ -182,6 +195,7 @@ serve(async (req) => {
           user_verification_status: "verified",
           transports: credential.response?.transports || [],
           friendly_name: "Passkey",
+          username: username.toLowerCase(),
         });
 
       if (credentialError) {
@@ -202,7 +216,7 @@ serve(async (req) => {
       // Generate a magic link for the user
       const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
         type: "magiclink",
-        email: email,
+        email: hiddenEmail,
       });
 
       if (sessionError) {
@@ -213,7 +227,7 @@ serve(async (req) => {
         );
       }
 
-      console.log("Registration successful for:", email);
+      console.log("Registration successful for:", username);
 
       return new Response(
         JSON.stringify({
