@@ -147,7 +147,7 @@ export const EmbedMap = ({ mapboxToken }: EmbedMapProps) => {
       <div className="absolute left-0 right-0 top-0 z-10 bg-gradient-to-b from-background/95 to-transparent p-3 pb-8">
         <div className="flex items-center justify-between gap-2">
           <h1 className="font-display text-base font-semibold text-foreground">
-            Popup Village
+            Villedge Is
           </h1>
           <a
             href={window.location.origin}
