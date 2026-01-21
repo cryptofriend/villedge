@@ -28,10 +28,10 @@ export const useBulletin = (villageId: string) => {
   });
 
   const addMessage = useMutation({
-    mutationFn: async ({ author_name, message }: { author_name: string; message: string }) => {
+    mutationFn: async ({ message }: { message: string }) => {
       const { data, error } = await supabase
         .from("bulletin")
-        .insert({ village_id: villageId, author_name, message })
+        .insert({ village_id: villageId, author_name: "Anonymous", message })
         .select()
         .single();
 
