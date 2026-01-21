@@ -16,6 +16,8 @@ export interface Stay {
   secret_hash: string;
   is_host: boolean;
   created_at: string;
+  project_description: string | null;
+  project_url: string | null;
 }
 
 export interface StayInput {
