@@ -491,6 +491,7 @@ export type Database = {
           transports: string[] | null
           user_id: string
           user_verification_status: string | null
+          username: string | null
         }
         Insert: {
           backup_state?: string | null
@@ -505,6 +506,7 @@ export type Database = {
           transports?: string[] | null
           user_id: string
           user_verification_status?: string | null
+          username?: string | null
         }
         Update: {
           backup_state?: string | null
@@ -519,6 +521,7 @@ export type Database = {
           transports?: string[] | null
           user_id?: string
           user_verification_status?: string | null
+          username?: string | null
         }
         Relationships: []
       }

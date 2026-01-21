@@ -24,35 +24,24 @@ serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    const { step, email, credential } = await req.json();
+    const { step, username, credential } = await req.json();
 
-    console.log(`WebAuthn Authenticate - Step: ${step}, Email: ${email || "discoverable"}`);
+    console.log(`WebAuthn Authenticate - Step: ${step}, Username: ${username || "discoverable"}`);
 
     if (step === "options") {
       // deno-lint-ignore no-explicit-any
       let allowCredentials: any[] = [];
 
-      // If email is provided, get user's credentials
-      if (email) {
-        const { data: users } = await supabase.auth.admin.listUsers();
-        // deno-lint-ignore no-explicit-any
-        const user = users?.users?.find((u: any) => u.email === email);
-
-        if (!user) {
-          return new Response(
-            JSON.stringify({ error: "No account found with this email" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
+      // If username is provided, get user's credentials
+      if (username) {
         const { data: credentials } = await supabase
           .from("webauthn_credentials")
-          .select("credential_id, transports")
-          .eq("user_id", user.id);
+          .select("credential_id, transports, user_id")
+          .eq("username", username.toLowerCase());
 
         if (!credentials || credentials.length === 0) {
           return new Response(
-            JSON.stringify({ error: "No passkey found for this account. Please sign up first." }),
+            JSON.stringify({ error: "No account found with this username. Please sign up first." }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -70,12 +59,12 @@ serve(async (req) => {
         allowCredentials: allowCredentials.length > 0 ? allowCredentials : undefined,
       });
 
-      // Store challenge
+      // Store challenge (using email field for username lookup)
       const { error: challengeError } = await supabase
         .from("webauthn_challenges")
         .insert({
           challenge: options.challenge,
-          email: email || null,
+          email: username ? username.toLowerCase() : null,
           type: "authentication",
         });
 
@@ -178,7 +167,7 @@ serve(async (req) => {
         .delete()
         .eq("id", challengeData.id);
 
-      // Get user email
+      // Get user data
       const { data: userData } = await supabase.auth.admin.getUserById(storedCredential.user_id);
       
       if (!userData.user) {
@@ -188,7 +177,7 @@ serve(async (req) => {
         );
       }
 
-      // Generate a magic link
+      // Generate a magic link using the user's hidden email
       const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
         type: "magiclink",
         email: userData.user.email!,
@@ -202,7 +191,7 @@ serve(async (req) => {
         );
       }
 
-      console.log("Authentication successful for:", userData.user.email);
+      console.log("Authentication successful for username:", storedCredential.username);
 
       return new Response(
         JSON.stringify({
