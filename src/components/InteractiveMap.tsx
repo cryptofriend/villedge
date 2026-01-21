@@ -793,7 +793,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 }`}
               >
                 <CalendarDays className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Stays</span>
+                <span className="hidden sm:inline">Residents</span>
               </button>
               <button
                 onClick={() => setActiveView("scenius")}

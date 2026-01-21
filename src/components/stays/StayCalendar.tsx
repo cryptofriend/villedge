@@ -17,10 +17,10 @@ export const StayCalendar = ({ villageId }: StayCalendarProps) => {
         <div>
           <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
-            Stay Calendar
+            Residents
           </h3>
           <p className="text-xs text-muted-foreground">
-            {stays.length} {stays.length === 1 ? "stay" : "stays"} recorded
+            {stays.length} {stays.length === 1 ? "resident" : "residents"} registered
           </p>
         </div>
         <AddStayForm villageId={villageId} onAddStay={addStay} />
