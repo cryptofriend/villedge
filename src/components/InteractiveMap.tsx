@@ -448,7 +448,7 @@ export const InteractiveMap = ({ mapboxToken }: InteractiveMapProps) => {
       if (selectedCategory && spot.category !== selectedCategory) return;
 
       const el = document.createElement("div");
-      el.innerHTML = createFloatingCommentHTML(latestComment, isMobile);
+      el.innerHTML = createFloatingCommentHTML(latestComment);
       el.style.pointerEvents = 'none';
 
       el.addEventListener("click", () => {
