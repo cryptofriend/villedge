@@ -13,11 +13,13 @@ import { OccupancyChart } from "./OccupancyChart";
 import { Button } from "@/components/ui/button";
 import { CalendarCheck, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getBestAvatar } from "@/lib/avatar";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface StayGanttTimelineProps {
   stays: Stay[];
@@ -216,21 +218,27 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
           
           {/* Names */}
           <div className="overflow-y-auto">
-            {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => (
-              <div
-                key={nickname}
-                className="h-10 flex items-center px-2 border-b border-border text-sm font-medium truncate"
-                title={nickname}
-              >
-                <span
-                  className={cn(
-                    "w-2 h-2 rounded-full mr-2 flex-shrink-0",
-                    getColorForNickname(nickname)
-                  )}
-                />
-                {nickname}
-              </div>
-            ))}
+            {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+              const firstStay = personStays[0];
+              const avatarUrl = getBestAvatar(nickname, firstStay?.social_profile || null, 32);
+              
+              return (
+                <div
+                  key={nickname}
+                  className="h-10 flex items-center gap-2 px-2 border-b border-border text-sm font-medium"
+                >
+                  <Avatar className="w-6 h-6 flex-shrink-0">
+                    <AvatarImage src={avatarUrl} alt={nickname} />
+                    <AvatarFallback className="text-[10px]">
+                      {nickname.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="truncate" title={nickname}>
+                    {nickname}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           {/* Resize Handle */}

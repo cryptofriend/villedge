@@ -1,8 +1,10 @@
 import { SceniusProject } from "@/hooks/useSceniusProjects";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Github, ExternalLink, Loader2, User } from "lucide-react";
+import { Github, ExternalLink, Loader2 } from "lucide-react";
 import { useStays } from "@/hooks/useStays";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { getBestAvatar } from "@/lib/avatar";
 
 interface SceniusListProps {
   projects: SceniusProject[];
@@ -49,36 +51,43 @@ export const SceniusList = ({ projects, loading, villageId }: SceniusListProps) 
     <ScrollArea className="h-[calc(100vh-280px)]">
       <div className="space-y-3 p-1">
         {/* Resident Projects - simple line items */}
-        {residentProjects.map((stay) => (
-          <div
-            key={stay.id}
-            className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted/80 transition-colors"
-          >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 shrink-0">
-              <User className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-foreground">{stay.nickname}</span>
-                <span className="text-muted-foreground">—</span>
-                <span className="text-sm text-muted-foreground truncate">
-                  {stay.project_description}
-                </span>
+        {residentProjects.map((stay) => {
+          const avatarUrl = getBestAvatar(stay.nickname, stay.social_profile, 40);
+          
+          return (
+            <div
+              key={stay.id}
+              className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted/80 transition-colors"
+            >
+              <Avatar className="w-9 h-9 flex-shrink-0">
+                <AvatarImage src={avatarUrl} alt={stay.nickname} />
+                <AvatarFallback className="text-xs">
+                  {stay.nickname.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-foreground">{stay.nickname}</span>
+                  <span className="text-muted-foreground">—</span>
+                  <span className="text-sm text-muted-foreground truncate">
+                    {stay.project_description}
+                  </span>
+                </div>
               </div>
+              {stay.project_url && (
+                <a
+                  href={stay.project_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 flex items-center gap-1 px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 transition-colors text-xs text-primary"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  <span className="hidden sm:inline">View</span>
+                </a>
+              )}
             </div>
-            {stay.project_url && (
-              <a
-                href={stay.project_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 transition-colors text-xs text-primary"
-              >
-                <ExternalLink className="h-3 w-3" />
-                <span className="hidden sm:inline">View</span>
-              </a>
-            )}
-          </div>
-        ))}
+          );
+        })}
 
         {/* Scenius Projects - full cards */}
         {projects.map((project) => (
