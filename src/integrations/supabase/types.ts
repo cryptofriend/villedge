@@ -109,6 +109,48 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_time: string | null
+          id: string
+          image_url: string | null
+          location: string | null
+          luma_id: string | null
+          luma_url: string
+          start_time: string
+          title: string
+          village_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          luma_id?: string | null
+          luma_url: string
+          start_time: string
+          title: string
+          village_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          luma_id?: string | null
+          luma_url?: string
+          start_time?: string
+          title?: string
+          village_id?: string
+        }
+        Relationships: []
+      }
       residents: {
         Row: {
           avatar_url: string | null
