@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      bulletin: {
+        Row: {
+          author_name: string
+          created_at: string
+          id: string
+          message: string
+          village_id: string
+        }
+        Insert: {
+          author_name: string
+          created_at?: string
+          id?: string
+          message: string
+          village_id: string
+        }
+        Update: {
+          author_name?: string
+          created_at?: string
+          id?: string
+          message?: string
+          village_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           author_name: string
