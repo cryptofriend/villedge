@@ -7,22 +7,27 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Fingerprint, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { Fingerprint, Mail, User, Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import { startRegistration, startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
+import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.string().email('Please enter a valid email address');
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 const displayNameSchema = z.string().min(2, 'Display name must be at least 2 characters').optional();
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading } = useAuth();
   
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; displayName?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; displayName?: string }>({});
+  const [supportsPasskey, setSupportsPasskey] = useState(false);
+
+  useEffect(() => {
+    setSupportsPasskey(browserSupportsWebAuthn());
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -39,11 +44,6 @@ export default function Auth() {
       newErrors.email = emailResult.error.errors[0].message;
     }
     
-    const passwordResult = passwordSchema.safeParse(password);
-    if (!passwordResult.success) {
-      newErrors.password = passwordResult.error.errors[0].message;
-    }
-    
     if (isSignUp && displayName) {
       const displayNameResult = displayNameSchema.safeParse(displayName);
       if (!displayNameResult.success) {
@@ -55,43 +55,127 @@ export default function Auth() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handlePasskeySignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!supportsPasskey) {
+      toast.error('Your browser does not support passkeys');
+      return;
+    }
+    
     if (!validateForm(false)) return;
     
     setIsSubmitting(true);
-    const { error } = await signIn(email, password);
-    setIsSubmitting(false);
     
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password');
-      } else {
-        toast.error(error.message);
+    try {
+      // Get authentication options from our edge function
+      const { data: optionsData, error: optionsError } = await supabase.functions.invoke('webauthn-authenticate', {
+        body: { step: 'options', email }
+      });
+
+      if (optionsError || optionsData?.error) {
+        throw new Error(optionsData?.error || optionsError?.message || 'Failed to get authentication options');
       }
-    } else {
-      toast.success('Signed in successfully!');
-      navigate('/');
+
+      // Start the WebAuthn authentication
+      const authResponse = await startAuthentication(optionsData.options);
+
+      // Verify with our edge function
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('webauthn-authenticate', {
+        body: { step: 'verify', email, credential: authResponse }
+      });
+
+      if (verifyError || verifyData?.error) {
+        throw new Error(verifyData?.error || verifyError?.message || 'Authentication failed');
+      }
+
+      if (verifyData.verified && verifyData.actionLink) {
+        // Use the magic link to create a session
+        const url = new URL(verifyData.actionLink);
+        const token = url.searchParams.get('token');
+        const type = url.searchParams.get('type');
+        
+        if (token && type) {
+          const { error: sessionError } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: type as 'magiclink'
+          });
+          
+          if (sessionError) {
+            throw sessionError;
+          }
+        }
+        
+        toast.success('Signed in successfully!');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Passkey sign-in error:', error);
+      toast.error(error instanceof Error ? error.message : 'Authentication failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handlePasskeySignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!supportsPasskey) {
+      toast.error('Your browser does not support passkeys');
+      return;
+    }
+    
     if (!validateForm(true)) return;
     
     setIsSubmitting(true);
-    const { error, data } = await signUp(email, password, displayName || undefined);
-    setIsSubmitting(false);
     
-    if (error) {
-      if (error.message.includes('already registered')) {
-        toast.error('An account with this email already exists. Please sign in instead.');
-      } else {
-        toast.error(error.message);
+    try {
+      // Get registration options from our edge function
+      const { data: optionsData, error: optionsError } = await supabase.functions.invoke('webauthn-register', {
+        body: { step: 'options', email, displayName: displayName || email }
+      });
+
+      if (optionsError || optionsData?.error) {
+        throw new Error(optionsData?.error || optionsError?.message || 'Failed to get registration options');
       }
-    } else if (data.user) {
-      toast.success('Account created successfully!');
-      navigate('/');
+
+      // Start the WebAuthn registration
+      const regResponse = await startRegistration(optionsData.options);
+
+      // Verify with our edge function
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('webauthn-register', {
+        body: { step: 'verify', email, displayName: displayName || email, credential: regResponse }
+      });
+
+      if (verifyError || verifyData?.error) {
+        throw new Error(verifyData?.error || verifyError?.message || 'Registration failed');
+      }
+
+      if (verifyData.verified && verifyData.actionLink) {
+        // Use the magic link to create a session
+        const url = new URL(verifyData.actionLink);
+        const token = url.searchParams.get('token');
+        const type = url.searchParams.get('type');
+        
+        if (token && type) {
+          const { error: sessionError } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: type as 'magiclink'
+          });
+          
+          if (sessionError) {
+            throw sessionError;
+          }
+        }
+        
+        toast.success('Account created successfully!');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Passkey sign-up error:', error);
+      toast.error(error instanceof Error ? error.message : 'Registration failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,6 +183,24 @@ export default function Auth() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!supportsPasskey) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
+        <Card className="w-full max-w-md shadow-xl border-border/50">
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+              <Fingerprint className="h-6 w-6 text-destructive" />
+            </div>
+            <CardTitle className="text-2xl font-display">Passkeys Not Supported</CardTitle>
+            <CardDescription>
+              Your browser doesn't support passkeys (WebAuthn). Please use a modern browser like Chrome, Safari, or Firefox to sign in with biometrics.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
@@ -111,7 +213,7 @@ export default function Auth() {
             <Fingerprint className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl font-display">Welcome to OurMap</CardTitle>
-          <CardDescription>Sign in or create an account to add content</CardDescription>
+          <CardDescription>Sign in with your passkey or create an account using biometrics</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="space-y-4">
@@ -121,7 +223,7 @@ export default function Auth() {
             </TabsList>
             
             <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
+              <form onSubmit={handlePasskeySignIn} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signin-email">Email</Label>
                   <div className="relative">
@@ -138,37 +240,28 @@ export default function Auth() {
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Authenticating...
                     </>
                   ) : (
-                    'Sign In'
+                    <>
+                      <Fingerprint className="h-4 w-4" />
+                      Sign In with Passkey
+                    </>
                   )}
                 </Button>
+                
+                <p className="text-xs text-muted-foreground text-center">
+                  Use Face ID, Touch ID, or Windows Hello to sign in
+                </p>
               </form>
             </TabsContent>
             
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
+              <form onSubmit={handlePasskeySignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Display Name</Label>
                   <div className="relative">
@@ -201,32 +294,23 @@ export default function Auth() {
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating passkey...
                     </>
                   ) : (
-                    'Create Account'
+                    <>
+                      <Fingerprint className="h-4 w-4" />
+                      Create Account with Passkey
+                    </>
                   )}
                 </Button>
+                
+                <p className="text-xs text-muted-foreground text-center">
+                  Set up Face ID, Touch ID, or Windows Hello for passwordless login
+                </p>
               </form>
             </TabsContent>
           </Tabs>
