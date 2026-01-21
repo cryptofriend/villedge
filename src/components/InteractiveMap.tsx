@@ -12,6 +12,7 @@ import { SceniusList } from "./SceniusList";
 import { BulletinList } from "./BulletinList";
 import { EventsList } from "./events/EventsList";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
+import { AuthButton } from "./AuthButton";
 import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
@@ -810,11 +811,12 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
             )}
           </div>
 
-          {/* Map / Residents / Scenius Toggle */}
+          {/* Map / Residents / Scenius Toggle + Auth */}
           {isZoomedIn && (
-            <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm pointer-events-auto mr-12 sm:mr-14">
-              <button
-                onClick={() => setActiveView("map")}
+            <div className="flex items-center gap-2 pointer-events-auto">
+              <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm">
+                <button
+                  onClick={() => setActiveView("map")}
                 className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                   activeView === "map"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -868,6 +870,8 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <Calendar className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Events</span>
               </button>
+              </div>
+              <AuthButton />
             </div>
           )}
         </div>
