@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -15,11 +8,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, CalendarIcon, MapPin, Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, MapPin, CalendarIcon, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface AddVillageFormProps {
   onVillageAdded?: () => void;
@@ -28,60 +24,71 @@ interface AddVillageFormProps {
 export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isResolvingLocation, setIsResolvingLocation] = useState(false);
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+  const [locationName, setLocationName] = useState("");
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
 
-  const generateSlug = (text: string) => {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .trim();
-  };
-
-  const resolveLocation = async (locationText: string) => {
-    if (!locationText.trim()) return;
+  const resolveGoogleMapsUrl = async (url: string) => {
+    if (!url.trim()) return;
     
-    setIsResolvingLocation(true);
+    setIsResolving(true);
+    
     try {
-      const { data, error } = await supabase.functions.invoke("resolve-google-maps", {
-        body: { query: locationText },
+      const { data, error } = await supabase.functions.invoke('resolve-google-maps', {
+        body: { url: url.trim() },
       });
 
       if (error) throw error;
 
-      if (data?.coordinates) {
-        setCoordinates([data.coordinates.lng, data.coordinates.lat]);
-        if (data.formattedAddress) {
-          setLocation(data.formattedAddress);
+      if (data.success && data.data) {
+        const place = data.data;
+        if (place.coordinates) {
+          setCoordinates(place.coordinates);
         }
-        toast.success("Location found!");
+        if (place.name) {
+          setLocationName(place.name);
+        }
+        toast.success("Location extracted successfully!");
       } else {
-        toast.error("Couldn't find that location");
+        toast.error(data.error || "Could not extract location from URL");
       }
     } catch (err) {
-      console.error("Error resolving location:", err);
-      toast.error("Failed to resolve location");
+      console.error("Error resolving URL:", err);
+      toast.error("Failed to resolve Google Maps URL");
     } finally {
-      setIsResolvingLocation(false);
+      setIsResolving(false);
+    }
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setGoogleMapsUrl(url);
+    
+    // Auto-resolve when a Google Maps URL is pasted
+    if (url.includes('google.com/maps') || url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps')) {
+      resolveGoogleMapsUrl(url);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !location.trim() || !startDate || !endDate) {
-      toast.error("Please fill in all required fields");
+    if (!name.trim()) {
+      toast.error("Please enter a village name");
       return;
     }
 
     if (!coordinates) {
-      toast.error("Please search for a valid location");
+      toast.error("Please paste a valid Google Maps link");
+      return;
+    }
+
+    if (!startDate || !endDate) {
+      toast.error("Please select start and end dates");
       return;
     }
 
@@ -91,120 +98,110 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     }
 
     setIsSubmitting(true);
-    try {
-      const id = generateSlug(name);
-      const dates = `${format(startDate, "MMM d")} - ${format(endDate, "MMM d, yyyy")}`;
 
-      const { error } = await supabase.from("villages").insert({
-        id,
-        name: name.trim(),
-        location: location.trim(),
-        center: coordinates,
-        dates,
-        description: `A village community in ${location}`,
-      });
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const dates = `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`;
 
-      if (error) throw error;
+    const { error } = await supabase.from('villages').insert({
+      id: slug,
+      name: name.trim(),
+      location: locationName || "Location",
+      center: coordinates,
+      dates,
+      description: `Welcome to ${name.trim()}`,
+    });
 
-      toast.success("Village created!");
-      setOpen(false);
-      resetForm();
-      onVillageAdded?.();
-    } catch (err: any) {
-      console.error("Error creating village:", err);
-      if (err.code === "23505") {
+    setIsSubmitting(false);
+
+    if (error) {
+      if (error.code === '23505') {
         toast.error("A village with this name already exists");
       } else {
         toast.error("Failed to create village");
+        console.error(error);
       }
-    } finally {
-      setIsSubmitting(false);
+      return;
     }
-  };
 
-  const resetForm = () => {
+    toast.success(`${name} created successfully!`);
+    
+    // Reset form
     setName("");
-    setLocation("");
+    setGoogleMapsUrl("");
+    setLocationName("");
+    setCoordinates(null);
     setStartDate(undefined);
     setEndDate(undefined);
-    setCoordinates(null);
+    setOpen(false);
+    
+    onVillageAdded?.();
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full shadow-md">
-          <Plus className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Plus className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display">Create a Village</DialogTitle>
+          <DialogTitle className="font-display text-xl">Create New Village</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Village Name</Label>
+            <Label htmlFor="name">Village Name *</Label>
             <Input
               id="name"
+              placeholder="e.g., Zuzalu Montenegro"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Proof of Retreat"
-              required
+              maxLength={100}
             />
           </div>
 
-          {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Search city or place..."
-                  className="pl-9"
-                  required
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => resolveLocation(location)}
-                disabled={isResolvingLocation || !location.trim()}
-              >
-                {isResolvingLocation ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Search"
-                )}
-              </Button>
+            <Label htmlFor="googleMapsUrl">Location (Google Maps Link) *</Label>
+            <div className="relative">
+              <Input
+                id="googleMapsUrl"
+                placeholder="Paste Google Maps link..."
+                value={googleMapsUrl}
+                onChange={handleUrlChange}
+                disabled={isResolving}
+              />
+              {isResolving && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
             </div>
-            {coordinates && (
+            {coordinates ? (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {locationName || `${coordinates[1].toFixed(4)}, ${coordinates[0].toFixed(4)}`}
+              </p>
+            ) : (
               <p className="text-xs text-muted-foreground">
-                📍 Coordinates: {coordinates[1].toFixed(4)}, {coordinates[0].toFixed(4)}
+                Paste a Google Maps link to set the village location
               </p>
             )}
           </div>
 
-          {/* Timeline */}
-          <div className="space-y-2">
-            <Label>Timeline</Label>
-            <div className="flex items-center gap-2">
-              {/* Start Date */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "flex-1 justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal",
                       !startDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
+                    {startDate ? format(startDate, "MMM d, yyyy") : "Pick date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -213,25 +210,24 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
                     selected={startDate}
                     onSelect={setStartDate}
                     initialFocus
-                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
+            </div>
 
-              <span className="text-muted-foreground">→</span>
-
-              {/* End Date */}
+            <div className="space-y-2">
+              <Label>End Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "flex-1 justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal",
                       !endDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                    {endDate ? format(endDate, "MMM d, yyyy") : "Pick date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -239,25 +235,21 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
                     mode="single"
                     selected={endDate}
                     onSelect={setEndDate}
-                    disabled={(date) => (startDate ? date < startDate : false)}
                     initialFocus
-                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              "Create Village"
-            )}
-          </Button>
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="sage" className="flex-1" disabled={isSubmitting || isResolving}>
+              {isSubmitting ? "Creating..." : "Create Village"}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
