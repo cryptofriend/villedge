@@ -52,7 +52,9 @@ const getColorForNickname = (nickname: string): string => {
 export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [nameColumnWidth, setNameColumnWidth] = useState(120);
+  const [intentionColumnWidth, setIntentionColumnWidth] = useState(140);
   const [isResizing, setIsResizing] = useState(false);
+  const [resizingColumn, setResizingColumn] = useState<'name' | 'intention' | null>(null);
   const dayWidth = 28;
 
   // Calculate date range from stays
@@ -133,19 +135,26 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
   };
 
   // Handle column resize
-  const handleResizeStart = (e: React.MouseEvent) => {
+  const handleResizeStart = (column: 'name' | 'intention') => (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
+    setResizingColumn(column);
     const startX = e.clientX;
-    const startWidth = nameColumnWidth;
+    const startWidth = column === 'name' ? nameColumnWidth : intentionColumnWidth;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const diff = moveEvent.clientX - startX;
-      setNameColumnWidth(Math.max(80, Math.min(200, startWidth + diff)));
+      const newWidth = Math.max(80, Math.min(300, startWidth + diff));
+      if (column === 'name') {
+        setNameColumnWidth(newWidth);
+      } else {
+        setIntentionColumnWidth(newWidth);
+      }
     };
 
     const handleMouseUp = () => {
       setIsResizing(false);
+      setResizingColumn(null);
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
@@ -214,7 +223,9 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
           style={{ width: nameColumnWidth }}
         >
           {/* Month/Day header space */}
-          <div className="h-14 border-b border-border bg-muted/30 sticky top-0 z-10" />
+          <div className="h-14 border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+            Name
+          </div>
           
           {/* Names */}
           <div className="overflow-y-auto">
@@ -244,7 +255,42 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
           {/* Resize Handle */}
           <div
             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors"
-            onMouseDown={handleResizeStart}
+            onMouseDown={handleResizeStart('name')}
+          />
+        </div>
+
+        {/* Intention Column */}
+        <div
+          className="flex-shrink-0 border-r border-border relative"
+          style={{ width: intentionColumnWidth }}
+        >
+          {/* Header */}
+          <div className="h-14 border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+            Intention
+          </div>
+          
+          {/* Intentions */}
+          <div className="overflow-y-auto">
+            {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+              const firstStay = personStays[0];
+              
+              return (
+                <div
+                  key={nickname}
+                  className="h-10 flex items-center px-2 border-b border-border text-sm text-muted-foreground"
+                >
+                  <span className="truncate" title={firstStay?.intention || ""}>
+                    {firstStay?.intention || "—"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Resize Handle */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors"
+            onMouseDown={handleResizeStart('intention')}
           />
         </div>
 
