@@ -22,10 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      db: { schema: "webauthn" }
-    });
-    const supabasePublic = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     const { step, email, credential } = await req.json();
 
@@ -37,7 +34,7 @@ serve(async (req) => {
 
       // If email is provided, get user's credentials
       if (email) {
-        const { data: users } = await supabasePublic.auth.admin.listUsers();
+        const { data: users } = await supabase.auth.admin.listUsers();
         // deno-lint-ignore no-explicit-any
         const user = users?.users?.find((u: any) => u.email === email);
 
@@ -49,7 +46,7 @@ serve(async (req) => {
         }
 
         const { data: credentials } = await supabase
-          .from("credentials")
+          .from("webauthn_credentials")
           .select("credential_id, transports")
           .eq("user_id", user.id);
 
@@ -75,7 +72,7 @@ serve(async (req) => {
 
       // Store challenge
       const { error: challengeError } = await supabase
-        .from("challenges")
+        .from("webauthn_challenges")
         .insert({
           challenge: options.challenge,
           email: email || null,
@@ -109,7 +106,7 @@ serve(async (req) => {
       // Find the credential in our database
       const credentialId = credential.id;
       const { data: storedCredential, error: credError } = await supabase
-        .from("credentials")
+        .from("webauthn_credentials")
         .select("*")
         .eq("credential_id", credentialId)
         .single();
@@ -124,7 +121,7 @@ serve(async (req) => {
 
       // Get the challenge
       const { data: challengeData } = await supabase
-        .from("challenges")
+        .from("webauthn_challenges")
         .select("*")
         .eq("type", "authentication")
         .order("created_at", { ascending: false })
@@ -168,7 +165,7 @@ serve(async (req) => {
 
       // Update the sign count
       await supabase
-        .from("credentials")
+        .from("webauthn_credentials")
         .update({
           sign_count: verification.authenticationInfo.newCounter,
           last_used_at: new Date().toISOString(),
@@ -177,12 +174,12 @@ serve(async (req) => {
 
       // Delete the used challenge
       await supabase
-        .from("challenges")
+        .from("webauthn_challenges")
         .delete()
         .eq("id", challengeData.id);
 
       // Get user email
-      const { data: userData } = await supabasePublic.auth.admin.getUserById(storedCredential.user_id);
+      const { data: userData } = await supabase.auth.admin.getUserById(storedCredential.user_id);
       
       if (!userData.user) {
         return new Response(
@@ -192,7 +189,7 @@ serve(async (req) => {
       }
 
       // Generate a magic link
-      const { data: sessionData, error: sessionError } = await supabasePublic.auth.admin.generateLink({
+      const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
         type: "magiclink",
         email: userData.user.email!,
       });

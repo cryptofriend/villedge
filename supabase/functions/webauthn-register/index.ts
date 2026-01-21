@@ -23,10 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      db: { schema: "webauthn" }
-    });
-    const supabasePublic = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     const { step, email, displayName, credential } = await req.json();
     
@@ -40,8 +37,7 @@ serve(async (req) => {
         );
       }
 
-      // Check if user already exists
-      const { data: existingUser } = await supabasePublic.auth.admin.listUsers();
+      const { data: existingUser } = await supabase.auth.admin.listUsers();
       const userExists = existingUser?.users?.find((u: { email?: string }) => u.email === email);
       
       if (userExists) {
@@ -70,7 +66,7 @@ serve(async (req) => {
 
       // Store challenge
       const { error: challengeError } = await supabase
-        .from("challenges")
+        .from("webauthn_challenges")
         .insert({
           challenge: options.challenge,
           email: email,
@@ -103,7 +99,7 @@ serve(async (req) => {
 
       // Get the stored challenge
       const { data: challengeData, error: challengeError } = await supabase
-        .from("challenges")
+        .from("webauthn_challenges")
         .select("*")
         .eq("email", email)
         .eq("type", "registration")
@@ -140,7 +136,7 @@ serve(async (req) => {
 
       // Create the user in Supabase Auth
       const password = crypto.randomUUID() + crypto.randomUUID();
-      const { data: authData, error: authError } = await supabasePublic.auth.admin.createUser({
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: email,
         password: password,
         email_confirm: true,
@@ -175,7 +171,7 @@ serve(async (req) => {
 
       // Store the credential
       const { error: credentialError } = await supabase
-        .from("credentials")
+        .from("webauthn_credentials")
         .insert({
           user_id: authData.user.id,
           credential_id: credentialIdB64,
@@ -190,7 +186,7 @@ serve(async (req) => {
 
       if (credentialError) {
         console.error("Failed to store credential:", credentialError);
-        await supabasePublic.auth.admin.deleteUser(authData.user.id);
+        await supabase.auth.admin.deleteUser(authData.user.id);
         return new Response(
           JSON.stringify({ error: "Failed to store credential" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -199,12 +195,12 @@ serve(async (req) => {
 
       // Delete the used challenge
       await supabase
-        .from("challenges")
+        .from("webauthn_challenges")
         .delete()
         .eq("id", challengeData.id);
 
       // Generate a magic link for the user
-      const { data: sessionData, error: sessionError } = await supabasePublic.auth.admin.generateLink({
+      const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
         type: "magiclink",
         email: email,
       });
