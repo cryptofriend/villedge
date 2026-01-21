@@ -228,6 +228,8 @@ export type Database = {
           is_host: boolean | null
           nickname: string
           offerings: string | null
+          project_description: string | null
+          project_url: string | null
           secret_hash: string | null
           social_profile: string | null
           start_date: string
@@ -243,6 +245,8 @@ export type Database = {
           is_host?: boolean | null
           nickname: string
           offerings?: string | null
+          project_description?: string | null
+          project_url?: string | null
           secret_hash?: string | null
           social_profile?: string | null
           start_date: string
@@ -258,6 +262,8 @@ export type Database = {
           is_host?: boolean | null
           nickname?: string
           offerings?: string | null
+          project_description?: string | null
+          project_url?: string | null
           secret_hash?: string | null
           social_profile?: string | null
           start_date?: string

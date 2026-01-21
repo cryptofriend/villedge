@@ -29,6 +29,8 @@ export interface StayInput {
   offerings?: string;
   asks?: string;
   secret_hash?: string;
+  project_description?: string;
+  project_url?: string;
   is_host?: boolean;
 }
 
