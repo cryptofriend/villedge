@@ -3,11 +3,12 @@ import { useTreasury, ProposalReactionType } from "@/hooks/useTreasury";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Coins, ThumbsUp, Clock, ThumbsDown, FileText } from "lucide-react";
+import { Send, Coins, ThumbsUp, Clock, ThumbsDown, FileText, ExternalLink, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TreasuryListProps {
   villageId: string;
@@ -20,7 +21,18 @@ const REACTIONS: { type: ProposalReactionType; icon: typeof ThumbsUp; label: str
 ];
 
 export const TreasuryList = ({ villageId }: TreasuryListProps) => {
-  const { treasury, proposals, isLoading, addProposal, addReaction, getReactionCounts } = useTreasury(villageId);
+  const { 
+    proposals, 
+    isLoading, 
+    isLoadingWallet,
+    walletBalance,
+    walletAddress,
+    addProposal, 
+    addReaction, 
+    getReactionCounts 
+  } = useTreasury(villageId);
+  
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -76,18 +88,47 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
     }
   };
 
-  const balance = treasury?.balance ?? 0;
+  const handleRefreshBalance = () => {
+    queryClient.invalidateQueries({ queryKey: ["wallet-balance", walletAddress] });
+  };
 
   return (
     <div className="flex flex-col h-full">
       {/* Treasury balance header */}
       <div className="p-4 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
-        <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-          <Coins className="h-3.5 w-3.5" />
-          <span>Treasury Balance</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs">
+            <Coins className="h-3.5 w-3.5" />
+            <span>Treasury Balance</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefreshBalance}
+              className="p-1 hover:bg-muted rounded transition-colors"
+              title="Refresh balance"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", isLoadingWallet && "animate-spin")} />
+            </button>
+            <a
+              href={`https://app.zerion.io/${walletAddress}/overview`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1 hover:bg-muted rounded transition-colors"
+              title="View on Zerion"
+            >
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+            </a>
+          </div>
         </div>
-        <div className="text-3xl font-bold text-foreground">
-          ${balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+        <div className="text-3xl font-bold text-foreground mt-1">
+          {isLoadingWallet ? (
+            <span className="text-muted-foreground">Loading...</span>
+          ) : (
+            `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          )}
+        </div>
+        <div className="text-xs text-muted-foreground mt-1 font-mono truncate">
+          {walletAddress}
         </div>
       </div>
 
