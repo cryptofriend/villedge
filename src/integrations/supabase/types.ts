@@ -178,6 +178,65 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          proposal_id: string
+          reaction_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          proposal_id: string
+          reaction_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          proposal_id?: string
+          reaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_reactions_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposals: {
+        Row: {
+          amount: number | null
+          author_name: string
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+          village_id: string
+        }
+        Insert: {
+          amount?: number | null
+          author_name: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+          village_id: string
+        }
+        Update: {
+          amount?: number | null
+          author_name?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+          village_id?: string
+        }
+        Relationships: []
+      }
       residents: {
         Row: {
           avatar_url: string | null
@@ -401,6 +460,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      treasury: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          updated_at: string
+          village_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          village_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          village_id?: string
+        }
+        Relationships: []
       }
       villages: {
         Row: {
