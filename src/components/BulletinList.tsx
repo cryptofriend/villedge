@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useBulletin } from "@/hooks/useBulletin";
 import { useBulletinReactions, ReactionType } from "@/hooks/useBulletinReactions";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MessageCircle, Heart, HandMetal, Sparkles, TrendingUp } from "lucide-react";
+import { Send, MessageCircle, Heart, HandMetal, Sparkles, TrendingUp, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BulletinListProps {
   villageId: string;
@@ -20,11 +22,35 @@ const REACTIONS: { type: ReactionType; icon: typeof Heart; label: string; active
 ];
 
 export const BulletinList = ({ villageId }: BulletinListProps) => {
-  const { messages, isLoading, addMessage } = useBulletin(villageId);
+  const { messages, isLoading, addMessage, refetch } = useBulletin(villageId);
   const { addReaction, getReactionCounts, getTopBulletinIds } = useBulletinReactions(villageId);
+  const { canCreate, isHost } = usePermissions();
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTopPosts, setShowTopPosts] = useState(false);
+
+  const handleDelete = async (bulletinId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bulletin')
+        .delete()
+        .eq('id', bulletinId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Message deleted",
+        description: "The message has been removed",
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,25 +126,31 @@ export const BulletinList = ({ villageId }: BulletinListProps) => {
         </Button>
       </div>
 
-      {/* Message form */}
-      <form onSubmit={handleSubmit} className="p-4 border-b border-border">
-        <div className="flex gap-2">
-          <Textarea
-            placeholder="Share something with the village..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="text-sm min-h-[60px] resize-none flex-1"
-          />
-          <Button 
-            type="submit" 
-            size="icon" 
-            disabled={isSubmitting || !message.trim()}
-            className="shrink-0"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+      {/* Message form - only for authenticated users */}
+      {canCreate ? (
+        <form onSubmit={handleSubmit} className="p-4 border-b border-border">
+          <div className="flex gap-2">
+            <Textarea
+              placeholder="Share something with the village..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="text-sm min-h-[60px] resize-none flex-1"
+            />
+            <Button 
+              type="submit" 
+              size="icon" 
+              disabled={isSubmitting || !message.trim()}
+              className="shrink-0"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="p-4 border-b border-border text-center text-sm text-muted-foreground">
+          Sign in to post messages
         </div>
-      </form>
+      )}
 
       {/* Messages list */}
       <ScrollArea className="flex-1">
@@ -138,9 +170,20 @@ export const BulletinList = ({ villageId }: BulletinListProps) => {
               
               return (
                 <div key={msg.id} className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm text-foreground whitespace-pre-wrap break-words">
-                    {msg.message}
-                  </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm text-foreground whitespace-pre-wrap break-words flex-1">
+                      {msg.message}
+                    </p>
+                    {isHost(villageId) && (
+                      <button
+                        onClick={() => handleDelete(msg.id)}
+                        className="shrink-0 p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                        title="Delete message"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                   
                   {/* Reactions row */}
                   <div className="flex items-center gap-1 mt-2">
@@ -151,15 +194,17 @@ export const BulletinList = ({ villageId }: BulletinListProps) => {
                       return (
                         <button
                           key={type}
-                          onClick={() => handleReaction(msg.id, type)}
+                          onClick={() => canCreate && handleReaction(msg.id, type)}
+                          disabled={!canCreate}
                           className={cn(
                             "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors",
                             "hover:bg-muted border border-transparent",
                             hasReactions 
                               ? "bg-muted/80 border-border/50" 
-                              : "opacity-60 hover:opacity-100"
+                              : "opacity-60 hover:opacity-100",
+                            !canCreate && "cursor-not-allowed opacity-50"
                           )}
-                          title={label}
+                          title={canCreate ? label : "Sign in to react"}
                         >
                           <Icon className={cn("h-3.5 w-3.5", hasReactions && activeColor)} />
                           {hasReactions && (

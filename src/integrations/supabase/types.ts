@@ -489,6 +489,7 @@ export type Database = {
         Row: {
           center: Json
           created_at: string
+          created_by: string | null
           dates: string
           description: string
           focus: string | null
@@ -506,6 +507,7 @@ export type Database = {
         Insert: {
           center: Json
           created_at?: string
+          created_by?: string | null
           dates: string
           description: string
           focus?: string | null
@@ -523,6 +525,7 @@ export type Database = {
         Update: {
           center?: Json
           created_at?: string
+          created_by?: string | null
           dates?: string
           description?: string
           focus?: string | null
@@ -623,6 +626,10 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }
+      is_village_host: {
+        Args: { _user_id: string; _village_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
