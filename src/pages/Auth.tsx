@@ -115,7 +115,7 @@ export default function Auth() {
       });
 
       // If user doesn't exist, sign them up instead
-      if (optionsData?.error?.includes('No account found') || optionsData?.error?.includes('not found')) {
+      if (optionsData?.needsRegistration) {
         console.log('User not found, creating new account...');
         
         const { data: regOptionsData, error: regOptionsError } = await supabase.functions.invoke('webauthn-register', {
