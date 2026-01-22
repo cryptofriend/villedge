@@ -157,8 +157,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
                 Villedge
               </h1>
-              <AuthButton />
-              <AddVillageForm onVillageAdded={() => window.location.reload()} />
+              <span className="hidden sm:flex items-center gap-2">
+                <AuthButton />
+                <AddVillageForm onVillageAdded={() => window.location.reload()} />
+              </span>
             </div>
             <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
               Explore communities around the world
@@ -196,6 +198,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Mobile bottom actions */}
+      <div className="absolute bottom-6 right-4 z-10 flex items-center gap-2 sm:hidden pointer-events-auto">
+        <AddVillageForm onVillageAdded={() => window.location.reload()} />
+        <AuthButton />
       </div>
     </div>
   );
