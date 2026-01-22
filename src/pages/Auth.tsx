@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Fingerprint, User, Loader2, Globe } from 'lucide-react';
@@ -11,6 +10,8 @@ import { z } from 'zod';
 import { startRegistration, startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import { supabase } from '@/integrations/supabase/client';
 import { IDKitWidget, VerificationLevel, ISuccessResult } from '@worldcoin/idkit';
+import { MiniKit, VerificationLevel as MiniKitVerificationLevel } from '@worldcoin/minikit-js';
+import { useMiniKit } from '@/components/MiniKitProvider';
 
 const usernameSchema = z.string().min(2, 'Username must be at least 2 characters').max(30, 'Username must be at most 30 characters').regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores and hyphens');
 
@@ -20,6 +21,7 @@ const WORLD_ID_ACTION = 'login';
 export default function Auth() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { isInsideMiniApp } = useMiniKit();
   
   const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,6 +99,67 @@ export default function Auth() {
       }
     } catch (error) {
       console.error('World ID sign-in error:', error);
+      toast.error(error instanceof Error ? error.message : 'World ID authentication failed');
+    } finally {
+      setIsWorldIdVerifying(false);
+    }
+  };
+
+  // Handle MiniKit World ID verification (for inside World App)
+  const handleMiniKitVerify = async () => {
+    if (!MiniKit.isInstalled()) {
+      toast.error('MiniKit is not available');
+      return;
+    }
+
+    setIsWorldIdVerifying(true);
+
+    try {
+      const { finalPayload } = await MiniKit.commandsAsync.verify({
+        action: WORLD_ID_ACTION,
+        verification_level: MiniKitVerificationLevel.Orb,
+      });
+
+      if (finalPayload.status === 'error') {
+        throw new Error('World ID verification was cancelled or failed');
+      }
+
+      // Send to our backend for verification
+      const { data, error } = await supabase.functions.invoke('verify-world-id', {
+        body: {
+          proof: finalPayload.proof,
+          merkle_root: finalPayload.merkle_root,
+          nullifier_hash: finalPayload.nullifier_hash,
+          verification_level: finalPayload.verification_level,
+          action: WORLD_ID_ACTION,
+        }
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || 'World ID verification failed');
+      }
+
+      if (data.verified && data.actionLink) {
+        const url = new URL(data.actionLink);
+        const token = url.searchParams.get('token');
+        const type = url.searchParams.get('type');
+        
+        if (token && type) {
+          const { error: sessionError } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: type as 'magiclink'
+          });
+          
+          if (sessionError) {
+            throw sessionError;
+          }
+        }
+        
+        toast.success('Signed in with World ID!');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('MiniKit World ID error:', error);
       toast.error(error instanceof Error ? error.message : 'World ID authentication failed');
     } finally {
       setIsWorldIdVerifying(false);
@@ -216,31 +279,48 @@ export default function Auth() {
         <CardContent className="space-y-4">
           {/* Auth Buttons Row */}
           <div className="flex gap-3">
-            {/* World ID Sign In */}
-            <IDKitWidget
-              app_id={WORLD_ID_APP_ID as `app_${string}`}
-              action={WORLD_ID_ACTION}
-              onSuccess={handleWorldIdSuccess}
-              handleVerify={handleWorldIdVerify}
-              verification_level={VerificationLevel.Orb}
-            >
-              {({ open }) => (
-                <Button 
-                  onClick={open} 
-                  className="flex-1 gap-2 h-12 bg-zinc-800/75 hover:bg-zinc-700/90 text-zinc-100 border border-zinc-600/60 transition-all duration-200"
-                  disabled={isWorldIdVerifying}
-                >
-                  {isWorldIdVerifying ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Globe className="h-5 w-5" />
-                      <span className="hidden sm:inline">World ID</span>
-                    </>
-                  )}
-                </Button>
-              )}
-            </IDKitWidget>
+            {/* World ID Sign In - Use MiniKit if inside World App, otherwise IDKit */}
+            {isInsideMiniApp ? (
+              <Button 
+                onClick={handleMiniKitVerify} 
+                className="flex-1 gap-2 h-12 bg-zinc-800/75 hover:bg-zinc-700/90 text-zinc-100 border border-zinc-600/60 transition-all duration-200"
+                disabled={isWorldIdVerifying}
+              >
+                {isWorldIdVerifying ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <Globe className="h-5 w-5" />
+                    <span className="hidden sm:inline">World ID</span>
+                  </>
+                )}
+              </Button>
+            ) : (
+              <IDKitWidget
+                app_id={WORLD_ID_APP_ID as `app_${string}`}
+                action={WORLD_ID_ACTION}
+                onSuccess={handleWorldIdSuccess}
+                handleVerify={handleWorldIdVerify}
+                verification_level={VerificationLevel.Orb}
+              >
+                {({ open }) => (
+                  <Button 
+                    onClick={open} 
+                    className="flex-1 gap-2 h-12 bg-zinc-800/75 hover:bg-zinc-700/90 text-zinc-100 border border-zinc-600/60 transition-all duration-200"
+                    disabled={isWorldIdVerifying}
+                  >
+                    {isWorldIdVerifying ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Globe className="h-5 w-5" />
+                        <span className="hidden sm:inline">World ID</span>
+                      </>
+                    )}
+                  </Button>
+                )}
+              </IDKitWidget>
+            )}
 
             {/* Passkey Sign In */}
             {supportsPasskey && (
