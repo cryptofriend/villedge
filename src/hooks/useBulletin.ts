@@ -43,10 +43,15 @@ export const useBulletin = (villageId: string) => {
     },
   });
 
+  const refetch = () => {
+    queryClient.invalidateQueries({ queryKey: ["bulletin", villageId] });
+  };
+
   return {
     messages,
     isLoading,
     error,
     addMessage,
+    refetch,
   };
 };

@@ -16,12 +16,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AddVillageFormProps {
   onVillageAdded?: () => void;
 }
 
 export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
@@ -77,6 +79,11 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!user) {
+      toast.error("Please sign in to create a village");
+      return;
+    }
+
     if (!name.trim()) {
       toast.error("Please enter a village name");
       return;
@@ -109,6 +116,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
       center: coordinates,
       dates,
       description: `Welcome to ${name.trim()}`,
+      created_by: user.id,
     });
 
     setIsSubmitting(false);

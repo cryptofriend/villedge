@@ -16,6 +16,7 @@ export interface Village {
   telegram_url: string | null;
   twitter_url: string | null;
   instagram_url: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +32,7 @@ export interface VillageInput {
   participants?: string;
   focus?: string;
   luma_calendar_id?: string;
+  created_by?: string;
 }
 
 export const useVillages = () => {
@@ -46,9 +48,10 @@ export const useVillages = () => {
 
       if (error) throw error;
 
-      const mappedVillages: Village[] = (data || []).map((v) => ({
+      const mappedVillages: Village[] = (data || []).map((v: any) => ({
         ...v,
         center: v.center as [number, number],
+        created_by: v.created_by || null,
       }));
 
       setVillages(mappedVillages);
@@ -79,7 +82,8 @@ export const useVillages = () => {
           participants: village.participants || null,
           focus: village.focus || null,
           luma_calendar_id: village.luma_calendar_id || null,
-        })
+          created_by: village.created_by || null,
+        } as any)
         .select()
         .single();
 
@@ -88,7 +92,7 @@ export const useVillages = () => {
       const newVillage: Village = {
         ...data,
         center: data.center as [number, number],
-      };
+      } as Village;
 
       setVillages((prev) => [...prev, newVillage]);
       return newVillage;

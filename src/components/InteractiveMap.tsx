@@ -23,6 +23,7 @@ import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { useVillages, Village } from "@/hooks/useVillages";
 import { useSceniusProjects } from "@/hooks/useSceniusProjects";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { Comment } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
   // Data hooks
   const { villages, loading: villagesLoading, refetch: refetchVillages } = useVillages();
   const { spots, loading: spotsLoading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
+  const { isHost, canCreate } = usePermissions();
   
   // State
   const [activeVillage, setActiveVillage] = useState<Village | null>(null);
@@ -757,12 +759,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                         <h1 className="font-display text-base font-semibold text-foreground leading-tight">
                           {activeVillage.name}
                         </h1>
-                        <EditVillageDialog 
-                          village={activeVillage} 
-                          onVillageUpdated={() => {
-                            refetchVillages();
-                          }} 
-                        />
+                        {isHost(activeVillage.id) && (
+                          <EditVillageDialog 
+                            village={activeVillage} 
+                            onVillageUpdated={() => {
+                              refetchVillages();
+                            }} 
+                          />
+                        )}
                       </div>
                       <VillageSocialIcons village={activeVillage} />
                       <span className="font-body text-xs text-muted-foreground">
@@ -776,12 +780,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                           <h1 className="font-display text-2xl md:text-3xl font-semibold text-foreground">
                             {activeVillage.name}
                           </h1>
-                          <EditVillageDialog 
-                            village={activeVillage} 
-                            onVillageUpdated={() => {
-                              refetchVillages();
-                            }} 
-                          />
+                          {isHost(activeVillage.id) && (
+                            <EditVillageDialog 
+                              village={activeVillage} 
+                              onVillageUpdated={() => {
+                                refetchVillages();
+                              }} 
+                            />
+                          )}
                         </div>
                         <span className="font-body text-sm text-muted-foreground">
                           {activeVillage.dates}
@@ -902,8 +908,8 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
               google_maps_url: selectedSpot.google_maps_url,
             }} 
             onClose={handleCloseSpot}
-            onDelete={deleteSpot}
-            onUpdate={updateSpot}
+            onDelete={activeVillage && isHost(activeVillage.id) ? deleteSpot : undefined}
+            onUpdate={canCreate ? updateSpot : undefined}
             userLocation={userLocation}
           />
         </div>
