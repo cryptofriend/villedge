@@ -103,15 +103,58 @@ export default function Auth() {
     }
   };
 
-  const handlePasskeySignIn = async () => {
+  const handlePasskeyContinue = async () => {
     if (!supportsPasskey || !validateForm()) return;
     
     setIsSubmitting(true);
     
     try {
+      // First, try to sign in
       const { data: optionsData, error: optionsError } = await supabase.functions.invoke('webauthn-authenticate', {
         body: { step: 'options', username }
       });
+
+      // If user doesn't exist, sign them up instead
+      if (optionsData?.error?.includes('No account found') || optionsData?.error?.includes('not found')) {
+        console.log('User not found, creating new account...');
+        
+        const { data: regOptionsData, error: regOptionsError } = await supabase.functions.invoke('webauthn-register', {
+          body: { step: 'options', username }
+        });
+
+        if (regOptionsError || regOptionsData?.error) {
+          throw new Error(regOptionsData?.error || regOptionsError?.message || 'Failed to get registration options');
+        }
+
+        const regResponse = await startRegistration(regOptionsData.options);
+
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke('webauthn-register', {
+          body: { step: 'verify', username, credential: regResponse }
+        });
+
+        if (verifyError || verifyData?.error) {
+          throw new Error(verifyData?.error || verifyError?.message || 'Registration failed');
+        }
+
+        if (verifyData.verified && verifyData.actionLink) {
+          const url = new URL(verifyData.actionLink);
+          const token = url.searchParams.get('token');
+          const type = url.searchParams.get('type');
+          
+          if (token && type) {
+            const { error: sessionError } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: type as 'magiclink'
+            });
+            
+            if (sessionError) throw sessionError;
+          }
+          
+          toast.success('Account created successfully!');
+          navigate('/');
+        }
+        return;
+      }
 
       if (optionsError || optionsData?.error) {
         throw new Error(optionsData?.error || optionsError?.message || 'Failed to get authentication options');
@@ -145,57 +188,8 @@ export default function Auth() {
         navigate('/');
       }
     } catch (error) {
-      console.error('Passkey sign-in error:', error);
+      console.error('Passkey error:', error);
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handlePasskeySignUp = async () => {
-    if (!supportsPasskey || !validateForm()) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      const { data: optionsData, error: optionsError } = await supabase.functions.invoke('webauthn-register', {
-        body: { step: 'options', username }
-      });
-
-      if (optionsError || optionsData?.error) {
-        throw new Error(optionsData?.error || optionsError?.message || 'Failed to get registration options');
-      }
-
-      const regResponse = await startRegistration(optionsData.options);
-
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('webauthn-register', {
-        body: { step: 'verify', username, credential: regResponse }
-      });
-
-      if (verifyError || verifyData?.error) {
-        throw new Error(verifyData?.error || verifyError?.message || 'Registration failed');
-      }
-
-      if (verifyData.verified && verifyData.actionLink) {
-        const url = new URL(verifyData.actionLink);
-        const token = url.searchParams.get('token');
-        const type = url.searchParams.get('type');
-        
-        if (token && type) {
-          const { error: sessionError } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: type as 'magiclink'
-          });
-          
-          if (sessionError) throw sessionError;
-        }
-        
-        toast.success('Account created successfully!');
-        navigate('/');
-      }
-    } catch (error) {
-      console.error('Passkey sign-up error:', error);
-      toast.error(error instanceof Error ? error.message : 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -277,30 +271,21 @@ export default function Auth() {
                     className="pl-10 h-9 text-sm"
                   />
                 </div>
-                {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
+              {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
               </div>
               
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handlePasskeySignIn} 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 gap-1.5"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Fingerprint className="h-3 w-3" />}
-                  Sign In
-                </Button>
-                <Button 
-                  onClick={handlePasskeySignUp} 
-                  size="sm" 
-                  className="flex-1 gap-1.5 bg-emerald-800/75 hover:bg-emerald-700/90 text-emerald-100 transition-all duration-200"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Fingerprint className="h-3 w-3" />}
-                  Sign Up
-                </Button>
-              </div>
+              <Button 
+                onClick={handlePasskeyContinue} 
+                size="sm" 
+                className="w-full gap-1.5 bg-emerald-800/75 hover:bg-emerald-700/90 text-emerald-100 transition-all duration-200"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Fingerprint className="h-3 w-3" />}
+                Continue with Passkey
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                New users will be signed up automatically
+              </p>
             </div>
           )}
         </CardContent>
