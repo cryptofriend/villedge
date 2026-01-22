@@ -752,7 +752,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                       <div className="flex items-center gap-1">
-                        <h1 className="font-display text-lg font-semibold text-foreground sm:text-2xl md:text-3xl truncate">
+                        <h1 className="font-display text-base font-semibold text-foreground sm:text-2xl md:text-3xl leading-tight">
                           {activeVillage.name}
                         </h1>
                         <EditVillageDialog 
@@ -761,6 +761,10 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                             refetchVillages();
                           }} 
                         />
+                        {/* Mobile social icons - next to name */}
+                        <div className="flex sm:hidden items-center ml-1">
+                          <VillageSocialIcons village={activeVillage} />
+                        </div>
                       </div>
                       <span className="font-body text-xs text-muted-foreground sm:text-sm">
                         {activeVillage.dates}
@@ -771,16 +775,9 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                         <AuthButton />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base truncate">
-                        {activeVillage.location}
-                      </p>
-                      {/* Mobile social icons */}
-                      <div className="flex sm:hidden items-center gap-1">
-                        <VillageSocialIcons village={activeVillage} />
-                        <AuthButton />
-                      </div>
-                    </div>
+                    <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base truncate">
+                      {activeVillage.location}
+                    </p>
                   </div>
                 </>
               )}
