@@ -1,4 +1,4 @@
-import { useEffect, ReactNode, createContext, useContext, useState } from 'react';
+import { useEffect, ReactNode, createContext, useContext, useRef, useState } from 'react';
 import { MiniKit } from '@worldcoin/minikit-js';
 
 interface MiniKitContextType {
@@ -16,30 +16,30 @@ export const useMiniKit = () => useContext(MiniKitContext);
 export const MiniKitProvider = ({ children }: { children: ReactNode }) => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInsideMiniApp, setIsInsideMiniApp] = useState(false);
+  const didInitRef = useRef(false);
 
   useEffect(() => {
-    // Check if we're running inside World App
-    const checkMiniApp = () => {
-      // MiniKit.isInstalled() returns true if running inside World App
-      const installed = MiniKit.isInstalled();
-      setIsInsideMiniApp(installed);
-      
-      if (!installed) {
-        // Try to install MiniKit anyway (will work if inside World App)
-        try {
-          MiniKit.install();
-          setIsInstalled(true);
-          setIsInsideMiniApp(MiniKit.isInstalled());
-        } catch (e) {
-          console.log('MiniKit not available (running in browser)');
-          setIsInstalled(false);
-        }
-      } else {
-        setIsInstalled(true);
-      }
-    };
+    // React StrictMode runs effects twice in dev; avoid double init.
+    if (didInitRef.current) return;
+    didInitRef.current = true;
 
-    checkMiniApp();
+    const appId = import.meta.env.VITE_WORLD_ID_APP_ID as string | undefined;
+
+    try {
+      // MiniKit requires appId to set up the bridge correctly.
+      if (appId) {
+        MiniKit.install(appId);
+      } else {
+        console.warn('VITE_WORLD_ID_APP_ID is not set; MiniKit will not initialize.');
+      }
+    } catch (e) {
+      // This will throw when not running inside World App.
+      console.log('MiniKit not available (running in browser)');
+    } finally {
+      const inside = MiniKit.isInstalled();
+      setIsInsideMiniApp(inside);
+      setIsInstalled(inside);
+    }
   }, []);
 
   return (
