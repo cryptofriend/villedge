@@ -11,7 +11,7 @@ import {
 import { Stay } from "@/hooks/useStays";
 import { OccupancyChart } from "./OccupancyChart";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, ChevronLeft, ChevronRight, ExternalLink, Twitter, Instagram } from "lucide-react";
+import { CalendarCheck, ChevronLeft, ChevronRight, ExternalLink, Twitter, Instagram, Github, Linkedin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBestAvatar } from "@/lib/avatar";
 import {
@@ -50,7 +50,7 @@ const getColorForNickname = (nickname: string): string => {
 };
 
 // Detect social network from URL
-const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' | 'other' | null; color: string } => {
+const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' | 'github' | 'linkedin' | 'other' | null; color: string } => {
   if (!url) return { type: null, color: '' };
   const lowerUrl = url.toLowerCase();
   if (lowerUrl.includes('twitter.com') || lowerUrl.includes('x.com')) {
@@ -58,6 +58,12 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
   }
   if (lowerUrl.includes('instagram.com')) {
     return { type: 'instagram', color: 'text-pink-500' };
+  }
+  if (lowerUrl.includes('github.com')) {
+    return { type: 'github', color: 'text-foreground' };
+  }
+  if (lowerUrl.includes('linkedin.com')) {
+    return { type: 'linkedin', color: 'text-blue-600' };
   }
   return { type: 'other', color: 'text-muted-foreground' };
 };
@@ -271,6 +277,8 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
                     >
                       {socialNetwork.type === 'twitter' && <Twitter className="h-3.5 w-3.5" />}
                       {socialNetwork.type === 'instagram' && <Instagram className="h-3.5 w-3.5" />}
+                      {socialNetwork.type === 'github' && <Github className="h-3.5 w-3.5" />}
+                      {socialNetwork.type === 'linkedin' && <Linkedin className="h-3.5 w-3.5" />}
                       {socialNetwork.type === 'other' && <ExternalLink className="h-3.5 w-3.5" />}
                     </a>
                   )}
