@@ -158,7 +158,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
                   Villedge
                 </h1>
                 <p className="mt-1 font-body text-xs text-muted-foreground sm:text-sm md:text-base">
-                  Explore EDGE communities around the world
+                  Explore communities around the world
                 </p>
               </div>
               <AddVillageForm onVillageAdded={() => window.location.reload()} />

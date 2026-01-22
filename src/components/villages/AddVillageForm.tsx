@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +25,7 @@ interface AddVillageFormProps {
 
 export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
@@ -80,7 +82,12 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     e.preventDefault();
 
     if (!user) {
-      toast.error("Please sign in to create a village");
+      toast.error("Please sign in to create a village", {
+        action: {
+          label: "Sign In",
+          onClick: () => navigate("/auth"),
+        },
+      });
       return;
     }
 
