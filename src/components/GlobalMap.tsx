@@ -201,7 +201,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       </div>
 
       {/* Mobile bottom actions */}
-      <div className="absolute bottom-6 right-4 z-10 flex items-center gap-2 sm:hidden pointer-events-auto">
+      <div className="absolute bottom-6 right-4 z-10 flex items-center gap-3 sm:hidden pointer-events-auto scale-[2] origin-bottom-right">
         <AddVillageForm onVillageAdded={() => window.location.reload()} />
         <AuthButton />
       </div>
