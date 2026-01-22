@@ -13,6 +13,7 @@ import { BulletinList } from "./BulletinList";
 import { EventsList } from "./events/EventsList";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
 import { AuthButton } from "./AuthButton";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
@@ -812,9 +813,9 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
             )}
           </div>
 
-          {/* Map / Residents / Scenius Toggle + Auth */}
+          {/* Map / Residents / Scenius Toggle - Desktop only */}
           {isZoomedIn && (
-            <div className="flex items-center gap-2 pointer-events-auto">
+            <div className="hidden sm:flex items-center gap-2 pointer-events-auto">
               <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm">
                 <button
                   onClick={() => setActiveView("map")}
@@ -879,7 +880,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
 
       {/* Selected spot card - only show in map view */}
       {selectedSpot && activeView === "map" && (
-        <div className="absolute bottom-4 left-4 z-20 md:bottom-6 md:left-6">
+        <div className="absolute bottom-20 left-4 z-20 sm:bottom-4 md:bottom-6 md:left-6">
           <SpotCard 
             spot={{
               id: selectedSpot.id,
@@ -1064,6 +1065,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
               });
             }
           }}
+        />
+      )}
+
+      {/* Mobile Bottom Navigation */}
+      {isZoomedIn && (
+        <MobileBottomNav
+          activeView={activeView}
+          onViewChange={setActiveView}
         />
       )}
     </div>
