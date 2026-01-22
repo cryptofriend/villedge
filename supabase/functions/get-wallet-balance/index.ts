@@ -5,6 +5,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Resolve ENS name to Ethereum address using ENS public resolver API
+async function resolveEns(ensName: string): Promise<string | null> {
+  try {
+    // Use ENS data API for resolution
+    const response = await fetch(`https://api.ensdata.net/${ensName}`);
+    
+    if (!response.ok) {
+      console.log(`ENS resolution via ensdata failed: ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    if (data.address) {
+      return data.address;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('ENS resolution failed:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -30,13 +53,28 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Fetching wallet balance for: ${walletAddress}`);
+    // Resolve ENS name if needed
+    let resolvedAddress = walletAddress;
+    if (walletAddress.endsWith('.eth')) {
+      console.log(`Resolving ENS name: ${walletAddress}`);
+      const address = await resolveEns(walletAddress);
+      if (!address) {
+        return new Response(
+          JSON.stringify({ error: 'Could not resolve ENS name' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      resolvedAddress = address;
+      console.log(`Resolved to: ${resolvedAddress}`);
+    }
+
+    console.log(`Fetching wallet balance for: ${resolvedAddress}`);
 
     // Zerion uses Basic Auth with API key as username
     const authHeader = 'Basic ' + btoa(apiKey + ':');
 
     const response = await fetch(
-      `https://api.zerion.io/v1/wallets/${encodeURIComponent(walletAddress)}/portfolio?currency=usd`,
+      `https://api.zerion.io/v1/wallets/${resolvedAddress}/portfolio?currency=usd`,
       {
         method: 'GET',
         headers: {
@@ -64,7 +102,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         balance: totalValue,
-        walletAddress,
+        walletAddress: resolvedAddress,
+        ensName: walletAddress.endsWith('.eth') ? walletAddress : undefined,
         timestamp: new Date().toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
