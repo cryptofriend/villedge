@@ -220,48 +220,50 @@ export default function Auth() {
           <CardDescription>Sign in with World ID or passkey</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* World ID Sign In */}
-          <IDKitWidget
-            app_id={WORLD_ID_APP_ID as `app_${string}`}
-            action={WORLD_ID_ACTION}
-            onSuccess={handleWorldIdSuccess}
-            handleVerify={handleWorldIdVerify}
-            verification_level={VerificationLevel.Orb}
-          >
-            {({ open }) => (
-              <Button 
-                onClick={open} 
-                className="w-full gap-2 h-12"
-                disabled={isWorldIdVerifying}
-              >
-                {isWorldIdVerifying ? (
-                  <>
+          {/* Auth Buttons Row */}
+          <div className="flex gap-3">
+            {/* World ID Sign In */}
+            <IDKitWidget
+              app_id={WORLD_ID_APP_ID as `app_${string}`}
+              action={WORLD_ID_ACTION}
+              onSuccess={handleWorldIdSuccess}
+              handleVerify={handleWorldIdVerify}
+              verification_level={VerificationLevel.Orb}
+            >
+              {({ open }) => (
+                <Button 
+                  onClick={open} 
+                  className="flex-1 gap-2 h-12 bg-black hover:bg-black/90 text-white"
+                  disabled={isWorldIdVerifying}
+                >
+                  {isWorldIdVerifying ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  <>
-                    <Globe className="h-5 w-5" />
-                    Sign in with World ID
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <Globe className="h-5 w-5" />
+                      <span className="hidden sm:inline">World ID</span>
+                    </>
+                  )}
+                </Button>
+              )}
+            </IDKitWidget>
+
+            {/* Passkey Sign In */}
+            {supportsPasskey && (
+              <Button 
+                onClick={() => setShowPasskeySignup(!showPasskeySignup)} 
+                className="flex-1 gap-2 h-12 bg-emerald-600 hover:bg-emerald-700 text-white"
+                disabled={isSubmitting}
+              >
+                <Fingerprint className="h-5 w-5" />
+                <span className="hidden sm:inline">Passkey</span>
               </Button>
             )}
-          </IDKitWidget>
+          </div>
 
-          {/* Passkey Sign Up Toggle */}
-          {supportsPasskey && !showPasskeySignup && (
-            <button
-              onClick={() => setShowPasskeySignup(true)}
-              className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Or sign up with passkey →
-            </button>
-          )}
-
-          {/* Passkey Sign Up Form */}
+          {/* Passkey Form */}
           {supportsPasskey && showPasskeySignup && (
-            <div className="space-y-3 pt-2 border-t border-border/50">
+            <div className="space-y-3 pt-3 border-t border-border/50">
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-xs">Username</Label>
                 <div className="relative">
@@ -291,22 +293,14 @@ export default function Auth() {
                 </Button>
                 <Button 
                   onClick={handlePasskeySignUp} 
-                  variant="secondary" 
                   size="sm" 
-                  className="flex-1 gap-1.5"
+                  className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Fingerprint className="h-3 w-3" />}
                   Sign Up
                 </Button>
               </div>
-              
-              <button
-                onClick={() => setShowPasskeySignup(false)}
-                className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                ← Back
-              </button>
             </div>
           )}
         </CardContent>
