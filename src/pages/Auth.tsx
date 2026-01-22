@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Fingerprint, User, Loader2, Globe } from 'lucide-react';
 import { z } from 'zod';
@@ -15,7 +14,6 @@ import { IDKitWidget, VerificationLevel, ISuccessResult } from '@worldcoin/idkit
 
 const usernameSchema = z.string().min(2, 'Username must be at least 2 characters').max(30, 'Username must be at most 30 characters').regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores and hyphens');
 
-// World ID app_id - this is the public app identifier
 const WORLD_ID_APP_ID = import.meta.env.VITE_WORLD_ID_APP_ID || 'app_staging_placeholder';
 const WORLD_ID_ACTION = 'login';
 
@@ -26,6 +24,7 @@ export default function Auth() {
   const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isWorldIdVerifying, setIsWorldIdVerifying] = useState(false);
+  const [showPasskeySignup, setShowPasskeySignup] = useState(false);
   const [errors, setErrors] = useState<{ username?: string }>({});
   const [supportsPasskey, setSupportsPasskey] = useState(false);
 
@@ -33,7 +32,6 @@ export default function Auth() {
     setSupportsPasskey(browserSupportsWebAuthn());
   }, []);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (user && !loading) {
       navigate('/');
@@ -42,20 +40,15 @@ export default function Auth() {
 
   const validateForm = () => {
     const newErrors: typeof errors = {};
-    
     const usernameResult = usernameSchema.safeParse(username);
     if (!usernameResult.success) {
       newErrors.username = usernameResult.error.errors[0].message;
     }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleWorldIdVerify = async (proof: ISuccessResult) => {
-    console.log('World ID proof received:', proof);
-    
-    // Send proof to our edge function for verification
     const { data, error } = await supabase.functions.invoke('verify-world-id', {
       body: {
         proof: proof.proof,
@@ -67,7 +60,6 @@ export default function Auth() {
     });
 
     if (error || data?.error) {
-      console.error('World ID verification failed:', error || data?.error);
       throw new Error(data?.error || error?.message || 'World ID verification failed');
     }
 
@@ -85,7 +77,6 @@ export default function Auth() {
       const verifyData = await handleWorldIdVerify(result);
       
       if (verifyData.verified && verifyData.actionLink) {
-        // Use the magic link to create a session
         const url = new URL(verifyData.actionLink);
         const token = url.searchParams.get('token');
         const type = url.searchParams.get('type');
@@ -112,20 +103,12 @@ export default function Auth() {
     }
   };
 
-  const handlePasskeySignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!supportsPasskey) {
-      toast.error('Your browser does not support passkeys');
-      return;
-    }
-    
-    if (!validateForm()) return;
+  const handlePasskeySignIn = async () => {
+    if (!supportsPasskey || !validateForm()) return;
     
     setIsSubmitting(true);
     
     try {
-      // Get authentication options from our edge function
       const { data: optionsData, error: optionsError } = await supabase.functions.invoke('webauthn-authenticate', {
         body: { step: 'options', username }
       });
@@ -134,10 +117,8 @@ export default function Auth() {
         throw new Error(optionsData?.error || optionsError?.message || 'Failed to get authentication options');
       }
 
-      // Start the WebAuthn authentication
       const authResponse = await startAuthentication(optionsData.options);
 
-      // Verify with our edge function
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('webauthn-authenticate', {
         body: { step: 'verify', username, credential: authResponse }
       });
@@ -147,7 +128,6 @@ export default function Auth() {
       }
 
       if (verifyData.verified && verifyData.actionLink) {
-        // Use the magic link to create a session
         const url = new URL(verifyData.actionLink);
         const token = url.searchParams.get('token');
         const type = url.searchParams.get('type');
@@ -158,9 +138,7 @@ export default function Auth() {
             type: type as 'magiclink'
           });
           
-          if (sessionError) {
-            throw sessionError;
-          }
+          if (sessionError) throw sessionError;
         }
         
         toast.success('Signed in successfully!');
@@ -174,20 +152,12 @@ export default function Auth() {
     }
   };
 
-  const handlePasskeySignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!supportsPasskey) {
-      toast.error('Your browser does not support passkeys');
-      return;
-    }
-    
-    if (!validateForm()) return;
+  const handlePasskeySignUp = async () => {
+    if (!supportsPasskey || !validateForm()) return;
     
     setIsSubmitting(true);
     
     try {
-      // Get registration options from our edge function
       const { data: optionsData, error: optionsError } = await supabase.functions.invoke('webauthn-register', {
         body: { step: 'options', username }
       });
@@ -196,10 +166,8 @@ export default function Auth() {
         throw new Error(optionsData?.error || optionsError?.message || 'Failed to get registration options');
       }
 
-      // Start the WebAuthn registration
       const regResponse = await startRegistration(optionsData.options);
 
-      // Verify with our edge function
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('webauthn-register', {
         body: { step: 'verify', username, credential: regResponse }
       });
@@ -209,7 +177,6 @@ export default function Auth() {
       }
 
       if (verifyData.verified && verifyData.actionLink) {
-        // Use the magic link to create a session
         const url = new URL(verifyData.actionLink);
         const token = url.searchParams.get('token');
         const type = url.searchParams.get('type');
@@ -220,9 +187,7 @@ export default function Auth() {
             type: type as 'magiclink'
           });
           
-          if (sessionError) {
-            throw sessionError;
-          }
+          if (sessionError) throw sessionError;
         }
         
         toast.success('Account created successfully!');
@@ -249,149 +214,99 @@ export default function Auth() {
       <Card className="w-full max-w-md shadow-xl border-border/50">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-            <Fingerprint className="h-6 w-6 text-primary" />
+            <Globe className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl font-display">Welcome to Villedge</CardTitle>
-          <CardDescription>Sign in with passkey or World ID</CardDescription>
+          <CardDescription>Sign in with World ID or passkey</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* World ID Sign In */}
-          <div className="space-y-3">
-            <IDKitWidget
-              app_id={WORLD_ID_APP_ID as `app_${string}`}
-              action={WORLD_ID_ACTION}
-              onSuccess={handleWorldIdSuccess}
-              handleVerify={handleWorldIdVerify}
-              verification_level={VerificationLevel.Orb}
+          <IDKitWidget
+            app_id={WORLD_ID_APP_ID as `app_${string}`}
+            action={WORLD_ID_ACTION}
+            onSuccess={handleWorldIdSuccess}
+            handleVerify={handleWorldIdVerify}
+            verification_level={VerificationLevel.Orb}
+          >
+            {({ open }) => (
+              <Button 
+                onClick={open} 
+                className="w-full gap-2 h-12"
+                disabled={isWorldIdVerifying}
+              >
+                {isWorldIdVerifying ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <Globe className="h-5 w-5" />
+                    Sign in with World ID
+                  </>
+                )}
+              </Button>
+            )}
+          </IDKitWidget>
+
+          {/* Passkey Sign Up Toggle */}
+          {supportsPasskey && !showPasskeySignup && (
+            <button
+              onClick={() => setShowPasskeySignup(true)}
+              className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              {({ open }) => (
+              Or sign up with passkey →
+            </button>
+          )}
+
+          {/* Passkey Sign Up Form */}
+          {supportsPasskey && showPasskeySignup && (
+            <div className="space-y-3 pt-2 border-t border-border/50">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-xs">Username</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="your_username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="pl-10 h-9 text-sm"
+                  />
+                </div>
+                {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
+              </div>
+              
+              <div className="flex gap-2">
                 <Button 
-                  onClick={open} 
+                  onClick={handlePasskeySignIn} 
                   variant="outline" 
-                  className="w-full gap-2 h-12 border-2"
-                  disabled={isWorldIdVerifying}
+                  size="sm" 
+                  className="flex-1 gap-1.5"
+                  disabled={isSubmitting}
                 >
-                  {isWorldIdVerifying ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <Globe className="h-5 w-5" />
-                      Sign in with World ID
-                    </>
-                  )}
+                  {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Fingerprint className="h-3 w-3" />}
+                  Sign In
                 </Button>
-              )}
-            </IDKitWidget>
-            <p className="text-xs text-muted-foreground text-center">
-              Prove you're human with World ID
-            </p>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
-          {/* Passkey Sign In/Up */}
-          {supportsPasskey ? (
-            <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+                <Button 
+                  onClick={handlePasskeySignUp} 
+                  variant="secondary" 
+                  size="sm" 
+                  className="flex-1 gap-1.5"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Fingerprint className="h-3 w-3" />}
+                  Sign Up
+                </Button>
+              </div>
               
-              <TabsContent value="signin">
-                <form onSubmit={handlePasskeySignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-username">Username</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-username"
-                        type="text"
-                        placeholder="your_username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
-                  </div>
-                  
-                  <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Authenticating...
-                      </>
-                    ) : (
-                      <>
-                        <Fingerprint className="h-4 w-4" />
-                        Sign In with Passkey
-                      </>
-                    )}
-                  </Button>
-                  
-                  <p className="text-xs text-muted-foreground text-center">
-                    Use Face ID, Touch ID, or Windows Hello to sign in
-                  </p>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="signup">
-                <form onSubmit={handlePasskeySignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-username">Choose a Username</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-username"
-                        type="text"
-                        placeholder="your_username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
-                    <p className="text-xs text-muted-foreground">
-                      Letters, numbers, underscores and hyphens only
-                    </p>
-                  </div>
-                  
-                  <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Creating passkey...
-                      </>
-                    ) : (
-                      <>
-                        <Fingerprint className="h-4 w-4" />
-                        Create Account with Passkey
-                      </>
-                    )}
-                  </Button>
-                  
-                  <p className="text-xs text-muted-foreground text-center">
-                    Set up Face ID, Touch ID, or Windows Hello for passwordless login
-                  </p>
-                </form>
-              </TabsContent>
-            </Tabs>
-          ) : (
-            <div className="text-center p-4 rounded-lg bg-muted/50">
-              <Fingerprint className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Passkeys are not supported in this browser. Use World ID above to sign in.
-              </p>
+              <button
+                onClick={() => setShowPasskeySignup(false)}
+                className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ← Back
+              </button>
             </div>
           )}
         </CardContent>
