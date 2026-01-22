@@ -410,11 +410,14 @@ export type Database = {
           description: string
           focus: string | null
           id: string
+          instagram_url: string | null
           location: string
           logo_url: string | null
           luma_calendar_id: string | null
           name: string
           participants: string | null
+          telegram_url: string | null
+          twitter_url: string | null
           updated_at: string
         }
         Insert: {
@@ -424,11 +427,14 @@ export type Database = {
           description: string
           focus?: string | null
           id: string
+          instagram_url?: string | null
           location: string
           logo_url?: string | null
           luma_calendar_id?: string | null
           name: string
           participants?: string | null
+          telegram_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -438,11 +444,14 @@ export type Database = {
           description?: string
           focus?: string | null
           id?: string
+          instagram_url?: string | null
           location?: string
           logo_url?: string | null
           luma_calendar_id?: string | null
           name?: string
           participants?: string | null
+          telegram_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
         }
         Relationships: []
