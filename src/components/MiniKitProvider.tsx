@@ -25,6 +25,13 @@ export const MiniKitProvider = ({ children }: { children: ReactNode }) => {
 
     const appId = import.meta.env.VITE_WORLD_ID_APP_ID as string | undefined;
 
+    const syncInstalledState = () => {
+      const inside = MiniKit.isInstalled();
+      setIsInsideMiniApp(inside);
+      setIsInstalled(inside);
+      return inside;
+    };
+
     try {
       // MiniKit requires appId to set up the bridge correctly.
       if (appId) {
@@ -35,11 +42,22 @@ export const MiniKitProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       // This will throw when not running inside World App.
       console.log('MiniKit not available (running in browser)');
-    } finally {
-      const inside = MiniKit.isInstalled();
-      setIsInsideMiniApp(inside);
-      setIsInstalled(inside);
     }
+
+    // Bridge handshake can be async; re-check for a short window.
+    // If we are *not* inside the World App, MiniKit.isInstalled() will remain false.
+    syncInstalledState();
+    let tries = 0;
+    const maxTries = 20; // ~2s at 100ms
+    const interval = window.setInterval(() => {
+      tries += 1;
+      const insideNow = syncInstalledState();
+      if (insideNow || tries >= maxTries) {
+        window.clearInterval(interval);
+      }
+    }, 100);
+
+    return () => window.clearInterval(interval);
   }, []);
 
   return (
