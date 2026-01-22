@@ -3,12 +3,13 @@ import { useTreasury, ProposalReactionType } from "@/hooks/useTreasury";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Coins, ThumbsUp, Clock, ThumbsDown, FileText, ExternalLink, RefreshCw } from "lucide-react";
+import { Send, Coins, ThumbsUp, Clock, ThumbsDown, FileText, ExternalLink, RefreshCw, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { TopUpDialog } from "./TopUpDialog";
 
 interface TreasuryListProps {
   villageId: string;
@@ -132,10 +133,12 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
         </div>
       </div>
 
-      {/* Add proposal button / form */}
-      <div className="p-4 border-b border-border">
+      {/* Top up and proposal buttons */}
+      <div className="p-4 border-b border-border space-y-2">
+        <TopUpDialog walletAddress={walletAddress} />
+        
         {showForm ? (
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-3 pt-2">
             <Input
               placeholder="Proposal title..."
               value={title}
@@ -177,12 +180,12 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
           </form>
         ) : (
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setShowForm(true)}
-            className="w-full"
+            className="w-full text-muted-foreground hover:text-foreground"
           >
-            <FileText className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             New Proposal
           </Button>
         )}
