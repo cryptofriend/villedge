@@ -40,9 +40,10 @@ serve(async (req) => {
           .eq("username", username.toLowerCase());
 
         if (!credentials || credentials.length === 0) {
+          // Return 200 with needsRegistration flag so client can handle gracefully
           return new Response(
-            JSON.stringify({ error: "No account found with this username. Please sign up first." }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            JSON.stringify({ needsRegistration: true }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
