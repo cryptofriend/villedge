@@ -13,6 +13,9 @@ export interface Village {
   participants: string | null;
   focus: string | null;
   luma_calendar_id: string | null;
+  telegram_url: string | null;
+  twitter_url: string | null;
+  instagram_url: string | null;
   created_at: string;
   updated_at: string;
 }
