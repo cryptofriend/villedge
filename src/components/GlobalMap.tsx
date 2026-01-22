@@ -152,17 +152,17 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       {/* Header overlay */}
       <div className="absolute left-0 right-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background/90 via-background/60 to-transparent p-3 pb-12 sm:p-4 sm:pb-16 md:p-6 md:pb-20">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2 sm:gap-4 pointer-events-auto w-fit max-w-[65%] sm:max-w-none">
-            <div>
+          <div className="flex flex-col gap-1 pointer-events-auto w-fit max-w-[75%] sm:max-w-none">
+            <div className="flex items-center gap-2">
               <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
                 Villedge
               </h1>
-              <p className="mt-1 font-body text-xs text-muted-foreground sm:text-sm md:text-base">
-                Explore communities around the world
-              </p>
+              <AuthButton />
+              <AddVillageForm onVillageAdded={() => window.location.reload()} />
             </div>
-            <AuthButton />
-            <AddVillageForm onVillageAdded={() => window.location.reload()} />
+            <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
+              Explore communities around the world
+            </p>
           </div>
         </div>
       </div>
