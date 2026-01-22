@@ -105,8 +105,8 @@ export default function Auth() {
     }
   };
 
-  // Handle MiniKit World ID verification (for inside World App)
-  const handleMiniKitVerify = async () => {
+  // Handle MiniKit wallet auth (for inside World App)
+  const handleMiniKitWalletAuth = async () => {
     if (!MiniKit.isInstalled()) {
       toast.error('MiniKit is not available');
       return;
@@ -115,28 +115,40 @@ export default function Auth() {
     setIsWorldIdVerifying(true);
 
     try {
-      const { finalPayload } = await MiniKit.commandsAsync.verify({
-        action: WORLD_ID_ACTION,
-        verification_level: MiniKitVerificationLevel.Orb,
-      });
-
-      if (finalPayload.status === 'error') {
-        throw new Error('World ID verification was cancelled or failed');
+      // 1. Get nonce from backend
+      const { data: nonceData, error: nonceError } = await supabase.functions.invoke('siwe-nonce');
+      
+      if (nonceError || !nonceData?.nonce) {
+        throw new Error('Failed to get authentication nonce');
       }
 
-      // Send to our backend for verification
-      const { data, error } = await supabase.functions.invoke('verify-world-id', {
+      const nonce = nonceData.nonce;
+      console.log('Got SIWE nonce:', nonce);
+
+      // 2. Request wallet authentication via MiniKit
+      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
+        nonce,
+        requestId: '0',
+        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week
+        statement: 'Sign in to Villedge with your World App wallet',
+      });
+
+      console.log('WalletAuth payload:', finalPayload);
+
+      if (finalPayload.status === 'error') {
+        throw new Error('Wallet authentication was cancelled or failed');
+      }
+
+      // 3. Verify signature on backend
+      const { data, error } = await supabase.functions.invoke('siwe-verify', {
         body: {
-          proof: finalPayload.proof,
-          merkle_root: finalPayload.merkle_root,
-          nullifier_hash: finalPayload.nullifier_hash,
-          verification_level: finalPayload.verification_level,
-          action: WORLD_ID_ACTION,
+          payload: finalPayload,
+          nonce,
         }
       });
 
       if (error || data?.error) {
-        throw new Error(data?.error || error?.message || 'World ID verification failed');
+        throw new Error(data?.error || error?.message || 'Wallet authentication failed');
       }
 
       if (data.verified && data.actionLink) {
@@ -155,12 +167,12 @@ export default function Auth() {
           }
         }
         
-        toast.success('Signed in with World ID!');
+        toast.success('Signed in with World App!');
         navigate('/');
       }
     } catch (error) {
-      console.error('MiniKit World ID error:', error);
-      toast.error(error instanceof Error ? error.message : 'World ID authentication failed');
+      console.error('MiniKit wallet auth error:', error);
+      toast.error(error instanceof Error ? error.message : 'Wallet authentication failed');
     } finally {
       setIsWorldIdVerifying(false);
     }
@@ -282,7 +294,7 @@ export default function Auth() {
             {/* World ID Sign In - Use MiniKit if inside World App, otherwise IDKit */}
             {isInsideMiniApp ? (
               <Button 
-                onClick={handleMiniKitVerify} 
+                onClick={handleMiniKitWalletAuth} 
                 className="flex-1 gap-2 h-12 bg-zinc-800/75 hover:bg-zinc-700/90 text-zinc-100 border border-zinc-600/60 transition-all duration-200"
                 disabled={isWorldIdVerifying}
               >
