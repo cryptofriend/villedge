@@ -233,7 +233,7 @@ export default function Auth() {
               {({ open }) => (
                 <Button 
                   onClick={open} 
-                  className="flex-1 gap-2 h-12 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700"
+                  className="flex-1 gap-2 h-12 bg-zinc-800/50 hover:bg-zinc-700/60 text-zinc-100 border border-zinc-700/50"
                   disabled={isWorldIdVerifying}
                 >
                   {isWorldIdVerifying ? (
@@ -252,7 +252,7 @@ export default function Auth() {
             {supportsPasskey && (
               <Button 
                 onClick={() => setShowPasskeySignup(!showPasskeySignup)} 
-                className="flex-1 gap-2 h-12 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 border border-emerald-700"
+                className="flex-1 gap-2 h-12 bg-emerald-800/50 hover:bg-emerald-700/60 text-emerald-100 border border-emerald-700/50"
                 disabled={isSubmitting}
               >
                 <Fingerprint className="h-5 w-5" />
@@ -294,7 +294,7 @@ export default function Auth() {
                 <Button 
                   onClick={handlePasskeySignUp} 
                   size="sm" 
-                  className="flex-1 gap-1.5 bg-emerald-800 hover:bg-emerald-700 text-emerald-100"
+                  className="flex-1 gap-1.5 bg-emerald-800/50 hover:bg-emerald-700/60 text-emerald-100"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Fingerprint className="h-3 w-3" />}
