@@ -750,9 +750,10 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                     className="h-8 w-8 rounded sm:h-10 sm:w-10 md:h-12 md:w-12 shrink-0"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                    {/* Mobile layout: stacked */}
+                    <div className="flex flex-col sm:hidden gap-0.5">
                       <div className="flex items-center gap-1">
-                        <h1 className="font-display text-base font-semibold text-foreground sm:text-2xl md:text-3xl leading-tight">
+                        <h1 className="font-display text-base font-semibold text-foreground leading-tight">
                           {activeVillage.name}
                         </h1>
                         <EditVillageDialog 
@@ -761,23 +762,38 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                             refetchVillages();
                           }} 
                         />
-                        {/* Mobile social icons - next to name */}
-                        <div className="flex sm:hidden items-center ml-1">
-                          <VillageSocialIcons village={activeVillage} />
-                        </div>
                       </div>
-                      <span className="font-body text-xs text-muted-foreground sm:text-sm">
+                      <VillageSocialIcons village={activeVillage} />
+                      <span className="font-body text-xs text-muted-foreground">
                         {activeVillage.dates}
                       </span>
-                      {/* Desktop social icons */}
-                      <div className="hidden sm:flex items-center gap-1.5">
-                        <VillageSocialIcons village={activeVillage} />
-                        <AuthButton />
-                      </div>
                     </div>
-                    <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base truncate">
-                      {activeVillage.location}
-                    </p>
+                    {/* Desktop layout */}
+                    <div className="hidden sm:block">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <h1 className="font-display text-2xl md:text-3xl font-semibold text-foreground">
+                            {activeVillage.name}
+                          </h1>
+                          <EditVillageDialog 
+                            village={activeVillage} 
+                            onVillageUpdated={() => {
+                              refetchVillages();
+                            }} 
+                          />
+                        </div>
+                        <span className="font-body text-sm text-muted-foreground">
+                          {activeVillage.dates}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <VillageSocialIcons village={activeVillage} />
+                          <AuthButton />
+                        </div>
+                      </div>
+                      <p className="font-body text-sm md:text-base text-muted-foreground truncate">
+                        {activeVillage.location}
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
