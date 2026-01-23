@@ -101,10 +101,16 @@ export const useAuth = () => {
   const updateProfile = async (updates: Partial<Pick<Profile, 'display_name' | 'avatar_url'>>) => {
     if (!user) return { error: new Error('Not authenticated') };
     
+    // Use upsert to handle both insert and update cases
     const { data, error } = await supabase
       .from('profiles')
-      .update(updates)
-      .eq('user_id', user.id)
+      .upsert({
+        user_id: user.id,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id',
+      })
       .select()
       .single();
     
