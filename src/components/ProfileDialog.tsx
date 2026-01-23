@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { getBestAvatar } from "@/lib/avatar";
+import { PersonalTopUpDialog } from "./PersonalTopUpDialog";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -101,9 +102,12 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
               <p className="text-sm font-medium text-foreground">
                 {displayName || "Your Name"}
               </p>
-              <p className="text-xs text-muted-foreground font-mono">
-                {truncatedAddress}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground font-mono">
+                  {truncatedAddress}
+                </p>
+                {address && <PersonalTopUpDialog walletAddress={address} />}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Add a social profile to use your real avatar
               </p>
