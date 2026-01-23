@@ -792,10 +792,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                         <span className="font-body text-sm text-muted-foreground">
                           {activeVillage.dates}
                         </span>
-                        <div className="flex items-center gap-1.5">
-                          <VillageSocialIcons village={activeVillage} />
-                          <AuthButton />
-                        </div>
+                        <VillageSocialIcons village={activeVillage} />
                       </div>
                       <p className="font-body text-sm md:text-base text-muted-foreground truncate">
                         {activeVillage.location}
@@ -817,7 +814,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
             )}
           </div>
 
-          {/* Map / Residents / Scenius Toggle - Desktop only */}
+          {/* Map / Residents / Scenius Toggle + Auth - Desktop only */}
           {isZoomedIn && (
             <div className="hidden sm:flex items-center gap-2 pointer-events-auto">
               <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm">
@@ -888,6 +885,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <span className="hidden sm:inline">Events</span>
               </button>
               </div>
+              <AuthButton />
             </div>
           )}
         </div>
