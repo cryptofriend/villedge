@@ -12,11 +12,11 @@ interface TreasuryMiniChartProps {
 export const TreasuryMiniChart = ({ incoming, outgoing, isLoading }: TreasuryMiniChartProps) => {
   const chartData = useMemo(() => {
     const today = startOfDay(new Date());
-    const thirtyDaysAgo = subDays(today, 30);
+    const sevenDaysAgo = subDays(today, 7);
     
-    // Create array of last 30 days
+    // Create array of last 7 days
     const days: { date: Date; label: string; incoming: number; outgoing: number; net: number }[] = [];
-    for (let i = 30; i >= 0; i--) {
+    for (let i = 7; i >= 0; i--) {
       const date = subDays(today, i);
       days.push({
         date,
@@ -29,7 +29,7 @@ export const TreasuryMiniChart = ({ incoming, outgoing, isLoading }: TreasuryMin
     
     // Aggregate incoming transactions
     incoming
-      .filter(tx => isAfter(new Date(tx.timestamp), thirtyDaysAgo))
+      .filter(tx => isAfter(new Date(tx.timestamp), sevenDaysAgo))
       .forEach(tx => {
         const txDate = startOfDay(new Date(tx.timestamp));
         const dayIndex = days.findIndex(d => 
@@ -42,7 +42,7 @@ export const TreasuryMiniChart = ({ incoming, outgoing, isLoading }: TreasuryMin
     
     // Aggregate outgoing transactions
     outgoing
-      .filter(tx => isAfter(new Date(tx.timestamp), thirtyDaysAgo))
+      .filter(tx => isAfter(new Date(tx.timestamp), sevenDaysAgo))
       .forEach(tx => {
         const txDate = startOfDay(new Date(tx.timestamp));
         const dayIndex = days.findIndex(d => 
@@ -81,7 +81,7 @@ export const TreasuryMiniChart = ({ incoming, outgoing, isLoading }: TreasuryMin
   if (!hasActivity) {
     return (
       <div className="h-16 flex items-center justify-center text-xs text-muted-foreground">
-        No activity in the last 30 days
+        No activity in the last 7 days
       </div>
     );
   }
@@ -89,7 +89,7 @@ export const TreasuryMiniChart = ({ incoming, outgoing, isLoading }: TreasuryMin
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">30 Day Activity</span>
+        <span className="text-muted-foreground">7 Day Activity</span>
         <span className={netChange >= 0 ? "text-green-500" : "text-red-500"}>
           {netChange >= 0 ? "+" : ""}{netChange.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}
         </span>
@@ -132,7 +132,7 @@ export const TreasuryMiniChart = ({ incoming, outgoing, isLoading }: TreasuryMin
         </ResponsiveContainer>
       </div>
       <div className="flex justify-between text-[10px] text-muted-foreground">
-        <span>30d ago</span>
+        <span>7d ago</span>
         <span>Today</span>
       </div>
     </div>
