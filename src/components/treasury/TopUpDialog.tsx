@@ -85,7 +85,7 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
           {/* QR Code */}
           <div className="p-4 bg-white rounded-xl shadow-inner">
             <QRCodeSVG
-              value={ethereumUri}
+              value={hexAddress}
               size={180}
               level="H"
               includeMargin={false}

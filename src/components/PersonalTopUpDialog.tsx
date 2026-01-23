@@ -64,7 +64,7 @@ export const PersonalTopUpDialog = ({ walletAddress }: PersonalTopUpDialogProps)
           {/* QR Code */}
           <div className="p-4 bg-white rounded-xl shadow-inner">
             <QRCodeSVG
-              value={ethereumUri}
+              value={walletAddress}
               size={180}
               level="H"
               includeMargin={false}
