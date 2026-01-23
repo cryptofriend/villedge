@@ -37,10 +37,18 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   const [projectDescription, setProjectDescription] = useState("");
   const [projectUrl, setProjectUrl] = useState("");
 
-  // Load profile data when dialog opens
+  // Load profile data when dialog opens or profile changes
   useEffect(() => {
-    if (open && profile) {
-      setDisplayName(profile.display_name || "");
+    if (open) {
+      // Always sync form with latest profile data when dialog opens
+      setDisplayName(profile?.display_name || "");
+      // Reset other fields since they're not persisted yet
+      setSocialProfile("");
+      setBio("");
+      setOfferings("");
+      setAsks("");
+      setProjectDescription("");
+      setProjectUrl("");
     }
   }, [open, profile]);
 
