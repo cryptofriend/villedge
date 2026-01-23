@@ -1,5 +1,5 @@
 import { http, createConfig, createStorage } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
+import { base } from 'wagmi/chains';
 import { porto } from 'porto/wagmi';
 import { Mode } from 'porto';
 
@@ -45,10 +45,10 @@ const dialogMode = Mode.dialog({
 });
 
 export const wagmiConfig = createConfig({
-  chains: [baseSepolia],
+  chains: [base],
   connectors: [porto({ mode: dialogMode })],
   storage: createStorage({ storage: localStorage }),
   transports: {
-    [baseSepolia.id]: http(),
+    [base.id]: http(),
   },
 });
