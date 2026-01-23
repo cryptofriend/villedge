@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Link, Gift, HelpCircle, MessageSquare, ExternalLink, Briefcase } from "lucide-react";
+import { User, Link, Gift, HelpCircle, MessageSquare, ExternalLink, Briefcase, Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { getBestAvatar } from "@/lib/avatar";
 import { PersonalTopUpDialog } from "./PersonalTopUpDialog";
+import { usePersonalBalance } from "@/hooks/usePersonalBalance";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ interface ProfileDialogProps {
 export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   const { profile, updateProfile, user } = useAuth();
   const { address } = useAccount();
+  const { balance, isLoading: isLoadingBalance } = usePersonalBalance(address);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [displayName, setDisplayName] = useState("");
@@ -108,9 +110,21 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
                 </p>
                 {address && <PersonalTopUpDialog walletAddress={address} />}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Add a social profile to use your real avatar
-              </p>
+              {/* Wallet Balance */}
+              <div className="flex items-center gap-1.5 mt-1">
+                <Wallet className="h-3 w-3 text-muted-foreground" />
+                {isLoadingBalance ? (
+                  <span className="text-xs text-muted-foreground">Loading...</span>
+                ) : (
+                  <span className="text-xs font-medium text-foreground">
+                    ${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-blue-600/10 text-blue-600 text-[10px] font-medium">
+                  <div className="w-1 h-1 rounded-full bg-blue-600" />
+                  Base
+                </span>
+              </div>
             </div>
           </div>
 
