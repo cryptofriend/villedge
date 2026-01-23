@@ -252,17 +252,6 @@ export default function Auth() {
               </div>
             </div>
 
-            {/* Learn more link */}
-            <div className="text-center pt-4">
-              <a 
-                href="https://porto.sh" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline"
-              >
-                Learn more about Porto →
-              </a>
-            </div>
           </div>
         </div>
       </div>
