@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpCircle, Copy, Check, Wallet, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import { useAccount, useSendTransaction } from "wagmi";
+import { useAccount, useChainId, useSendTransaction, useSwitchChain } from "wagmi";
 import { parseEther } from "viem";
 import { Input } from "@/components/ui/input";
 
@@ -30,7 +30,9 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
   const [amount, setAmount] = useState("");
   const [showPayForm, setShowPayForm] = useState(false);
 
-  const { address: connectedAddress, isConnected } = useAccount();
+  const { isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { sendTransaction, isPending } = useSendTransaction();
 
   // Use resolved address (hex) for the QR code, fallback to walletAddress
@@ -52,6 +54,16 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
   };
 
   const handlePayWithWallet = () => {
+    if (chainId !== 8453) {
+      toast.error("Please switch to Base network");
+      try {
+        switchChain({ chainId: 8453 });
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
     if (!amount || parseFloat(amount) <= 0) {
       toast.error("Please enter a valid amount");
       return;
@@ -68,6 +80,7 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
       {
         to: toAddress as `0x${string}`,
         value: parseEther(amount),
+        chainId: 8453,
       },
       {
         onSuccess: (hash) => {
@@ -146,6 +159,28 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
                 </Button>
               ) : (
                 <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                  {chainId !== 8453 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Wrong network (current chain: {chainId}). Switch to Base (8453) to send.
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => switchChain({ chainId: 8453 })}
+                        disabled={isSwitchingChain}
+                      >
+                        {isSwitchingChain ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Switching...
+                          </>
+                        ) : (
+                          "Switch to Base"
+                        )}
+                      </Button>
+                    </div>
+                  )}
                   <div className="space-y-1.5">
                     <label className="text-xs text-muted-foreground">
                       Amount (ETH)
@@ -176,7 +211,7 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
                       size="sm"
                       className="flex-1"
                       onClick={handlePayWithWallet}
-                      disabled={isPending || !amount}
+                      disabled={isPending || !amount || chainId !== 8453}
                     >
                       {isPending ? (
                         <>
