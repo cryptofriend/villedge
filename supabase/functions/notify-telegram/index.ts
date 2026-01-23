@@ -40,45 +40,45 @@ const handler = async (req: Request): Promise<Response> => {
     let message = "";
 
     if (type === "spot") {
-      message = `📍 *New Spot Added*\n\n`;
-      message += `*${escapeMarkdown(name)}*\n`;
-      if (category) message += `Category: ${escapeMarkdown(category)}\n`;
-      if (description) message += `\n${escapeMarkdown(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
+      message = `📍 <b>New Spot Added</b>\n\n`;
+      message += `<b>${escapeHtml(name)}</b>\n`;
+      if (category) message += `Category: ${escapeHtml(category)}\n`;
+      if (description) message += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
     } else if (type === "event") {
-      message = `🗓️ *New Event Added*\n\n`;
-      message += `*${escapeMarkdown(name)}*\n`;
+      message = `🗓️ <b>New Event Added</b>\n\n`;
+      message += `<b>${escapeHtml(name)}</b>\n`;
       if (startTime) {
         const date = new Date(startTime);
         message += `📅 ${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}\n`;
         message += `🕐 ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}\n`;
       }
-      if (location) message += `📌 ${escapeMarkdown(location)}\n`;
-      if (description) message += `\n${escapeMarkdown(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
+      if (location) message += `📌 ${escapeHtml(location)}\n`;
+      if (description) message += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
     } else if (type === "donation") {
-      message = `💰 *Treasury Donation Received*\n\n`;
+      message = `💰 <b>Treasury Donation Received</b>\n\n`;
       
       // Show donor name/address
       const donor = fromName || (from ? `${from.slice(0, 6)}...${from.slice(-4)}` : "Anonymous");
-      message += `From: *${escapeMarkdown(donor)}*\n`;
+      message += `From: <b>${escapeHtml(donor)}</b>\n`;
       
       // Show amount
       if (amount && symbol) {
-        message += `Amount: *${amount.toFixed(6)} ${escapeMarkdown(symbol)}*\n`;
+        message += `Amount: <b>${amount.toFixed(6)} ${escapeHtml(symbol)}</b>\n`;
       }
       if (amountUsd && amountUsd > 0) {
-        message += `Value: *$${amountUsd.toFixed(2)} USD*\n`;
+        message += `Value: <b>$${amountUsd.toFixed(2)} USD</b>\n`;
       }
       
       // Show chain
       if (chain) {
-        message += `Chain: ${escapeMarkdown(chain)}\n`;
+        message += `Chain: ${escapeHtml(chain)}\n`;
       }
       
       // Add transaction link
       if (txHash && chain) {
         const explorerUrl = getExplorerUrl(chain, txHash);
         if (explorerUrl) {
-          message += `\n🔗 [View Transaction](${explorerUrl})`;
+          message += `\n🔗 <a href="${explorerUrl}">View Transaction</a>`;
         }
       }
       
@@ -86,10 +86,12 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (type !== "donation") {
-      message += `\n\n🔗 [View on map](https://map.proofofretreat.me)`;
+      message += `\n\n🔗 <a href="https://map.proofofretreat.me">View on map</a>`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    
+    console.log(`Sending Telegram message to chat: ${chatId}`);
     
     const response = await fetch(telegramUrl, {
       method: "POST",
@@ -97,7 +99,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         chat_id: chatId,
         text: message,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         disable_web_page_preview: true,
       }),
     });
@@ -124,8 +126,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-function escapeMarkdown(text: string): string {
-  return text.replace(/[_*\[\]()~`>#+=|{}.!-]/g, "\\$&");
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function getExplorerUrl(chain: string, txHash: string): string | null {
