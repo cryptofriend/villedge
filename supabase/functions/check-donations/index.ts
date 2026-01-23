@@ -128,6 +128,42 @@ async function fetchIncomingTransactions(walletAddress: string, apiKey: string):
   return transactions.filter(tx => tx.type === 'incoming');
 }
 
+// Fetch wallet balance from Zerion
+async function fetchWalletBalance(walletAddress: string, apiKey: string): Promise<number | null> {
+  try {
+    let resolvedAddress = walletAddress;
+    
+    if (walletAddress.endsWith('.eth')) {
+      const address = await resolveEns(walletAddress);
+      if (!address) return null;
+      resolvedAddress = address;
+    }
+
+    const authHeader = 'Basic ' + btoa(apiKey + ':');
+    const response = await fetch(
+      `https://api.zerion.io/v1/wallets/${resolvedAddress}/portfolio/?currency=usd&filter[positions]=only_simple`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Zerion balance API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data?.data?.attributes?.total?.positions || null;
+  } catch (error) {
+    console.error("Failed to fetch wallet balance:", error);
+    return null;
+  }
+}
+
 // Resolve ENS/Basename for a donor address
 async function resolveDonorName(address: string): Promise<string | null> {
   try {
@@ -152,7 +188,7 @@ async function resolveDonorName(address: string): Promise<string | null> {
 }
 
 // Send Telegram notification
-async function sendTelegramNotification(tx: Transaction, fromName?: string | null) {
+async function sendTelegramNotification(tx: Transaction, fromName?: string | null, treasuryBalance?: number | null, villageId?: string) {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -173,6 +209,8 @@ async function sendTelegramNotification(tx: Transaction, fromName?: string | nul
         fromName: fromName || undefined,
         txHash: tx.hash,
         chain: tx.chain,
+        treasuryBalance: treasuryBalance,
+        villageId: villageId,
       }),
     });
     
@@ -245,7 +283,15 @@ serve(async (req) => {
     });
     console.log(`Recent new transactions (last 24h): ${recentNewTxs.length}`);
 
+    // Fetch current treasury balance once (for all notifications)
+    let treasuryBalance: number | null = null;
+    if (recentNewTxs.length > 0) {
+      treasuryBalance = await fetchWalletBalance(walletAddress, zerionKey);
+      console.log(`Current treasury balance: $${treasuryBalance?.toFixed(2) || 'unknown'}`);
+    }
+
     let notifiedCount = 0;
+    const villageId = "por"; // Hardcoded for now, can be made dynamic
 
     // Process each new transaction
     for (const tx of recentNewTxs) {
@@ -263,8 +309,8 @@ serve(async (req) => {
       // Resolve donor name
       const fromName = await resolveDonorName(tx.from);
       
-      // Send notification
-      await sendTelegramNotification(tx, fromName);
+      // Send notification with treasury balance
+      await sendTelegramNotification(tx, fromName, treasuryBalance, villageId);
       notifiedCount++;
     }
 
