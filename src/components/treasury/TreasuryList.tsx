@@ -4,7 +4,7 @@ import { useWalletTransactions } from "@/hooks/useWalletTransactions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Coins, ThumbsUp, Clock, ThumbsDown, FileText, ExternalLink, RefreshCw, Plus, ArrowLeftRight } from "lucide-react";
+import { Send, Coins, ThumbsUp, Clock, ThumbsDown, FileText, ExternalLink, RefreshCw, Plus, ArrowLeftRight, Trophy } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
@@ -12,12 +12,13 @@ import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { TopUpDialog } from "./TopUpDialog";
 import { TransactionsList } from "./TransactionsList";
+import { DonorsLeaderboard } from "./DonorsLeaderboard";
 
 interface TreasuryListProps {
   villageId: string;
 }
 
-type ActiveTab = "proposals" | "transactions";
+type ActiveTab = "proposals" | "transactions" | "leaderboard";
 
 const REACTIONS: { type: ProposalReactionType; icon: typeof ThumbsUp; label: string; activeColor: string }[] = [
   { type: "fund", icon: ThumbsUp, label: "Fund this", activeColor: "text-green-500" },
@@ -176,12 +177,24 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
           )}
         >
           <ArrowLeftRight className="h-4 w-4" />
-          Transactions
+          Txs
           {(incoming.length + outgoing.length) > 0 && (
             <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">
               {incoming.length + outgoing.length}
             </span>
           )}
+        </button>
+        <button
+          onClick={() => setActiveTab("leaderboard")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors",
+            activeTab === "leaderboard"
+              ? "text-foreground border-b-2 border-primary bg-muted/30"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
+          )}
+        >
+          <Trophy className="h-4 w-4" />
+          Leaderboard
         </button>
       </div>
 
@@ -312,7 +325,7 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
             )}
           </div>
         </ScrollArea>
-      ) : (
+      ) : activeTab === "transactions" ? (
         /* Transactions view - split incoming/outgoing */
         <div className="flex flex-1 min-h-0">
           <div className="flex-1 border-r border-border flex flex-col min-h-0">
@@ -330,6 +343,12 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
             />
           </div>
         </div>
+      ) : (
+        /* Leaderboard view */
+        <DonorsLeaderboard 
+          transactions={incoming} 
+          isLoading={isLoadingTxs} 
+        />
       )}
     </div>
   );
