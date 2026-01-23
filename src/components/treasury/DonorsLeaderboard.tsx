@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { Trophy, Medal, ExternalLink, Loader2 } from "lucide-react";
 import { Transaction } from "@/hooks/useWalletTransactions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DonorsLeaderboardProps {
   transactions: Transaction[];
@@ -13,6 +15,14 @@ interface DonorEntry {
   totalValue: number;      // Native token amount
   totalValueUsd: number;   // USD value
   transactionCount: number;
+  resolvedName?: string | null;
+  avatar?: string | null;
+}
+
+interface ResolvedName {
+  address: string;
+  name: string | null;
+  avatar: string | null;
 }
 
 const truncateAddress = (address: string) => {
@@ -39,6 +49,9 @@ const getRankBg = (rank: number) => {
 };
 
 export const DonorsLeaderboard = ({ transactions, isLoading }: DonorsLeaderboardProps) => {
+  const [resolvedNames, setResolvedNames] = useState<Record<string, ResolvedName>>({});
+  const [isResolvingNames, setIsResolvingNames] = useState(false);
+
   // Aggregate transactions by sender address
   const donorMap = transactions.reduce<Record<string, DonorEntry>>((acc, tx) => {
     const address = tx.from.toLowerCase();
@@ -59,6 +72,56 @@ export const DonorsLeaderboard = ({ transactions, isLoading }: DonorsLeaderboard
   // Sort by total USD value (descending)
   const leaderboard = Object.values(donorMap)
     .sort((a, b) => b.totalValueUsd - a.totalValueUsd);
+
+  // Resolve ENS/Base names for addresses
+  useEffect(() => {
+    const resolveNames = async () => {
+      if (leaderboard.length === 0) return;
+      
+      // Only resolve for addresses we don't have yet
+      const addressesToResolve = leaderboard
+        .map(d => d.address)
+        .filter(addr => !resolvedNames[addr.toLowerCase()]);
+      
+      if (addressesToResolve.length === 0) return;
+      
+      setIsResolvingNames(true);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('resolve-ens-names', {
+          body: { addresses: addressesToResolve }
+        });
+        
+        if (error) {
+          console.error('Error resolving names:', error);
+          return;
+        }
+        
+        if (data?.results) {
+          const newResolved: Record<string, ResolvedName> = {};
+          data.results.forEach((result: ResolvedName) => {
+            newResolved[result.address.toLowerCase()] = result;
+          });
+          setResolvedNames(prev => ({ ...prev, ...newResolved }));
+        }
+      } catch (err) {
+        console.error('Failed to resolve names:', err);
+      } finally {
+        setIsResolvingNames(false);
+      }
+    };
+    
+    resolveNames();
+  }, [leaderboard.length]);
+
+  // Get display name for an address
+  const getDisplayName = (address: string) => {
+    const resolved = resolvedNames[address.toLowerCase()];
+    if (resolved?.name) {
+      return resolved.name;
+    }
+    return truncateAddress(address);
+  };
 
   if (isLoading) {
     return (
@@ -81,6 +144,9 @@ export const DonorsLeaderboard = ({ transactions, isLoading }: DonorsLeaderboard
         <span className="text-sm font-medium">Top Donors</span>
         <span className="text-xs text-muted-foreground ml-auto">
           {leaderboard.length} contributors
+          {isResolvingNames && (
+            <Loader2 className="inline-block ml-1 h-3 w-3 animate-spin" />
+          )}
         </span>
       </div>
       <ScrollArea className="flex-1">
@@ -94,6 +160,10 @@ export const DonorsLeaderboard = ({ transactions, isLoading }: DonorsLeaderboard
           ) : (
             leaderboard.map((donor, index) => {
               const rank = index + 1;
+              const resolved = resolvedNames[donor.address.toLowerCase()];
+              const displayName = getDisplayName(donor.address);
+              const hasResolvedName = !!resolved?.name;
+              
               return (
                 <a
                   key={donor.address}
@@ -109,12 +179,22 @@ export const DonorsLeaderboard = ({ transactions, isLoading }: DonorsLeaderboard
                     {getRankIcon(rank)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-mono text-sm font-medium truncate">
-                      {truncateAddress(donor.address)}
+                    <div className={cn(
+                      "text-sm font-medium truncate",
+                      hasResolvedName ? "text-foreground" : "font-mono"
+                    )}>
+                      {displayName}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {donor.transactionCount} transaction{donor.transactionCount !== 1 ? 's' : ''}
-                    </div>
+                    {hasResolvedName && (
+                      <div className="text-[10px] text-muted-foreground font-mono">
+                        {truncateAddress(donor.address)}
+                      </div>
+                    )}
+                    {!hasResolvedName && (
+                      <div className="text-[10px] text-muted-foreground">
+                        {donor.transactionCount} transaction{donor.transactionCount !== 1 ? 's' : ''}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-sm font-semibold text-primary">
