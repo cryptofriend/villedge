@@ -25,6 +25,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
   const [telegramUrl, setTelegramUrl] = useState(village.telegram_url || "");
   const [twitterUrl, setTwitterUrl] = useState(village.twitter_url || "");
   const [instagramUrl, setInstagramUrl] = useState(village.instagram_url || "");
+  const [walletAddress, setWalletAddress] = useState(village.wallet_address || "");
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -35,6 +36,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
       setTelegramUrl(village.telegram_url || "");
       setTwitterUrl(village.twitter_url || "");
       setInstagramUrl(village.instagram_url || "");
+      setWalletAddress(village.wallet_address || "");
     }
   }, [open, village]);
 
@@ -58,6 +60,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           telegram_url: telegramUrl || null,
           twitter_url: twitterUrl || null,
           instagram_url: instagramUrl || null,
+          wallet_address: walletAddress.trim() || null,
         })
         .eq("id", village.id);
 
@@ -124,6 +127,22 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
               placeholder="What is this village about?"
               rows={3}
             />
+          </div>
+
+          <div className="border-t pt-4">
+            <h4 className="font-medium text-sm mb-3">Treasury</h4>
+            <div className="space-y-2">
+              <Label htmlFor="wallet">Wallet Address</Label>
+              <Input
+                id="wallet"
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
+                placeholder="0x... or yourname.eth"
+              />
+              <p className="text-xs text-muted-foreground">
+                ENS names and hex addresses are supported. Used for treasury tracking and donation notifications.
+              </p>
+            </div>
           </div>
 
           <div className="border-t pt-4">
