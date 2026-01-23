@@ -85,14 +85,24 @@ Deno.serve(async (req) => {
       userId = existingUser.id;
       console.log("porto-auth: Found existing user:", userId);
       
-      // Update profile avatar if not set
+      // Ensure profile exists and update avatar if not set
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('avatar_url')
         .eq('user_id', userId)
         .single();
       
-      if (existingProfile && !existingProfile.avatar_url) {
+      if (!existingProfile) {
+        // Profile doesn't exist, create it
+        await supabase
+          .from('profiles')
+          .insert({
+            user_id: userId,
+            display_name: truncatedAddress,
+            avatar_url: avatarUrl,
+          });
+        console.log("porto-auth: Created missing profile for existing user");
+      } else if (!existingProfile.avatar_url) {
         await supabase
           .from('profiles')
           .update({ avatar_url: avatarUrl })
@@ -118,19 +128,21 @@ Deno.serve(async (req) => {
       userId = newUser.user.id;
       console.log("porto-auth: Created new user:", userId);
 
-      // Update the profile with avatar (trigger creates profile, we update it)
-      // Small delay to ensure trigger has executed
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      await supabase
+      // Create profile for new user
+      const { error: profileError } = await supabase
         .from('profiles')
-        .update({ 
+        .insert({
+          user_id: userId,
+          display_name: truncatedAddress,
           avatar_url: avatarUrl,
-          display_name: truncatedAddress
-        })
-        .eq('user_id', userId);
+        });
       
-      console.log("porto-auth: Updated profile with avatar");
+      if (profileError) {
+        console.error("porto-auth: Error creating profile:", profileError);
+        // Don't throw - user was created, profile creation failure is not critical
+      } else {
+        console.log("porto-auth: Created profile for new user");
+      }
     }
 
     // Generate magic link for authentication
