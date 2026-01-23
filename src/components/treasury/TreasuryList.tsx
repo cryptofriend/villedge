@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTreasury, ProposalReactionType } from "@/hooks/useTreasury";
 import { useWalletTransactions } from "@/hooks/useWalletTransactions";
+import { useDonationNotifier } from "@/hooks/useDonationNotifier";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,9 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
   } = useTreasury(villageId);
   
   const { incoming, outgoing, isLoading: isLoadingTxs, refetch: refetchTxs } = useWalletTransactions(walletAddress);
+  
+  // Send Telegram notifications for new donations
+  useDonationNotifier(incoming);
   
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
