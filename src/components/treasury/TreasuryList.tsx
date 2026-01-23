@@ -32,6 +32,7 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
     isLoadingWallet,
     walletBalance,
     walletAddress,
+    resolvedAddress,
     addProposal, 
     addReaction, 
     getReactionCounts 
@@ -143,7 +144,7 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
 
       {/* Top up button */}
       <div className="p-4 border-b border-border">
-        <TopUpDialog walletAddress={walletAddress} />
+        <TopUpDialog walletAddress={walletAddress} resolvedAddress={resolvedAddress} />
       </div>
 
       {/* Tab buttons */}
