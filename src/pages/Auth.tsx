@@ -233,7 +233,7 @@ export default function Auth() {
               {/* Info text */}
               <div className="text-center space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Porto uses passkeys for secure, passwordless authentication
+                  Use passkeys for secure, passwordless authentication
                 </p>
                 <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/70">
                   <span className="flex items-center gap-1">
