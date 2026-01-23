@@ -116,9 +116,15 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
                 {isLoadingBalance ? (
                   <span className="text-xs text-muted-foreground">Loading...</span>
                 ) : (
-                  <span className="text-xs font-medium text-foreground">
+                  <a
+                    href={`https://app.zerion.io/${address}/overview`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-foreground hover:text-primary transition-colors flex items-center gap-1"
+                  >
                     ${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+                    <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
                 )}
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-blue-600/10 text-blue-600 text-[10px] font-medium">
                   <div className="w-1 h-1 rounded-full bg-blue-600" />
