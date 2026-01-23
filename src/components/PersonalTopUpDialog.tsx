@@ -22,10 +22,9 @@ const SUPPORTED_CHAINS = [
 export const PersonalTopUpDialog = ({ walletAddress }: PersonalTopUpDialogProps) => {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedChain, setSelectedChain] = useState(SUPPORTED_CHAINS[0]);
 
   // EIP-681 Ethereum URI format: ethereum:<address>@<chainId>
-  const ethereumUri = `ethereum:${walletAddress}@${selectedChain.chainId}`;
+  const ethereumUri = `ethereum:${walletAddress}@8453`;
 
   const handleCopy = async () => {
     try {
@@ -48,34 +47,19 @@ export const PersonalTopUpDialog = ({ walletAddress }: PersonalTopUpDialogProps)
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">
+          <DialogTitle className="text-center flex items-center justify-center gap-2">
             Top Up Your Wallet
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-600 text-white text-xs font-medium">
+              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+              Base
+            </span>
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 pt-4">
-          {/* Chain selector */}
-          <div className="w-full space-y-2">
-            <p className="text-xs text-muted-foreground text-center">
-              Select Network
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {SUPPORTED_CHAINS.map((chain) => (
-                <button
-                  key={chain.name}
-                  onClick={() => setSelectedChain(chain)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
-                    selectedChain.chainId === chain.chainId
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted/50 hover:bg-muted"
-                  }`}
-                >
-                  <div className={`w-2 h-2 rounded-full ${chain.color}`} />
-                  <span className="text-xs font-medium">{chain.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Send funds on Base network only
+          </p>
 
           {/* QR Code */}
           <div className="p-4 bg-white rounded-xl shadow-inner">
@@ -103,7 +87,7 @@ export const PersonalTopUpDialog = ({ walletAddress }: PersonalTopUpDialogProps)
           </button>
 
           <p className="text-xs text-muted-foreground text-center">
-            Scan with your wallet app to receive {selectedChain.name} tokens
+            Scan with your crypto wallet
           </p>
         </div>
       </DialogContent>
