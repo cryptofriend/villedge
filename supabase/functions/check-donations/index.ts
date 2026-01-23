@@ -245,101 +245,121 @@ serve(async (req) => {
     // Create Supabase client with service role for DB access
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get all villages with treasury wallet addresses
-    // For now, we'll use the hardcoded wallet from the PoR village
-    const walletAddress = "proofofretreat.eth";
+    // Get all villages with wallet addresses configured
+    const { data: villages, error: villagesError } = await supabase
+      .from('villages')
+      .select('id, wallet_address')
+      .not('wallet_address', 'is', null);
     
-    console.log(`Checking donations for wallet: ${walletAddress}`);
+    if (villagesError) {
+      console.error("Failed to fetch villages:", villagesError);
+      throw new Error("Failed to fetch villages");
+    }
 
-    // Fetch incoming transactions
-    const incomingTxs = await fetchIncomingTransactions(walletAddress, zerionKey);
-    console.log(`Found ${incomingTxs.length} incoming transactions`);
-
-    if (incomingTxs.length === 0) {
+    if (!villages || villages.length === 0) {
+      console.log("No villages with wallet addresses configured");
       return new Response(
-        JSON.stringify({ success: true, message: "No incoming transactions found", notified: 0 }),
+        JSON.stringify({ success: true, message: "No villages with wallet addresses", notified: 0 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get already notified tx hashes from database
-    const { data: notifiedRows } = await supabase
-      .from('notified_donations')
-      .select('tx_hash')
-      .eq('wallet_address', walletAddress);
-    
-    const notifiedHashes = new Set((notifiedRows || []).map(r => r.tx_hash));
-    console.log(`Already notified: ${notifiedHashes.size} transactions`);
+    console.log(`Found ${villages.length} villages with wallet addresses`);
 
-    // Filter to only new transactions (not already notified)
-    const newTxs = incomingTxs.filter(tx => !notifiedHashes.has(tx.hash));
-    console.log(`New transactions to notify: ${newTxs.length}`);
+    let totalNotified = 0;
+    let totalChecked = 0;
 
-    // Only notify for recent transactions (within last 24 hours)
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    const recentNewTxs = newTxs.filter(tx => {
-      const txTime = new Date(tx.timestamp).getTime();
-      return txTime > oneDayAgo;
-    });
-    console.log(`Recent new transactions (last 24h): ${recentNewTxs.length}`);
-
-    // Fetch current treasury balance once (for all notifications)
-    let treasuryBalance: number | null = null;
-    if (recentNewTxs.length > 0) {
-      treasuryBalance = await fetchWalletBalance(walletAddress, zerionKey);
-      console.log(`Current treasury balance: $${treasuryBalance?.toFixed(2) || 'unknown'}`);
-    }
-
-    let notifiedCount = 0;
-    const villageId = "por"; // Hardcoded for now, can be made dynamic
-
-    // Process each new transaction
-    for (const tx of recentNewTxs) {
-      // Mark as notified in DB first (to prevent duplicates)
-      const { error: insertError } = await supabase
-        .from('notified_donations')
-        .insert({ tx_hash: tx.hash, wallet_address: walletAddress });
+    // Process each village
+    for (const village of villages) {
+      const walletAddress = village.wallet_address;
+      const villageId = village.id;
       
-      if (insertError) {
-        // Already notified (race condition), skip
-        console.log(`Skipping tx ${tx.hash} - already in DB`);
-        continue;
+      console.log(`Checking donations for village ${villageId}: ${walletAddress}`);
+
+      // Fetch incoming transactions
+      const incomingTxs = await fetchIncomingTransactions(walletAddress, zerionKey);
+      totalChecked += incomingTxs.length;
+      console.log(`Found ${incomingTxs.length} incoming transactions for ${villageId}`);
+
+      if (incomingTxs.length === 0) continue;
+
+      // Get already notified tx hashes from database
+      const { data: notifiedRows } = await supabase
+        .from('notified_donations')
+        .select('tx_hash')
+        .eq('wallet_address', walletAddress);
+      
+      const notifiedHashes = new Set((notifiedRows || []).map(r => r.tx_hash));
+      console.log(`Already notified for ${villageId}: ${notifiedHashes.size} transactions`);
+
+      // Filter to only new transactions (not already notified)
+      const newTxs = incomingTxs.filter(tx => !notifiedHashes.has(tx.hash));
+      console.log(`New transactions to notify for ${villageId}: ${newTxs.length}`);
+
+      // Only notify for recent transactions (within last 24 hours)
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      const recentNewTxs = newTxs.filter(tx => {
+        const txTime = new Date(tx.timestamp).getTime();
+        return txTime > oneDayAgo;
+      });
+      console.log(`Recent new transactions (last 24h) for ${villageId}: ${recentNewTxs.length}`);
+
+      // Fetch current treasury balance once (for all notifications of this village)
+      let treasuryBalance: number | null = null;
+      if (recentNewTxs.length > 0) {
+        treasuryBalance = await fetchWalletBalance(walletAddress, zerionKey);
+        console.log(`Treasury balance for ${villageId}: $${treasuryBalance?.toFixed(2) || 'unknown'}`);
       }
 
-      // Resolve donor name
-      const fromName = await resolveDonorName(tx.from);
+      // Process each new transaction
+      for (const tx of recentNewTxs) {
+        // Mark as notified in DB first (to prevent duplicates)
+        const { error: insertError } = await supabase
+          .from('notified_donations')
+          .insert({ tx_hash: tx.hash, wallet_address: walletAddress });
+        
+        if (insertError) {
+          // Already notified (race condition), skip
+          console.log(`Skipping tx ${tx.hash} - already in DB`);
+          continue;
+        }
+
+        // Resolve donor name
+        const fromName = await resolveDonorName(tx.from);
+        
+        // Send notification with treasury balance
+        await sendTelegramNotification(tx, fromName, treasuryBalance, villageId);
+        totalNotified++;
+      }
+
+      // Also mark older transactions as seen (without notifying)
+      const olderTxs = newTxs.filter(tx => {
+        const txTime = new Date(tx.timestamp).getTime();
+        return txTime <= oneDayAgo;
+      });
       
-      // Send notification with treasury balance
-      await sendTelegramNotification(tx, fromName, treasuryBalance, villageId);
-      notifiedCount++;
+      if (olderTxs.length > 0) {
+        const olderInserts = olderTxs.map(tx => ({
+          tx_hash: tx.hash,
+          wallet_address: walletAddress,
+        }));
+        
+        await supabase
+          .from('notified_donations')
+          .upsert(olderInserts, { onConflict: 'tx_hash', ignoreDuplicates: true });
+        
+        console.log(`Marked ${olderTxs.length} older transactions as seen for ${villageId}`);
+      }
     }
 
-    // Also mark older transactions as seen (without notifying)
-    const olderTxs = newTxs.filter(tx => {
-      const txTime = new Date(tx.timestamp).getTime();
-      return txTime <= oneDayAgo;
-    });
-    
-    if (olderTxs.length > 0) {
-      const olderInserts = olderTxs.map(tx => ({
-        tx_hash: tx.hash,
-        wallet_address: walletAddress,
-      }));
-      
-      await supabase
-        .from('notified_donations')
-        .upsert(olderInserts, { onConflict: 'tx_hash', ignoreDuplicates: true });
-      
-      console.log(`Marked ${olderTxs.length} older transactions as seen`);
-    }
-
-    console.log(`Donation check complete. Notified: ${notifiedCount}`);
+    console.log(`Donation check complete. Total notified: ${totalNotified}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Checked ${incomingTxs.length} transactions, notified ${notifiedCount} new donations`,
-        notified: notifiedCount
+        message: `Checked ${totalChecked} transactions across ${villages.length} villages, notified ${totalNotified} new donations`,
+        notified: totalNotified,
+        villagesChecked: villages.length
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
