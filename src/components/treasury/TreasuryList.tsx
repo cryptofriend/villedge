@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { TopUpDialog } from "./TopUpDialog";
 import { TransactionsList } from "./TransactionsList";
 import { DonorsLeaderboard } from "./DonorsLeaderboard";
+import { TreasuryMiniChart } from "./TreasuryMiniChart";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TreasuryListProps {
@@ -168,6 +169,15 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
         <div className="text-xs text-muted-foreground mt-1 font-mono truncate">
           {walletAddress}
         </div>
+      </div>
+
+      {/* Mini chart */}
+      <div className="px-4 py-3 border-b border-border">
+        <TreasuryMiniChart 
+          incoming={incoming} 
+          outgoing={outgoing} 
+          isLoading={isLoadingTxs} 
+        />
       </div>
 
       {/* Top up & check donations buttons */}
