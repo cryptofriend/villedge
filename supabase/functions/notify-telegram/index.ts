@@ -6,12 +6,20 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "spot" | "event";
+  type: "spot" | "event" | "donation";
   name: string;
   description?: string;
   location?: string;
   startTime?: string;
   category?: string;
+  // Donation-specific fields
+  amount?: number;
+  amountUsd?: number;
+  symbol?: string;
+  from?: string;
+  fromName?: string;
+  txHash?: string;
+  chain?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -27,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram credentials not configured");
     }
 
-    const { type, name, description, location, startTime, category }: NotificationRequest = await req.json();
+    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain }: NotificationRequest = await req.json();
 
     let message = "";
 
@@ -46,9 +54,40 @@ const handler = async (req: Request): Promise<Response> => {
       }
       if (location) message += `📌 ${escapeMarkdown(location)}\n`;
       if (description) message += `\n${escapeMarkdown(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
+    } else if (type === "donation") {
+      message = `💰 *Treasury Donation Received*\n\n`;
+      
+      // Show donor name/address
+      const donor = fromName || (from ? `${from.slice(0, 6)}...${from.slice(-4)}` : "Anonymous");
+      message += `From: *${escapeMarkdown(donor)}*\n`;
+      
+      // Show amount
+      if (amount && symbol) {
+        message += `Amount: *${amount.toFixed(6)} ${escapeMarkdown(symbol)}*\n`;
+      }
+      if (amountUsd && amountUsd > 0) {
+        message += `Value: *$${amountUsd.toFixed(2)} USD*\n`;
+      }
+      
+      // Show chain
+      if (chain) {
+        message += `Chain: ${escapeMarkdown(chain)}\n`;
+      }
+      
+      // Add transaction link
+      if (txHash && chain) {
+        const explorerUrl = getExplorerUrl(chain, txHash);
+        if (explorerUrl) {
+          message += `\n🔗 [View Transaction](${explorerUrl})`;
+        }
+      }
+      
+      message += `\n\n🙏 Thank you for supporting the village!`;
     }
 
-    message += `\n\n🔗 [View on map](https://map.proofofretreat.me)`;
+    if (type !== "donation") {
+      message += `\n\n🔗 [View on map](https://map.proofofretreat.me)`;
+    }
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     
@@ -87,6 +126,19 @@ const handler = async (req: Request): Promise<Response> => {
 
 function escapeMarkdown(text: string): string {
   return text.replace(/[_*\[\]()~`>#+=|{}.!-]/g, "\\$&");
+}
+
+function getExplorerUrl(chain: string, txHash: string): string | null {
+  const explorers: Record<string, string> = {
+    'ethereum': `https://etherscan.io/tx/${txHash}`,
+    'base': `https://basescan.org/tx/${txHash}`,
+    'optimism': `https://optimistic.etherscan.io/tx/${txHash}`,
+    'arbitrum': `https://arbiscan.io/tx/${txHash}`,
+    'polygon': `https://polygonscan.com/tx/${txHash}`,
+    'avalanche': `https://snowtrace.io/tx/${txHash}`,
+    'bsc': `https://bscscan.com/tx/${txHash}`,
+  };
+  return explorers[chain.toLowerCase()] || null;
 }
 
 serve(handler);
