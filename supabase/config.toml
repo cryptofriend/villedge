@@ -3,6 +3,9 @@ project_id = "hgxmhzswfrhvoynhasmb"
 [functions.get-wallet-balance]
 verify_jwt = false
 
+[functions.get-wallet-transactions]
+verify_jwt = false
+
 [functions.porto-auth]
 verify_jwt = false
 

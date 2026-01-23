@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTreasury, ProposalReactionType } from "@/hooks/useTreasury";
+import { useWalletTransactions } from "@/hooks/useWalletTransactions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { TopUpDialog } from "./TopUpDialog";
+import { TransactionsList } from "./TransactionsList";
 
 interface TreasuryListProps {
   villageId: string;
@@ -32,6 +34,8 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
     addReaction, 
     getReactionCounts 
   } = useTreasury(villageId);
+  
+  const { incoming, outgoing, isLoading: isLoadingTxs, refetch: refetchTxs } = useWalletTransactions(walletAddress);
   
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
@@ -91,6 +95,7 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
 
   const handleRefreshBalance = () => {
     queryClient.invalidateQueries({ queryKey: ["wallet-balance", walletAddress] });
+    refetchTxs();
   };
 
   return (
@@ -191,9 +196,31 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
         )}
       </div>
 
+      {/* Transaction history - split view */}
+      <div className="flex border-b border-border h-48 sm:h-56">
+        <div className="flex-1 border-r border-border">
+          <TransactionsList 
+            transactions={incoming} 
+            type="incoming" 
+            isLoading={isLoadingTxs} 
+          />
+        </div>
+        <div className="flex-1">
+          <TransactionsList 
+            transactions={outgoing} 
+            type="outgoing" 
+            isLoading={isLoadingTxs} 
+          />
+        </div>
+      </div>
+
       {/* Proposals list */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-3">
+          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Proposals
+          </h3>
           {isLoading ? (
             <div className="text-center text-muted-foreground text-sm py-8">
               Loading proposals...
