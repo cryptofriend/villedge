@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,13 +15,14 @@ import { useMiniKit } from '@/components/MiniKitProvider';
 
 const usernameSchema = z.string().min(2, 'Username must be at least 2 characters').max(30, 'Username must be at most 30 characters').regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores and hyphens');
 
-const WORLD_ID_APP_ID = import.meta.env.VITE_WORLD_ID_APP_ID || 'app_staging_placeholder';
+const WORLD_ID_APP_ID = (import.meta.env.VITE_WORLD_ID_APP_ID as string | undefined) ?? undefined;
 const WORLD_ID_ACTION = 'login';
 
 export default function Auth() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { isInsideMiniApp } = useMiniKit();
+  const didAutoMiniKitAuth = useRef(false);
   
   const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +30,13 @@ export default function Auth() {
   const [showPasskeySignup, setShowPasskeySignup] = useState(false);
   const [errors, setErrors] = useState<{ username?: string }>({});
   const [supportsPasskey, setSupportsPasskey] = useState(false);
+
+  const isWorldAppWebView = useMemo(() => {
+    // Heuristic fallback: some World App webviews include “WorldApp” in UA.
+    return typeof navigator !== 'undefined' && /WorldApp/i.test(navigator.userAgent);
+  }, []);
+
+  const shouldUseMiniKit = isInsideMiniApp || isWorldAppWebView;
 
   useEffect(() => {
     setSupportsPasskey(browserSupportsWebAuthn());
@@ -106,67 +114,58 @@ export default function Auth() {
   };
 
   // Handle MiniKit wallet auth (for inside World App)
-  const handleMiniKitWalletAuth = async () => {
-    if (!MiniKit.isInstalled()) {
-      toast.error('MiniKit is not available');
+  const handleMiniKitWalletAuth = useCallback(async () => {
+    if (!WORLD_ID_APP_ID) {
+      toast.error('World ID is not configured (missing App ID).');
       return;
     }
 
     setIsWorldIdVerifying(true);
 
     try {
-      // 1. Get nonce from backend
+      // 1) Get nonce from backend
       const { data: nonceData, error: nonceError } = await supabase.functions.invoke('siwe-nonce');
-      
       if (nonceError || !nonceData?.nonce) {
-        throw new Error('Failed to get authentication nonce');
+        throw new Error(nonceData?.error || nonceError?.message || 'Failed to get authentication nonce');
       }
 
-      const nonce = nonceData.nonce;
-      console.log('Got SIWE nonce:', nonce);
+      const nonce = nonceData.nonce as string;
 
-      // 2. Request wallet authentication via MiniKit
+      // 2) Request wallet authentication via MiniKit
+      // Avoid pre-checking MiniKit.isInstalled(); it can be noisy and bridge readiness may be async.
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
         nonce,
         requestId: '0',
-        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week
+        expirationTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         statement: 'Sign in to Villedge with your World App wallet',
       });
-
-      console.log('WalletAuth payload:', finalPayload);
 
       if (finalPayload.status === 'error') {
         throw new Error('Wallet authentication was cancelled or failed');
       }
 
-      // 3. Verify signature on backend
+      // 3) Verify signature on backend
       const { data, error } = await supabase.functions.invoke('siwe-verify', {
-        body: {
-          payload: finalPayload,
-          nonce,
-        }
+        body: { payload: finalPayload, nonce },
       });
 
       if (error || data?.error) {
         throw new Error(data?.error || error?.message || 'Wallet authentication failed');
       }
 
-      if (data.verified && data.actionLink) {
+      if (data?.verified && data?.actionLink) {
         const url = new URL(data.actionLink);
         const token = url.searchParams.get('token');
         const type = url.searchParams.get('type');
-        
+
         if (token && type) {
           const { error: sessionError } = await supabase.auth.verifyOtp({
             token_hash: token,
             type: type as 'magiclink'
           });
-          
-          if (sessionError) {
-            throw sessionError;
-          }
+          if (sessionError) throw sessionError;
         }
-        
+
         toast.success('Signed in with World App!');
         navigate('/');
       }
@@ -176,7 +175,17 @@ export default function Auth() {
     } finally {
       setIsWorldIdVerifying(false);
     }
-  };
+  }, [navigate]);
+
+  // Auto-start MiniKit auth when we detect the World App webview.
+  useEffect(() => {
+    if (loading || user) return;
+    if (!shouldUseMiniKit) return;
+    if (didAutoMiniKitAuth.current) return;
+
+    didAutoMiniKitAuth.current = true;
+    handleMiniKitWalletAuth();
+  }, [handleMiniKitWalletAuth, loading, shouldUseMiniKit, user]);
 
   const handlePasskeyContinue = async () => {
     if (!supportsPasskey || !validateForm()) return;
@@ -292,7 +301,7 @@ export default function Auth() {
           {/* Auth Buttons Row */}
           <div className="flex gap-3">
             {/* World ID Sign In - Use MiniKit if inside World App, otherwise IDKit */}
-            {isInsideMiniApp ? (
+            {shouldUseMiniKit ? (
               <Button 
                 onClick={handleMiniKitWalletAuth} 
                 className="flex-1 gap-2 h-12 bg-zinc-800/75 hover:bg-zinc-700/90 text-zinc-100 border border-zinc-600/60 transition-all duration-200"
@@ -309,7 +318,7 @@ export default function Auth() {
               </Button>
             ) : (
               <IDKitWidget
-                app_id={WORLD_ID_APP_ID as `app_${string}`}
+                app_id={(WORLD_ID_APP_ID ?? '') as `app_${string}`}
                 action={WORLD_ID_ACTION}
                 onSuccess={handleWorldIdSuccess}
                 handleVerify={handleWorldIdVerify}
@@ -317,7 +326,13 @@ export default function Auth() {
               >
                 {({ open }) => (
                   <Button 
-                    onClick={open} 
+                    onClick={() => {
+                      if (!WORLD_ID_APP_ID) {
+                        toast.error('World ID is not configured (missing App ID).');
+                        return;
+                      }
+                      open();
+                    }}
                     className="flex-1 gap-2 h-12 bg-zinc-800/75 hover:bg-zinc-700/90 text-zinc-100 border border-zinc-600/60 transition-all duration-200"
                     disabled={isWorldIdVerifying}
                   >
