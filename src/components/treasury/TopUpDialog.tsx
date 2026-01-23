@@ -18,7 +18,6 @@ interface TopUpDialogProps {
 
 const SUPPORTED_CHAINS = [
   { name: "Base", chainId: 8453, color: "bg-blue-600" },
-  { name: "Ethereum", chainId: 1, color: "bg-blue-500" },
 ];
 
 export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps) => {
