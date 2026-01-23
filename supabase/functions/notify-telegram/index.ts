@@ -20,6 +20,8 @@ interface NotificationRequest {
   fromName?: string;
   txHash?: string;
   chain?: string;
+  treasuryBalance?: number;
+  villageId?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -35,7 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram credentials not configured");
     }
 
-    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain }: NotificationRequest = await req.json();
+    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId }: NotificationRequest = await req.json();
 
     let message = "";
 
@@ -74,6 +76,11 @@ const handler = async (req: Request): Promise<Response> => {
         message += `Chain: ${escapeHtml(chain)}\n`;
       }
       
+      // Show treasury balance
+      if (treasuryBalance && treasuryBalance > 0) {
+        message += `\n💼 <b>Treasury Balance: $${treasuryBalance.toFixed(2)} USD</b>\n`;
+      }
+      
       // Add transaction link
       if (txHash && chain) {
         const explorerUrl = getExplorerUrl(chain, txHash);
@@ -81,6 +88,12 @@ const handler = async (req: Request): Promise<Response> => {
           message += `\n🔗 <a href="${explorerUrl}">View Transaction</a>`;
         }
       }
+      
+      // Add top-up link
+      const topUpUrl = villageId 
+        ? `https://villedge.lovable.app/${villageId}?tab=treasury`
+        : `https://villedge.lovable.app`;
+      message += `\n💳 <a href="${topUpUrl}">Top Up Treasury</a>`;
       
       message += `\n\n🙏 Thank you for supporting the village!`;
     }
