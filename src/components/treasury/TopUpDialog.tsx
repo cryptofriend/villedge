@@ -7,91 +7,35 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowUpCircle, Wallet, Loader2 } from "lucide-react";
+import { ArrowUpCircle, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 
 interface TopUpDialogProps {
   walletAddress: string;
 }
 
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-      isMetaMask?: boolean;
-    };
-  }
-}
+const SUPPORTED_CHAINS = [
+  { name: "Ethereum", color: "bg-blue-500" },
+  { name: "Base", color: "bg-blue-600" },
+  { name: "Optimism", color: "bg-red-500" },
+  { name: "Arbitrum", color: "bg-blue-400" },
+];
 
 export const TopUpDialog = ({ walletAddress }: TopUpDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const handleTopUp = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
-
-    if (!window.ethereum) {
-      toast.error("Please install MetaMask or another Web3 wallet");
-      return;
-    }
-
-    setIsLoading(true);
-
+  const handleCopy = async () => {
     try {
-      // Request wallet connection
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      }) as string[];
-
-      if (!accounts || accounts.length === 0) {
-        toast.error("No wallet connected");
-        return;
-      }
-
-      const fromAddress = accounts[0];
-
-      // Convert ETH amount to Wei (hex)
-      const amountInWei = BigInt(Math.floor(parseFloat(amount) * 1e18));
-      const hexAmount = "0x" + amountInWei.toString(16);
-
-      // Send transaction
-      const txHash = await window.ethereum.request({
-        method: "eth_sendTransaction",
-        params: [
-          {
-            from: fromAddress,
-            to: walletAddress,
-            value: hexAmount,
-          },
-        ],
-      });
-
-      toast.success("Transaction submitted!", {
-        description: `TX: ${(txHash as string).slice(0, 10)}...`,
-        action: {
-          label: "View",
-          onClick: () => window.open(`https://etherscan.io/tx/${txHash}`, "_blank"),
-        },
-      });
-
-      setOpen(false);
-      setAmount("");
-    } catch (error: unknown) {
-      console.error("Transaction error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Transaction failed or was rejected";
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+      await navigator.clipboard.writeText(walletAddress);
+      setCopied(true);
+      toast.success("Address copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy address");
     }
   };
-
-  const presetAmounts = ["0.01", "0.05", "0.1", "0.5"];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -103,76 +47,57 @@ export const TopUpDialog = ({ walletAddress }: TopUpDialogProps) => {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
+          <DialogTitle className="text-center">
             Top Up Treasury
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount (ETH)</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.001"
-              min="0"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="text-lg font-mono"
+        <div className="flex flex-col items-center gap-4 pt-4">
+          {/* QR Code */}
+          <div className="p-4 bg-white rounded-xl shadow-inner">
+            <QRCodeSVG
+              value={walletAddress}
+              size={180}
+              level="H"
+              includeMargin={false}
             />
           </div>
 
-          {/* Preset amounts */}
-          <div className="flex flex-wrap gap-2">
-            {presetAmounts.map((preset) => (
-              <Button
-                key={preset}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setAmount(preset)}
-                className="flex-1 min-w-[60px]"
-              >
-                {preset} ETH
-              </Button>
-            ))}
-          </div>
-
-          <div className="bg-muted/50 rounded-lg p-3 text-xs space-y-1">
-            <div className="flex justify-between text-muted-foreground">
-              <span>To:</span>
-              <span className="font-mono truncate ml-2 max-w-[200px]">{walletAddress}</span>
-            </div>
-            {amount && parseFloat(amount) > 0 && (
-              <div className="flex justify-between font-medium">
-                <span>Amount:</span>
-                <span>{amount} ETH</span>
-              </div>
-            )}
-          </div>
-
-          <Button
-            onClick={handleTopUp}
-            disabled={isLoading || !amount || parseFloat(amount) <= 0}
-            className="w-full"
+          {/* Wallet address */}
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors group max-w-full"
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Waiting for signature...
-              </>
+            <span className="font-mono text-xs text-muted-foreground truncate">
+              {walletAddress}
+            </span>
+            {copied ? (
+              <Check className="h-4 w-4 text-green-500 shrink-0" />
             ) : (
-              <>
-                <Wallet className="h-4 w-4 mr-2" />
-                Sign & Send
-              </>
+              <Copy className="h-4 w-4 text-muted-foreground group-hover:text-foreground shrink-0" />
             )}
-          </Button>
+          </button>
+
+          {/* Supported chains */}
+          <div className="w-full space-y-2">
+            <p className="text-xs text-muted-foreground text-center">
+              Supported Networks
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {SUPPORTED_CHAINS.map((chain) => (
+                <div
+                  key={chain.name}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded-full"
+                >
+                  <div className={`w-2 h-2 rounded-full ${chain.color}`} />
+                  <span className="text-xs font-medium">{chain.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            This will open your wallet to sign the transaction
+            Scan the QR code or copy the address to send crypto to the treasury
           </p>
         </div>
       </DialogContent>
