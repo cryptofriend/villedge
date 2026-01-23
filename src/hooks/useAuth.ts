@@ -7,6 +7,12 @@ export interface Profile {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
+  social_url: string | null;
+  bio: string | null;
+  offerings: string | null;
+  asks: string | null;
+  project_description: string | null;
+  project_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -98,7 +104,7 @@ export const useAuth = () => {
     return { error };
   };
 
-  const updateProfile = async (updates: Partial<Pick<Profile, 'display_name' | 'avatar_url'>>) => {
+  const updateProfile = async (updates: Partial<Pick<Profile, 'display_name' | 'avatar_url' | 'social_url' | 'bio' | 'offerings' | 'asks' | 'project_description' | 'project_url'>>) => {
     if (!user) return { error: new Error('Not authenticated') };
     
     // Use upsert to handle both insert and update cases

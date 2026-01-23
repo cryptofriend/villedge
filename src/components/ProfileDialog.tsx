@@ -42,13 +42,12 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
     if (open) {
       // Always sync form with latest profile data when dialog opens
       setDisplayName(profile?.display_name || "");
-      // Reset other fields since they're not persisted yet
-      setSocialProfile("");
-      setBio("");
-      setOfferings("");
-      setAsks("");
-      setProjectDescription("");
-      setProjectUrl("");
+      setSocialProfile(profile?.social_url || "");
+      setBio(profile?.bio || "");
+      setOfferings(profile?.offerings || "");
+      setAsks(profile?.asks || "");
+      setProjectDescription(profile?.project_description || "");
+      setProjectUrl(profile?.project_url || "");
     }
   }, [open, profile]);
 
@@ -74,6 +73,12 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
       const { error } = await updateProfile({
         display_name: displayName.trim(),
         avatar_url: avatarUrl,
+        social_url: socialProfile.trim() || null,
+        bio: bio.trim() || null,
+        offerings: offerings.trim() || null,
+        asks: asks.trim() || null,
+        project_description: projectDescription.trim() || null,
+        project_url: projectUrl.trim() || null,
       });
 
       if (error) {
