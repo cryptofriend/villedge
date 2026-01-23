@@ -31,7 +31,7 @@ const truncateAddress = (address: string) => {
 };
 
 const getAddressExplorerUrl = (address: string) => {
-  return `https://basescan.org/address/${address}`;
+  return `https://app.zerion.io/${address}/overview`;
 };
 
 const getRankIcon = (rank: number) => {
