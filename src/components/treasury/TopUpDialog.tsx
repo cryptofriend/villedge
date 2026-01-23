@@ -7,9 +7,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowUpCircle, Copy, Check } from "lucide-react";
+import { ArrowUpCircle, Copy, Check, Wallet, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
+import { useAccount, useSendTransaction } from "wagmi";
+import { parseEther } from "viem";
+import { Input } from "@/components/ui/input";
 
 interface TopUpDialogProps {
   walletAddress: string;
@@ -24,6 +27,11 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedChain, setSelectedChain] = useState(SUPPORTED_CHAINS[0]);
+  const [amount, setAmount] = useState("");
+  const [showPayForm, setShowPayForm] = useState(false);
+
+  const { address: connectedAddress, isConnected } = useAccount();
+  const { sendTransaction, isPending } = useSendTransaction();
 
   // Use resolved address (hex) for the QR code, fallback to walletAddress
   const hexAddress = resolvedAddress || walletAddress;
@@ -43,8 +51,42 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
     }
   };
 
+  const handlePayWithWallet = () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    sendTransaction(
+      {
+        to: hexAddress as `0x${string}`,
+        value: parseEther(amount),
+      },
+      {
+        onSuccess: (hash) => {
+          toast.success("Transaction submitted!", {
+            description: `TX: ${hash.slice(0, 10)}...`,
+          });
+          setAmount("");
+          setShowPayForm(false);
+        },
+        onError: (error) => {
+          toast.error("Transaction failed", {
+            description: error.message.slice(0, 100),
+          });
+        },
+      }
+    );
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        setShowPayForm(false);
+        setAmount("");
+      }
+    }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full">
           <ArrowUpCircle className="h-4 w-4 mr-2" />
@@ -80,6 +122,73 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Pay with wallet section */}
+          {isConnected && (
+            <div className="w-full space-y-3">
+              {!showPayForm ? (
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={() => setShowPayForm(true)}
+                >
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Pay with my wallet
+                </Button>
+              ) : (
+                <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">
+                      Amount (ETH)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      placeholder="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="text-center"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setShowPayForm(false);
+                        setAmount("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={handlePayWithWallet}
+                      disabled={isPending || !amount}
+                    >
+                      {isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        "Send"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 w-full">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or scan QR</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
           {/* QR Code */}
