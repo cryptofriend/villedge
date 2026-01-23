@@ -5,6 +5,40 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Generate DiceBear avatar URL (same logic as frontend)
+const AVATAR_STYLES = [
+  "adventurer",
+  "adventurer-neutral",
+  "avataaars",
+  "big-ears",
+  "big-smile",
+  "bottts",
+  "croodles",
+  "fun-emoji",
+  "lorelei",
+  "micah",
+  "miniavs",
+  "notionists",
+  "open-peeps",
+  "personas",
+  "pixel-art",
+  "thumbs",
+];
+
+const getStyleForSeed = (seed: string): string => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_STYLES[Math.abs(hash) % AVATAR_STYLES.length];
+};
+
+const getAvatarUrl = (seed: string, size: number = 128): string => {
+  const style = getStyleForSeed(seed);
+  const encodedSeed = encodeURIComponent(seed);
+  return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodedSeed}&size=${size}`;
+};
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -23,7 +57,8 @@ Deno.serve(async (req) => {
     }
 
     const normalizedAddress = address.toLowerCase();
-    console.log("porto-auth: Authenticating address:", normalizedAddress);
+    const truncatedAddress = `${normalizedAddress.slice(0, 6)}...${normalizedAddress.slice(-4)}`;
+    console.log("porto-auth: Authenticating address:", truncatedAddress);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -31,6 +66,9 @@ Deno.serve(async (req) => {
 
     // Generate a deterministic email from the wallet address
     const walletEmail = `${normalizedAddress}@porto.wallet`;
+    
+    // Generate avatar based on wallet address
+    const avatarUrl = getAvatarUrl(normalizedAddress);
 
     // Check if user exists
     const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
@@ -46,6 +84,21 @@ Deno.serve(async (req) => {
     if (existingUser) {
       userId = existingUser.id;
       console.log("porto-auth: Found existing user:", userId);
+      
+      // Update profile avatar if not set
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('user_id', userId)
+        .single();
+      
+      if (existingProfile && !existingProfile.avatar_url) {
+        await supabase
+          .from('profiles')
+          .update({ avatar_url: avatarUrl })
+          .eq('user_id', userId);
+        console.log("porto-auth: Updated profile avatar for existing user");
+      }
     } else {
       // Create new user
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
@@ -53,7 +106,7 @@ Deno.serve(async (req) => {
         email_confirm: true,
         user_metadata: {
           wallet_address: normalizedAddress,
-          display_name: `${normalizedAddress.slice(0, 6)}...${normalizedAddress.slice(-4)}`,
+          display_name: truncatedAddress,
         },
       });
 
@@ -64,6 +117,20 @@ Deno.serve(async (req) => {
 
       userId = newUser.user.id;
       console.log("porto-auth: Created new user:", userId);
+
+      // Update the profile with avatar (trigger creates profile, we update it)
+      // Small delay to ensure trigger has executed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      await supabase
+        .from('profiles')
+        .update({ 
+          avatar_url: avatarUrl,
+          display_name: truncatedAddress
+        })
+        .eq('user_id', userId);
+      
+      console.log("porto-auth: Updated profile with avatar");
     }
 
     // Generate magic link for authentication

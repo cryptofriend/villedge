@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,14 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogIn, LogOut, Copy, Wallet } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { LogIn, LogOut, Copy, Wallet, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProfileDialog } from './ProfileDialog';
 
 export function AuthButton() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, signOut, loading } = useAuth();
+  const { user, profile, isAuthenticated, signOut, loading } = useAuth();
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -60,40 +64,55 @@ export function AuthButton() {
 
   // Truncate address: 0x1234...5678
   const truncatedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const displayName = profile?.display_name || truncatedAddress;
+  const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2 px-3 bg-card/90 backdrop-blur-sm border-border/50 hover:bg-card"
-        >
-          <Wallet className="h-4 w-4 text-primary" />
-          <span className="font-mono text-xs">{truncatedAddress}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-card border-border z-50">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">Connected Wallet</p>
-            <p className="text-xs text-muted-foreground font-mono">{truncatedAddress}</p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleCopyAddress} className="cursor-pointer">
-          <Copy className="mr-2 h-4 w-4" />
-          Copy Address
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleSignOut} 
-          className="text-destructive focus:text-destructive cursor-pointer"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Disconnect
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2 px-2 bg-card/90 backdrop-blur-sm border-border/50 hover:bg-card"
+          >
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-mono text-xs hidden sm:inline">{truncatedAddress}</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 bg-card border-border z-50">
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium">{displayName}</p>
+              <p className="text-xs text-muted-foreground font-mono">{truncatedAddress}</p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setProfileOpen(true)} className="cursor-pointer">
+            <User className="mr-2 h-4 w-4" />
+            Edit Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleCopyAddress} className="cursor-pointer">
+            <Copy className="mr-2 h-4 w-4" />
+            Copy Address
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={handleSignOut} 
+            className="text-destructive focus:text-destructive cursor-pointer"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Disconnect
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+    </>
   );
 }
