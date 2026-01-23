@@ -151,6 +151,27 @@ export type Database = {
         }
         Relationships: []
       }
+      notified_donations: {
+        Row: {
+          id: string
+          notified_at: string
+          tx_hash: string
+          wallet_address: string
+        }
+        Insert: {
+          id?: string
+          notified_at?: string
+          tx_hash: string
+          wallet_address: string
+        }
+        Update: {
+          id?: string
+          notified_at?: string
+          tx_hash?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           asks: string | null

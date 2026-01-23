@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.resolve-ens-names]
 verify_jwt = false
+
+[functions.check-donations]
+verify_jwt = false
