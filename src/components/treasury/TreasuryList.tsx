@@ -188,60 +188,6 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
       {activeTab === "proposals" ? (
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-3">
-            {/* New proposal form/button */}
-            {showForm ? (
-              <form onSubmit={handleSubmit} className="space-y-3 bg-muted/30 rounded-lg p-3">
-                <Input
-                  placeholder="Proposal title..."
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="text-sm"
-                />
-                <Textarea
-                  placeholder="Description (optional)"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="text-sm min-h-[60px] resize-none"
-                />
-                <Input
-                  placeholder="Amount requested (optional)"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="text-sm"
-                />
-                <div className="flex gap-2">
-                  <Button 
-                    type="submit" 
-                    size="sm"
-                    disabled={isSubmitting || !title.trim()}
-                    className="flex-1"
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Submit
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowForm(true)}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Proposal
-              </Button>
-            )}
-
             {/* Proposals list */}
             {isLoading ? (
               <div className="text-center text-muted-foreground text-sm py-8">
@@ -308,6 +254,60 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
                   </div>
                 );
               })
+            )}
+
+            {/* New proposal form/button - at the bottom */}
+            {showForm ? (
+              <form onSubmit={handleSubmit} className="space-y-3 bg-muted/30 rounded-lg p-3">
+                <Input
+                  placeholder="Proposal title..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="text-sm"
+                />
+                <Textarea
+                  placeholder="Description (optional)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="text-sm min-h-[60px] resize-none"
+                />
+                <Input
+                  placeholder="Amount requested (optional)"
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    type="submit" 
+                    size="sm"
+                    disabled={isSubmitting || !title.trim()}
+                    className="flex-1"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Submit
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowForm(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowForm(true)}
+                className="w-full text-muted-foreground hover:text-foreground"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Proposal
+              </Button>
             )}
           </div>
         </ScrollArea>
