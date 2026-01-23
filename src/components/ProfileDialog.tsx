@@ -117,7 +117,7 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
                   <span className="text-xs text-muted-foreground">Loading...</span>
                 ) : (
                   <a
-                    href={`https://app.zerion.io/${address?.toLowerCase()}/overview`}
+                    href={`https://basescan.org/address/${address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-medium text-foreground hover:text-primary transition-colors flex items-center gap-1"
