@@ -57,9 +57,16 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
       return;
     }
 
+    // Ensure we have a valid hex address
+    const toAddress = hexAddress.startsWith('0x') ? hexAddress : null;
+    if (!toAddress) {
+      toast.error("Treasury address not resolved yet. Please try again.");
+      return;
+    }
+
     sendTransaction(
       {
-        to: hexAddress as `0x${string}`,
+        to: toAddress as `0x${string}`,
         value: parseEther(amount),
       },
       {
@@ -71,6 +78,7 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
           setShowPayForm(false);
         },
         onError: (error) => {
+          console.error("Transaction error:", error);
           toast.error("Transaction failed", {
             description: error.message.slice(0, 100),
           });
