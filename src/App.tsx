@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { MiniKitProvider } from "@/components/MiniKitProvider";
+import { PortoProvider } from "@/components/PortoProvider";
 import Index from "./pages/Index";
 import Village from "./pages/Village";
 import Embed from "./pages/Embed";
@@ -14,7 +14,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <MiniKitProvider>
+    <PortoProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -30,7 +30,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </MiniKitProvider>
+    </PortoProvider>
   </QueryClientProvider>
 );
 
