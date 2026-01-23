@@ -34,7 +34,8 @@ interface Transaction {
   timestamp: string;
   from: string;
   to: string;
-  value: number;
+  value: number;      // Native token amount (e.g., ETH)
+  valueUsd: number;   // USD value
   symbol: string;
   chain: string;
   status: string;
@@ -118,7 +119,8 @@ serve(async (req) => {
       
       // Determine if incoming or outgoing based on transfers
       let type: 'incoming' | 'outgoing' = 'outgoing';
-      let value = 0;
+      let value = 0;      // Native token amount
+      let valueUsd = 0;   // USD value
       let symbol = 'ETH';
       let from = attrs.sent_from || '';
       let to = attrs.sent_to || '';
@@ -127,14 +129,18 @@ serve(async (req) => {
       for (const transfer of transfers) {
         if (transfer.direction === 'in') {
           type = 'incoming';
-          value = transfer.value || 0;
+          // Get native token quantity (not USD value)
+          value = transfer.quantity?.float || transfer.quantity?.numeric || 0;
+          valueUsd = transfer.value || 0;
           symbol = transfer.fungible_info?.symbol || 'ETH';
           from = transfer.sender || from;
           to = transfer.recipient || to;
           break;
         } else if (transfer.direction === 'out') {
           type = 'outgoing';
-          value = transfer.value || 0;
+          // Get native token quantity (not USD value)
+          value = transfer.quantity?.float || transfer.quantity?.numeric || 0;
+          valueUsd = transfer.value || 0;
           symbol = transfer.fungible_info?.symbol || 'ETH';
           from = transfer.sender || from;
           to = transfer.recipient || to;
@@ -159,6 +165,7 @@ serve(async (req) => {
         from,
         to,
         value,
+        valueUsd,
         symbol,
         chain: attrs.chain || 'ethereum',
         status: attrs.status || 'confirmed',
