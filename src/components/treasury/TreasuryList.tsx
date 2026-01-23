@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useTreasury, ProposalReactionType } from "@/hooks/useTreasury";
 import { useWalletTransactions } from "@/hooks/useWalletTransactions";
-import { useDonationNotifier } from "@/hooks/useDonationNotifier";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Coins, ThumbsUp, Clock, ThumbsDown, FileText, ExternalLink, RefreshCw, Plus, ArrowLeftRight, Trophy } from "lucide-react";
+import { Send, Coins, ThumbsUp, Clock, ThumbsDown, FileText, ExternalLink, RefreshCw, Plus, ArrowLeftRight, Trophy, Bell } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
@@ -14,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { TopUpDialog } from "./TopUpDialog";
 import { TransactionsList } from "./TransactionsList";
 import { DonorsLeaderboard } from "./DonorsLeaderboard";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TreasuryListProps {
   villageId: string;
@@ -42,9 +42,6 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
   
   const { incoming, outgoing, isLoading: isLoadingTxs, refetch: refetchTxs } = useWalletTransactions(walletAddress);
   
-  // Send Telegram notifications for new donations
-  useDonationNotifier(incoming);
-  
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -52,6 +49,7 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("proposals");
+  const [isCheckingDonations, setIsCheckingDonations] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +105,31 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
     refetchTxs();
   };
 
+  const handleCheckDonations = async () => {
+    setIsCheckingDonations(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-donations");
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Donations checked",
+        description: data?.message || `Notified ${data?.notified || 0} new donations`,
+      });
+      
+      // Refresh transactions after checking
+      refetchTxs();
+    } catch (error) {
+      console.error("Failed to check donations:", error);
+      toast({
+        title: "Error",
+        description: "Failed to check donations",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingDonations(false);
+    }
+  };
   return (
     <div className="flex flex-col h-full">
       {/* Treasury balance header */}
@@ -147,9 +170,19 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
         </div>
       </div>
 
-      {/* Top up button */}
-      <div className="p-4 border-b border-border">
+      {/* Top up & check donations buttons */}
+      <div className="p-4 border-b border-border flex gap-2">
         <TopUpDialog walletAddress={walletAddress} resolvedAddress={resolvedAddress} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCheckDonations}
+          disabled={isCheckingDonations}
+          className="flex-1"
+        >
+          <Bell className={cn("h-4 w-4 mr-2", isCheckingDonations && "animate-pulse")} />
+          {isCheckingDonations ? "Checking..." : "Notify Donations"}
+        </Button>
       </div>
 
       {/* Tab buttons */}
