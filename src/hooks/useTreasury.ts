@@ -29,6 +29,7 @@ interface ProposalReaction {
 interface WalletBalance {
   balance: number;
   walletAddress: string;
+  ensName?: string;
   timestamp: string;
 }
 
@@ -164,6 +165,9 @@ export const useTreasury = (villageId: string) => {
 
   // Use live wallet balance, fall back to DB treasury balance
   const liveBalance = walletBalance?.balance ?? treasury?.balance ?? 0;
+  
+  // Get the resolved hex address from the wallet balance response
+  const resolvedAddress = walletBalance?.walletAddress;
 
   return {
     treasury,
@@ -173,6 +177,7 @@ export const useTreasury = (villageId: string) => {
     walletError,
     walletBalance: liveBalance,
     walletAddress: TREASURY_WALLET,
+    resolvedAddress,
     addProposal,
     addReaction,
     getReactionCounts,
