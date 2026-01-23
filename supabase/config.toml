@@ -3,11 +3,14 @@ project_id = "hgxmhzswfrhvoynhasmb"
 [functions.get-wallet-balance]
 verify_jwt = false
 
-[functions.verify-world-id]
+[functions.porto-auth]
 verify_jwt = false
 
-[functions.siwe-nonce]
+[functions.notify-telegram]
 verify_jwt = false
 
-[functions.siwe-verify]
+[functions.resolve-google-maps]
+verify_jwt = false
+
+[functions.resolve-luma-event]
 verify_jwt = false
