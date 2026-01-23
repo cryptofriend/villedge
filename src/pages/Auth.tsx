@@ -180,8 +180,7 @@ export default function Auth() {
 
             {/* Desktop Header */}
             <div className="hidden lg:block text-center">
-              <h2 className="font-display text-3xl font-bold text-foreground mb-2">Get Started</h2>
-              <p className="text-muted-foreground">Sign in with your Porto wallet</p>
+              <h2 className="font-display text-3xl font-bold text-foreground">Get Started</h2>
             </div>
 
             {/* Porto Button */}
@@ -226,7 +225,7 @@ export default function Auth() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                    <span>Continue with Porto</span>
+                    <span>Sign In / Sign Up</span>
                   </div>
                 )}
               </Button>
