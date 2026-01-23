@@ -8,7 +8,8 @@ export interface Transaction {
   timestamp: string;
   from: string;
   to: string;
-  value: number;
+  value: number;      // Native token amount (e.g., ETH)
+  valueUsd: number;   // USD value
   symbol: string;
   chain: string;
   status: string;

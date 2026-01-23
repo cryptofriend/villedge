@@ -10,7 +10,8 @@ interface DonorsLeaderboardProps {
 
 interface DonorEntry {
   address: string;
-  totalValue: number;
+  totalValue: number;      // Native token amount
+  totalValueUsd: number;   // USD value
   transactionCount: number;
 }
 
@@ -45,17 +46,19 @@ export const DonorsLeaderboard = ({ transactions, isLoading }: DonorsLeaderboard
       acc[address] = {
         address: tx.from,
         totalValue: 0,
+        totalValueUsd: 0,
         transactionCount: 0,
       };
     }
     acc[address].totalValue += tx.value;
+    acc[address].totalValueUsd += tx.valueUsd || 0;
     acc[address].transactionCount += 1;
     return acc;
   }, {});
 
-  // Sort by total value (descending)
+  // Sort by total USD value (descending)
   const leaderboard = Object.values(donorMap)
-    .sort((a, b) => b.totalValue - a.totalValue);
+    .sort((a, b) => b.totalValueUsd - a.totalValueUsd);
 
   if (isLoading) {
     return (
@@ -115,9 +118,11 @@ export const DonorsLeaderboard = ({ transactions, isLoading }: DonorsLeaderboard
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-sm font-semibold text-primary">
-                      {donor.totalValue.toFixed(4)}
+                      ${donor.totalValueUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">ETH</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {donor.totalValue.toFixed(4)} ETH
+                    </div>
                   </div>
                   <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                 </a>
