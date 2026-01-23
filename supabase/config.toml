@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.resolve-luma-event]
 verify_jwt = false
+
+[functions.resolve-ens-names]
+verify_jwt = false
