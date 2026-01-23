@@ -814,9 +814,10 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
             )}
           </div>
 
-          {/* Map / Residents / Scenius Toggle + Auth - Desktop only */}
-          {isZoomedIn && (
-            <div className="hidden sm:flex items-center gap-2 pointer-events-auto">
+          {/* Auth button - always visible on desktop (top-right) */}
+          <div className="hidden sm:flex items-center gap-2 pointer-events-auto">
+            {/* View toggle tabs - only when zoomed in */}
+            {isZoomedIn && (
               <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm">
                 <button
                   onClick={() => setActiveView("map")}
@@ -885,9 +886,9 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <span className="hidden sm:inline">Events</span>
               </button>
               </div>
-              <AuthButton />
-            </div>
-          )}
+            )}
+            <AuthButton />
+          </div>
         </div>
       </div>
 
