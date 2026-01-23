@@ -64,6 +64,12 @@ export function AuthButton() {
 
   // Truncate address: 0x1234...5678
   const truncatedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+  
+  // Check if user has set a custom display name (not just the wallet address format)
+  const hasCustomName = profile?.display_name && 
+    !profile.display_name.startsWith('0x') && 
+    profile.display_name !== truncatedAddress;
+  
   const displayName = profile?.display_name || truncatedAddress;
   const initials = displayName.slice(0, 2).toUpperCase();
 
@@ -76,13 +82,22 @@ export function AuthButton() {
             size="sm" 
             className="gap-2 px-2 bg-card/90 backdrop-blur-sm border-border/50 hover:bg-card"
           >
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
-              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <span className="font-mono text-xs hidden sm:inline">{truncatedAddress}</span>
+            {hasCustomName ? (
+              <>
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs hidden sm:inline max-w-20 truncate">{displayName}</span>
+              </>
+            ) : (
+              <>
+                <Wallet className="h-4 w-4 text-primary" />
+                <span className="font-mono text-xs hidden sm:inline">{truncatedAddress}</span>
+              </>
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 bg-card border-border z-50">
