@@ -157,14 +157,18 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
                 Villedge
               </h1>
-              <span className="hidden sm:flex items-center gap-2">
-                <AuthButton />
+              <span className="hidden sm:block">
                 <AddVillageForm onVillageAdded={() => window.location.reload()} />
               </span>
             </div>
             <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
               Explore communities around the world
             </p>
+          </div>
+          
+          {/* Auth button - right side */}
+          <div className="hidden sm:block pointer-events-auto">
+            <AuthButton />
           </div>
         </div>
       </div>
