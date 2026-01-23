@@ -542,6 +542,7 @@ export type Database = {
           telegram_url: string | null
           twitter_url: string | null
           updated_at: string
+          wallet_address: string | null
         }
         Insert: {
           center: Json
@@ -560,6 +561,7 @@ export type Database = {
           telegram_url?: string | null
           twitter_url?: string | null
           updated_at?: string
+          wallet_address?: string | null
         }
         Update: {
           center?: Json
@@ -578,6 +580,7 @@ export type Database = {
           telegram_url?: string | null
           twitter_url?: string | null
           updated_at?: string
+          wallet_address?: string | null
         }
         Relationships: []
       }
