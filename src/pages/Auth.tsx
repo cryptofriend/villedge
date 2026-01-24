@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles } from 'lucide-react';
@@ -10,10 +12,18 @@ import { supabase } from '@/integrations/supabase/client';
 export default function Auth() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  
+  // Porto/Biometric wallet
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  
+  // Solana wallet
+  const { publicKey, connected: solanaConnected, disconnect: disconnectSolana } = useWallet();
+  const { setVisible: openSolanaModal } = useWalletModal();
+  
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | null>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -22,19 +32,26 @@ export default function Auth() {
     }
   }, [user, loading, navigate]);
 
-  // When wallet connects, authenticate with backend
+  // When Porto wallet connects, authenticate with backend
   useEffect(() => {
-    if (isConnected && address && !user && !isAuthenticating) {
-      authenticateWithBackend(address);
+    if (isConnected && address && !user && !isAuthenticating && authType === 'biometric') {
+      authenticateWithBackend(address, 'porto');
     }
-  }, [isConnected, address, user, isAuthenticating]);
+  }, [isConnected, address, user, isAuthenticating, authType]);
 
-  const authenticateWithBackend = async (walletAddress: string) => {
+  // When Solana wallet connects, authenticate with backend
+  useEffect(() => {
+    if (solanaConnected && publicKey && !user && !isAuthenticating && authType === 'solana') {
+      authenticateWithBackend(publicKey.toBase58(), 'solana');
+    }
+  }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
+
+  const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana') => {
     setIsAuthenticating(true);
     
     try {
       const { data, error } = await supabase.functions.invoke('porto-auth', {
-        body: { address: walletAddress },
+        body: { address: walletAddress, walletType: type },
       });
 
       if (error || data?.error) {
@@ -44,12 +61,12 @@ export default function Auth() {
       if (data?.verified && data?.actionLink) {
         const url = new URL(data.actionLink);
         const token = url.searchParams.get('token');
-        const type = url.searchParams.get('type');
+        const tokenType = url.searchParams.get('type');
 
-        if (token && type) {
+        if (token && tokenType) {
           const { error: sessionError } = await supabase.auth.verifyOtp({
             token_hash: token,
-            type: type as 'magiclink',
+            type: tokenType as 'magiclink',
           });
 
           if (sessionError) throw sessionError;
@@ -59,15 +76,21 @@ export default function Auth() {
         navigate('/');
       }
     } catch (error) {
-      console.error('Porto auth error:', error);
+      console.error('Auth error:', error);
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
-      disconnect();
+      if (type === 'porto') {
+        disconnect();
+      } else {
+        disconnectSolana();
+      }
     } finally {
       setIsAuthenticating(false);
+      setAuthType(null);
     }
   };
 
-  const handleConnect = () => {
+  const handleBiometricConnect = () => {
+    setAuthType('biometric');
     const portoConnector = connectors.find(c => c.id === 'porto' || c.name.toLowerCase().includes('porto'));
     if (portoConnector) {
       connect({ connector: portoConnector });
@@ -75,7 +98,13 @@ export default function Auth() {
       connect({ connector: connectors[0] });
     } else {
       toast.error('No wallet connector available');
+      setAuthType(null);
     }
+  };
+
+  const handleSolanaConnect = () => {
+    setAuthType('solana');
+    openSolanaModal(true);
   };
 
   if (loading) {
@@ -86,7 +115,8 @@ export default function Auth() {
     );
   }
 
-  const isLoading = isConnecting || isAuthenticating;
+  const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
+  const isSolanaLoading = isAuthenticating && authType === 'solana';
 
   const features = [
     {
@@ -183,70 +213,81 @@ export default function Auth() {
               <h2 className="font-display text-3xl font-bold text-foreground">Get Started</h2>
             </div>
 
-            {/* Porto Button */}
-            <div className="space-y-4">
+            {/* Login Buttons */}
+            <div className="space-y-3">
+              {/* Biometric Button */}
               <Button
-                onClick={handleConnect}
+                onClick={handleBiometricConnect}
                 className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-                disabled={isLoading}
+                disabled={isBiometricLoading || isSolanaLoading}
               >
-                {isLoading ? (
+                {isBiometricLoading ? (
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span>{isAuthenticating ? 'Signing in...' : 'Connecting...'}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <svg 
-                      className="h-5 w-5" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path 
-                        d="M12 2L2 7L12 12L22 7L12 2Z" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                      />
-                      <path 
-                        d="M2 17L12 22L22 17" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                      />
-                      <path 
-                        d="M2 12L12 17L22 12" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span>Sign In / Sign Up</span>
+                    <Fingerprint className="h-5 w-5" />
+                    <span>Sign in with Biometric</span>
                   </div>
                 )}
               </Button>
 
+              {/* Solana Button */}
+              <Button
+                onClick={handleSolanaConnect}
+                variant="outline"
+                className="w-full h-14 text-base font-medium rounded-xl border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 bg-gradient-to-r from-[#9945FF]/10 to-[#14F195]/10 border-[#9945FF]/30 hover:border-[#9945FF]/50"
+                disabled={isBiometricLoading || isSolanaLoading}
+              >
+                {isSolanaLoading ? (
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Signing in...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="solanaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#9945FF" />
+                          <stop offset="100%" stopColor="#14F195" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M25.7 97.9c.7-.7 1.6-1.1 2.6-1.1h95.2c1.6 0 2.5 2 1.4 3.1l-19.6 19.6c-.7.7-1.6 1.1-2.6 1.1H7.5c-1.6 0-2.5-2-1.4-3.1l19.6-19.6z" fill="url(#solanaGradient)"/>
+                      <path d="M25.7 8.5c.7-.7 1.7-1.1 2.6-1.1h95.2c1.6 0 2.5 2 1.4 3.1L105.3 30c-.7.7-1.6 1.1-2.6 1.1H7.5c-1.6 0-2.5-2-1.4-3.1L25.7 8.5z" fill="url(#solanaGradient)"/>
+                      <path d="M105.3 52.9c-.7-.7-1.6-1.1-2.6-1.1H7.5c-1.6 0-2.5 2-1.4 3.1l19.6 19.6c.7.7 1.6 1.1 2.6 1.1h95.2c1.6 0 2.5-2 1.4-3.1L105.3 52.9z" fill="url(#solanaGradient)"/>
+                    </svg>
+                    <span>Sign in with Solana</span>
+                  </div>
+                )}
+              </Button>
+
+              {/* Divider */}
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-background px-2 text-muted-foreground">secure & decentralized</span>
+                </div>
+              </div>
+
               {/* Info text */}
               <div className="text-center space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Use passkeys for secure, passwordless authentication
-                </p>
                 <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/70">
                   <span className="flex items-center gap-1">
                     <Shield className="h-3 w-3" />
-                    Secure
+                    Self-Custody
                   </span>
                   <span className="flex items-center gap-1">
                     <Fingerprint className="h-3 w-3" />
-                    Biometric
+                    Passwordless
                   </span>
                   <span className="flex items-center gap-1">
                     <Globe className="h-3 w-3" />
-                    Decentralized
+                    Cross-Platform
                   </span>
                 </div>
               </div>
