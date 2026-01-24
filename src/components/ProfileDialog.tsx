@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Link, Gift, HelpCircle, MessageSquare, ExternalLink, Briefcase, Wallet } from "lucide-react";
+import { User, Link, Gift, HelpCircle, MessageSquare, ExternalLink, Briefcase, Wallet, Twitter, Github, Linkedin, Instagram, Globe, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { getBestAvatar } from "@/lib/avatar";
 import { PersonalTopUpDialog } from "./PersonalTopUpDialog";
 import { usePersonalBalance } from "@/hooks/usePersonalBalance";
+
+// Detect social platform from URL
+const getSocialPlatform = (url: string) => {
+  if (!url) return null;
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.includes("twitter.com") || lowerUrl.includes("x.com")) {
+    return { platform: "twitter", icon: Twitter, color: "text-sky-500", label: "Twitter/X" };
+  }
+  if (lowerUrl.includes("github.com")) {
+    return { platform: "github", icon: Github, color: "text-foreground", label: "GitHub" };
+  }
+  if (lowerUrl.includes("linkedin.com")) {
+    return { platform: "linkedin", icon: Linkedin, color: "text-blue-600", label: "LinkedIn" };
+  }
+  if (lowerUrl.includes("instagram.com")) {
+    return { platform: "instagram", icon: Instagram, color: "text-pink-500", label: "Instagram" };
+  }
+  // Default to globe icon for other URLs
+  if (url.startsWith("http")) {
+    return { platform: "website", icon: Globe, color: "text-muted-foreground", label: "Website" };
+  }
+  return null;
+};
 
 interface ProfileDialogProps {
   open: boolean;
@@ -37,6 +65,10 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   const [projectDescription, setProjectDescription] = useState("");
   const [projectUrl, setProjectUrl] = useState("");
 
+  // Track which sections are expanded
+  const [aboutExpanded, setAboutExpanded] = useState(false);
+  const [projectExpanded, setProjectExpanded] = useState(false);
+
   // Load profile data when dialog opens or profile changes
   useEffect(() => {
     if (open) {
@@ -48,8 +80,15 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
       setAsks(profile?.asks || "");
       setProjectDescription(profile?.project_description || "");
       setProjectUrl(profile?.project_url || "");
+      
+      // Auto-expand sections that have content
+      setAboutExpanded(!!(profile?.bio || profile?.offerings || profile?.asks));
+      setProjectExpanded(!!(profile?.project_description || profile?.project_url));
     }
   }, [open, profile]);
+
+  // Get social platform info
+  const socialPlatformInfo = getSocialPlatform(socialProfile);
 
   // Generate preview avatar based on social profile or display name
   const previewAvatar = socialProfile 
@@ -114,9 +153,23 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">
-                {displayName || "Your Name"}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-foreground">
+                  {displayName || "Your Name"}
+                </p>
+                {/* Social Icon */}
+                {socialPlatformInfo && socialProfile && (
+                  <a
+                    href={socialProfile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`hover:opacity-80 transition-opacity ${socialPlatformInfo.color}`}
+                    title={socialPlatformInfo.label}
+                  >
+                    <socialPlatformInfo.icon className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <p className="text-xs text-muted-foreground font-mono">
                   {truncatedAddress}
@@ -167,98 +220,160 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
           {/* Social Profile */}
           <div className="space-y-2">
             <Label htmlFor="social" className="flex items-center gap-2">
-              <Link className="h-4 w-4 text-muted-foreground" />
+              {socialPlatformInfo ? (
+                <socialPlatformInfo.icon className={`h-4 w-4 ${socialPlatformInfo.color}`} />
+              ) : (
+                <Link className="h-4 w-4 text-muted-foreground" />
+              )}
               Social Profile URL
             </Label>
-            <Input
-              id="social"
-              type="url"
-              value={socialProfile}
-              onChange={(e) => setSocialProfile(e.target.value)}
-              placeholder="https://twitter.com/username"
-            />
-            <p className="text-xs text-muted-foreground">
-              Twitter or GitHub URL to fetch your avatar
-            </p>
-          </div>
-
-          {/* Bio */}
-          <div className="space-y-2">
-            <Label htmlFor="bio" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              About You
-            </Label>
-            <Textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell others about yourself..."
-              rows={2}
-            />
-          </div>
-
-          {/* Offerings & Asks */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="offerings" className="flex items-center gap-2">
-                <Gift className="h-4 w-4 text-muted-foreground" />
-                Offerings
-              </Label>
-              <Textarea
-                id="offerings"
-                value={offerings}
-                onChange={(e) => setOfferings(e.target.value)}
-                placeholder="What can you offer?"
-                rows={2}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="asks" className="flex items-center gap-2">
-                <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                Asks
-              </Label>
-              <Textarea
-                id="asks"
-                value={asks}
-                onChange={(e) => setAsks(e.target.value)}
-                placeholder="What help do you need?"
-                rows={2}
-              />
-            </div>
-          </div>
-
-          {/* What do you work on? */}
-          <div className="space-y-2 p-3 bg-muted/30 rounded-lg border border-border">
-            <Label className="flex items-center gap-2 text-sm font-medium">
-              <Briefcase className="h-4 w-4 text-primary" />
-              What do you work on?
-            </Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              This info can be shared when you join a village
-            </p>
-            <Textarea
-              id="projectDescription"
-              value={projectDescription}
-              onChange={(e) => setProjectDescription(e.target.value)}
-              placeholder="Brief description of your project or work..."
-              rows={2}
-            />
-            <div className="mt-2">
-              <Label htmlFor="projectUrl" className="flex items-center gap-2 text-xs">
-                <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                Link to your app/project
-              </Label>
+            <div className="relative">
               <Input
-                id="projectUrl"
+                id="social"
                 type="url"
-                value={projectUrl}
-                onChange={(e) => setProjectUrl(e.target.value)}
-                placeholder="https://your-project.com"
-                className="mt-1"
+                value={socialProfile}
+                onChange={(e) => setSocialProfile(e.target.value)}
+                placeholder="https://twitter.com/username"
+                className={socialPlatformInfo ? "pr-10" : ""}
               />
+              {socialPlatformInfo && socialProfile && (
+                <a
+                  href={socialProfile}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-80 transition-opacity ${socialPlatformInfo.color}`}
+                  title={`Open ${socialPlatformInfo.label}`}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Twitter, GitHub, LinkedIn, or Instagram URL
+            </p>
           </div>
+
+          {/* About You - Collapsible */}
+          <Collapsible open={aboutExpanded} onOpenChange={setAboutExpanded}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center justify-between w-full p-3 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  About You
+                  {(bio || offerings || asks) && (
+                    <span className="text-xs text-muted-foreground font-normal">
+                      ({[bio, offerings, asks].filter(Boolean).length} filled)
+                    </span>
+                  )}
+                </span>
+                {aboutExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-3">
+              {/* Bio */}
+              <div className="space-y-2">
+                <Label htmlFor="bio" className="text-xs text-muted-foreground">
+                  Bio
+                </Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell others about yourself..."
+                  rows={2}
+                />
+              </div>
+
+              {/* Offerings & Asks */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="offerings" className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Gift className="h-3 w-3" />
+                    Offerings
+                  </Label>
+                  <Textarea
+                    id="offerings"
+                    value={offerings}
+                    onChange={(e) => setOfferings(e.target.value)}
+                    placeholder="What can you offer?"
+                    rows={2}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="asks" className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <HelpCircle className="h-3 w-3" />
+                    Asks
+                  </Label>
+                  <Textarea
+                    id="asks"
+                    value={asks}
+                    onChange={(e) => setAsks(e.target.value)}
+                    placeholder="What help do you need?"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* What do you work on? - Collapsible */}
+          <Collapsible open={projectExpanded} onOpenChange={setProjectExpanded}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center justify-between w-full p-3 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <Briefcase className="h-4 w-4 text-primary" />
+                  What do you work on?
+                  {(projectDescription || projectUrl) && (
+                    <span className="text-xs text-muted-foreground font-normal">
+                      (filled)
+                    </span>
+                  )}
+                </span>
+                {projectExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-3">
+              <p className="text-xs text-muted-foreground">
+                This info can be shared when you join a village
+              </p>
+              <Textarea
+                id="projectDescription"
+                value={projectDescription}
+                onChange={(e) => setProjectDescription(e.target.value)}
+                placeholder="Brief description of your project or work..."
+                rows={2}
+              />
+              <div>
+                <Label htmlFor="projectUrl" className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <ExternalLink className="h-3 w-3" />
+                  Link to your app/project
+                </Label>
+                <Input
+                  id="projectUrl"
+                  type="url"
+                  value={projectUrl}
+                  onChange={(e) => setProjectUrl(e.target.value)}
+                  placeholder="https://your-project.com"
+                  className="mt-1"
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           <Button type="submit" variant="sage" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "Saving..." : "Save Profile"}
