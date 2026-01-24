@@ -1,6 +1,7 @@
 import { http, createConfig, createStorage } from 'wagmi';
-import { base } from 'wagmi/chains';
+import { base, mainnet } from 'wagmi/chains';
 import { porto } from 'porto/wagmi';
+import { injected } from 'wagmi/connectors';
 import { Mode } from 'porto';
 
 // Villedge-themed Porto dialog
@@ -45,10 +46,14 @@ const dialogMode = Mode.dialog({
 });
 
 export const wagmiConfig = createConfig({
-  chains: [base],
-  connectors: [porto({ mode: dialogMode })],
+  chains: [base, mainnet],
+  connectors: [
+    porto({ mode: dialogMode }),
+    injected({ target: 'metaMask' }),
+  ],
   storage: createStorage({ storage: localStorage }),
   transports: {
     [base.id]: http(),
+    [mainnet.id]: http(),
   },
 });
