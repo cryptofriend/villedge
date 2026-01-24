@@ -19,7 +19,7 @@ export default function Auth() {
   const { disconnect } = useDisconnect();
   
   // Solana wallet
-  const { publicKey, connected: solanaConnected, disconnect: disconnectSolana } = useWallet();
+  const { publicKey, connected: solanaConnected, connecting: solanaConnecting, disconnect: disconnectSolana } = useWallet();
   const { setVisible: openSolanaModal } = useWalletModal();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -127,7 +127,7 @@ export default function Auth() {
   }
 
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
-  const isSolanaLoading = isAuthenticating && authType === 'solana';
+  const isSolanaLoading = (solanaConnecting || isAuthenticating) && authType === 'solana';
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
   const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading;
 
@@ -284,7 +284,7 @@ export default function Auth() {
                 {isSolanaLoading ? (
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Signing in...</span>
+                    <span>{solanaConnecting ? 'Connecting wallet...' : 'Signing in...'}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
