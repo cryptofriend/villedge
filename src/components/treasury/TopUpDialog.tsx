@@ -13,20 +13,19 @@ import { QRCodeSVG } from "qrcode.react";
 import { useAccount, useChainId, useSendTransaction, useSwitchChain } from "wagmi";
 import { parseEther } from "viem";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface TopUpDialogProps {
   walletAddress: string;
   resolvedAddress?: string;
+  solanaWalletAddress?: string;
 }
 
-const SUPPORTED_CHAINS = [
-  { name: "Base", chainId: 8453, color: "bg-blue-600" },
-];
-
-export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps) => {
+export const TopUpDialog = ({ walletAddress, resolvedAddress, solanaWalletAddress }: TopUpDialogProps) => {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedChain, setSelectedChain] = useState(SUPPORTED_CHAINS[0]);
+  const [selectedNetwork, setSelectedNetwork] = useState<"base" | "solana">("base");
   const [amount, setAmount] = useState("");
   const [showPayForm, setShowPayForm] = useState(false);
 
@@ -37,14 +36,11 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
 
   // Use resolved address (hex) for the QR code, fallback to walletAddress
   const hexAddress = resolvedAddress || walletAddress;
-  
-  // EIP-681 Ethereum URI format: ethereum:<address>@<chainId>
-  // This format is recognized by all major crypto wallets
-  const ethereumUri = `ethereum:${hexAddress}@${selectedChain.chainId}`;
+  const displayAddress = selectedNetwork === "base" ? hexAddress : (solanaWalletAddress || "");
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(hexAddress);
+      await navigator.clipboard.writeText(displayAddress);
       setCopied(true);
       toast.success("Address copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
@@ -122,31 +118,39 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 pt-4">
-          {/* Chain selector */}
-          <div className="w-full space-y-2">
-            <p className="text-xs text-muted-foreground text-center">
-              Select Network
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {SUPPORTED_CHAINS.map((chain) => (
-                <button
-                  key={chain.name}
-                  onClick={() => setSelectedChain(chain)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
-                    selectedChain.chainId === chain.chainId
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted/50 hover:bg-muted"
-                  }`}
-                >
-                  <div className={`w-2 h-2 rounded-full ${chain.color}`} />
-                  <span className="text-xs font-medium">{chain.name}</span>
-                </button>
-              ))}
+          {/* Network switch */}
+          <div className="w-full flex items-center justify-center gap-4 p-3 bg-muted/30 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className={`w-2.5 h-2.5 rounded-full ${selectedNetwork === "base" ? "bg-blue-500" : "bg-muted"}`} />
+              <Label 
+                htmlFor="network-switch" 
+                className={`text-sm font-medium cursor-pointer ${selectedNetwork === "base" ? "text-foreground" : "text-muted-foreground"}`}
+              >
+                Base
+              </Label>
+            </div>
+            <Switch
+              id="network-switch"
+              checked={selectedNetwork === "solana"}
+              onCheckedChange={(checked) => {
+                setSelectedNetwork(checked ? "solana" : "base");
+                setShowPayForm(false);
+                setAmount("");
+              }}
+            />
+            <div className="flex items-center gap-2">
+              <Label 
+                htmlFor="network-switch" 
+                className={`text-sm font-medium cursor-pointer ${selectedNetwork === "solana" ? "text-foreground" : "text-muted-foreground"}`}
+              >
+                Solana
+              </Label>
+              <div className={`w-2.5 h-2.5 rounded-full ${selectedNetwork === "solana" ? "bg-purple-500" : "bg-muted"}`} />
             </div>
           </div>
 
-          {/* Pay with wallet section */}
-          {isConnected && (
+          {/* Pay with wallet section - only for Base */}
+          {isConnected && selectedNetwork === "base" && (
             <div className="w-full space-y-3">
               {!showPayForm ? (
                 <Button
@@ -228,16 +232,25 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
             </div>
           )}
 
+          {/* Solana info text */}
+          {selectedNetwork === "solana" && (
+            <p className="text-xs text-muted-foreground text-center">
+              Send SOL or SPL tokens to the address below
+            </p>
+          )}
+
           <div className="flex items-center gap-2 w-full">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-muted-foreground">or scan QR</span>
+            <span className="text-xs text-muted-foreground">
+              {selectedNetwork === "base" && isConnected ? "or scan QR" : "scan QR code"}
+            </span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
           {/* QR Code */}
           <div className="p-4 bg-white rounded-xl shadow-inner">
             <QRCodeSVG
-              value={hexAddress}
+              value={displayAddress}
               size={180}
               level="H"
               includeMargin={false}
@@ -250,7 +263,7 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
             className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors group max-w-full"
           >
             <span className="font-mono text-xs text-muted-foreground truncate">
-              {hexAddress}
+              {displayAddress}
             </span>
             {copied ? (
               <Check className="h-4 w-4 text-green-500 shrink-0" />
@@ -260,7 +273,7 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress }: TopUpDialogProps
           </button>
 
           <p className="text-xs text-muted-foreground text-center">
-            Scan with your wallet app to send {selectedChain.name} tokens
+            Scan with your wallet app to send {selectedNetwork === "base" ? "ETH on Base" : "SOL"}
           </p>
         </div>
       </DialogContent>
