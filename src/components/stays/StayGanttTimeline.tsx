@@ -11,9 +11,10 @@ import {
 import { Stay } from "@/hooks/useStays";
 import { OccupancyChart } from "./OccupancyChart";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, ChevronLeft, ChevronRight, ExternalLink, Twitter, Instagram, Github, Linkedin } from "lucide-react";
+import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBestAvatar } from "@/lib/avatar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Tooltip,
   TooltipContent,
@@ -70,11 +71,12 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 
 export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [nameColumnWidth, setNameColumnWidth] = useState(120);
+  const isMobile = useIsMobile();
+  const [nameColumnWidth, setNameColumnWidth] = useState(isMobile ? 100 : 120);
   const [intentionColumnWidth, setIntentionColumnWidth] = useState(140);
   const [isResizing, setIsResizing] = useState(false);
   const [resizingColumn, setResizingColumn] = useState<'name' | 'intention' | null>(null);
-  const dayWidth = 28;
+  const dayWidth = isMobile ? 20 : 28;
 
   // Calculate date range from stays
   const dateRange = useMemo(() => {
@@ -242,7 +244,10 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
           style={{ width: nameColumnWidth }}
         >
           {/* Month/Day header space */}
-          <div className="h-14 border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+          <div className={cn(
+            "border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center font-semibold text-muted-foreground",
+            isMobile ? "h-12 text-[10px]" : "h-14 text-xs"
+          )}>
             Name
           </div>
           
@@ -256,18 +261,21 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
               return (
                 <div
                   key={nickname}
-                  className="h-10 flex items-center gap-2 px-2 border-b border-border text-sm font-medium"
+                  className={cn(
+                    "flex items-center gap-1.5 px-1.5 border-b border-border font-medium",
+                    isMobile ? "h-9 text-xs" : "h-10 text-sm gap-2 px-2"
+                  )}
                 >
-                  <Avatar className="w-6 h-6 flex-shrink-0">
+                  <Avatar className={cn("flex-shrink-0", isMobile ? "w-5 h-5" : "w-6 h-6")}>
                     <AvatarImage src={avatarUrl} alt={nickname} />
-                    <AvatarFallback className="text-[10px]">
+                    <AvatarFallback className={cn(isMobile ? "text-[8px]" : "text-[10px]")}>
                       {nickname.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="truncate" title={nickname}>
+                  <span className={cn("truncate", isMobile && "text-xs")} title={nickname}>
                     {nickname}
                   </span>
-                  {firstStay?.social_profile && socialNetwork.type && (
+                  {!isMobile && firstStay?.social_profile && socialNetwork.type && (
                     <a
                       href={firstStay.social_profile}
                       target="_blank"
@@ -294,69 +302,75 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
           />
         </div>
 
-        {/* Intention Column */}
-        <div
-          className="flex-shrink-0 border-r border-border relative"
-          style={{ width: intentionColumnWidth }}
-        >
-          {/* Header */}
-          <div className="h-14 border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
-            Intention
-          </div>
-          
-          {/* Intentions */}
-          <div className="overflow-y-auto">
-            {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
-              const firstStay = personStays[0];
-              
-              return (
-                <div
-                  key={nickname}
-                  className="h-10 flex items-center px-2 border-b border-border text-sm text-muted-foreground"
-                >
-                  <span className="truncate" title={firstStay?.intention || ""}>
-                    {firstStay?.intention || "—"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Resize Handle */}
+        {/* Intention Column - Hidden on mobile */}
+        {!isMobile && (
           <div
-            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors"
-            onMouseDown={handleResizeStart('intention')}
-          />
-        </div>
+            className="flex-shrink-0 border-r border-border relative"
+            style={{ width: intentionColumnWidth }}
+          >
+            {/* Header */}
+            <div className="h-14 border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+              Intention
+            </div>
+            
+            {/* Intentions */}
+            <div className="overflow-y-auto">
+              {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+                const firstStay = personStays[0];
+                
+                return (
+                  <div
+                    key={nickname}
+                    className="h-10 flex items-center px-2 border-b border-border text-sm text-muted-foreground"
+                  >
+                    <span className="truncate" title={firstStay?.intention || ""}>
+                      {firstStay?.intention || "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Resize Handle */}
+            <div
+              className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors"
+              onMouseDown={handleResizeStart('intention')}
+            />
+          </div>
+        )}
 
         {/* Timeline Grid */}
         <div className="flex-1 overflow-x-auto" ref={scrollContainerRef}>
           <div style={{ width: days.length * dayWidth, minWidth: "100%" }}>
             {/* Month Headers */}
-            <div className="flex h-7 border-b border-border bg-muted/30 sticky top-0 z-10">
+            <div className={cn("flex border-b border-border bg-muted/30 sticky top-0 z-10", isMobile ? "h-6" : "h-7")}>
               {monthHeaders.map(({ month, startIndex, span }, idx) => (
                 <div
                   key={idx}
-                  className="text-xs font-semibold text-foreground flex items-center justify-center border-r border-border"
+                  className={cn(
+                    "font-semibold text-foreground flex items-center justify-center border-r border-border",
+                    isMobile ? "text-[10px]" : "text-xs"
+                  )}
                   style={{ width: span * dayWidth, left: startIndex * dayWidth }}
                 >
-                  {format(month, "MMMM yyyy")}
+                  {isMobile ? format(month, "MMM yy") : format(month, "MMMM yyyy")}
                 </div>
               ))}
             </div>
 
             {/* Day Headers */}
-            <div className="flex h-7 border-b border-border bg-muted/20 sticky top-7 z-10">
+            <div className={cn("flex border-b border-border bg-muted/20 sticky top-7 z-10", isMobile ? "h-6" : "h-7")}>
               {days.map((day, idx) => (
                 <div
                   key={idx}
                   className={cn(
-                    "text-[10px] text-center flex flex-col items-center justify-center border-r border-border/50",
+                    "text-center flex flex-col items-center justify-center border-r border-border/50",
+                    isMobile ? "text-[8px]" : "text-[10px]",
                     isToday(day) && "bg-primary/20 font-bold"
                   )}
                   style={{ width: dayWidth }}
                 >
-                  <span className="text-muted-foreground">{format(day, "EEE").slice(0, 1)}</span>
+                  {!isMobile && <span className="text-muted-foreground">{format(day, "EEE").slice(0, 1)}</span>}
                   <span>{format(day, "d")}</span>
                 </div>
               ))}
@@ -364,7 +378,7 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
 
             {/* Stay Rows */}
             {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => (
-              <div key={nickname} className="relative h-10 border-b border-border">
+              <div key={nickname} className={cn("relative border-b border-border", isMobile ? "h-9" : "h-10")}>
                 {/* Grid lines */}
                 <div className="absolute inset-0 flex">
                   {days.map((day, idx) => (
@@ -389,18 +403,19 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
                   return (
                     <Tooltip key={stay.id}>
                       <TooltipTrigger asChild>
-                        <div
+                  <div
                           className={cn(
-                            "absolute top-1 h-8 rounded-md flex items-center justify-center text-white text-xs font-medium px-2 cursor-pointer transition-all hover:brightness-110 shadow-sm",
+                            "absolute rounded-md flex items-center justify-center text-white font-medium cursor-pointer transition-all hover:brightness-110 shadow-sm",
+                            isMobile ? "top-1.5 h-6 text-[9px] px-1" : "top-1 h-8 text-xs px-2",
                             getColorForNickname(nickname)
                           )}
                           style={{
-                            left: startOffset * dayWidth + 2,
-                            width: duration * dayWidth - 4,
+                            left: startOffset * dayWidth + 1,
+                            width: duration * dayWidth - 2,
                           }}
                         >
                           <span className="truncate">
-                            {stay.villa} · {duration}d
+                            {isMobile ? `${duration}d` : `${stay.villa} · ${duration}d`}
                           </span>
                         </div>
                       </TooltipTrigger>
