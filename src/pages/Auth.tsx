@@ -199,9 +199,9 @@ export default function Auth() {
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-background/50 backdrop-blur-sm">
       {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/5 via-sage-100/50 to-primary/10 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 relative overflow-hidden backdrop-blur-sm">
         {/* Decorative elements */}
         <div className="absolute top-20 left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-20 w-80 h-80 bg-sage-200/30 rounded-full blur-3xl" />
@@ -292,63 +292,6 @@ export default function Auth() {
                   <div className="flex items-center gap-3">
                     <Fingerprint className="h-5 w-5" />
                     <span>Sign in with Biometric</span>
-                  </div>
-                )}
-              </Button>
-
-              {/* Ethereum Button */}
-              <Button
-                onClick={handleEthereumConnect}
-                variant="outline"
-                className="w-full h-14 text-base font-medium rounded-xl border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 bg-gradient-to-r from-[#627EEA]/10 to-[#627EEA]/5 border-[#627EEA]/30 hover:border-[#627EEA]/50"
-                disabled={anyLoading}
-              >
-                {isEthereumLoading ? (
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>{isAuthenticating ? 'Signing in...' : 'Connecting...'}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <svg className="h-5 w-5" viewBox="0 0 256 417" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M127.961 0L125.166 9.5V285.168L127.961 287.958L255.923 212.32L127.961 0Z" fill="#627EEA"/>
-                      <path d="M127.962 0L0 212.32L127.962 287.959V154.158V0Z" fill="#8C9FEA"/>
-                      <path d="M127.961 312.187L126.386 314.107V412.306L127.961 416.905L256 236.587L127.961 312.187Z" fill="#627EEA"/>
-                      <path d="M127.962 416.905V312.187L0 236.587L127.962 416.905Z" fill="#8C9FEA"/>
-                      <path d="M127.961 287.958L255.922 212.32L127.961 154.159V287.958Z" fill="#3C3C3B"/>
-                      <path d="M0.001 212.32L127.962 287.958V154.159L0.001 212.32Z" fill="#627EEA"/>
-                    </svg>
-                    <span>Sign in with Ethereum</span>
-                  </div>
-                )}
-              </Button>
-
-              {/* Solana Button */}
-              <Button
-                onClick={handleSolanaConnect}
-                variant="outline"
-                className="w-full h-14 text-base font-medium rounded-xl border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 bg-gradient-to-r from-[#9945FF]/10 to-[#14F195]/10 border-[#9945FF]/30 hover:border-[#9945FF]/50"
-                disabled={anyLoading}
-              >
-                {isSolanaLoading ? (
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>{solanaConnecting ? 'Connecting wallet...' : 'Signing in...'}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <svg className="h-5 w-5" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <defs>
-                        <linearGradient id="solanaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#9945FF" />
-                          <stop offset="100%" stopColor="#14F195" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M25.7 97.9c.7-.7 1.6-1.1 2.6-1.1h95.2c1.6 0 2.5 2 1.4 3.1l-19.6 19.6c-.7.7-1.6 1.1-2.6 1.1H7.5c-1.6 0-2.5-2-1.4-3.1l19.6-19.6z" fill="url(#solanaGradient)"/>
-                      <path d="M25.7 8.5c.7-.7 1.7-1.1 2.6-1.1h95.2c1.6 0 2.5 2 1.4 3.1L105.3 30c-.7.7-1.6 1.1-2.6 1.1H7.5c-1.6 0-2.5-2-1.4-3.1L25.7 8.5z" fill="url(#solanaGradient)"/>
-                      <path d="M105.3 52.9c-.7-.7-1.6-1.1-2.6-1.1H7.5c-1.6 0-2.5 2-1.4 3.1l19.6 19.6c.7.7 1.6 1.1 2.6 1.1h95.2c1.6 0 2.5-2 1.4-3.1L105.3 52.9z" fill="url(#solanaGradient)"/>
-                    </svg>
-                    <span>Sign in with Solana</span>
                   </div>
                 )}
               </Button>
