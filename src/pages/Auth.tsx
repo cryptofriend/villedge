@@ -23,7 +23,7 @@ export default function Auth() {
   const { setVisible: openSolanaModal } = useWalletModal();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | null>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -32,10 +32,10 @@ export default function Auth() {
     }
   }, [user, loading, navigate]);
 
-  // When Porto wallet connects, authenticate with backend
+  // When Porto/Ethereum wallet connects, authenticate with backend
   useEffect(() => {
-    if (isConnected && address && !user && !isAuthenticating && authType === 'biometric') {
-      authenticateWithBackend(address, 'porto');
+    if (isConnected && address && !user && !isAuthenticating && (authType === 'biometric' || authType === 'ethereum')) {
+      authenticateWithBackend(address, authType === 'biometric' ? 'porto' : 'ethereum');
     }
   }, [isConnected, address, user, isAuthenticating, authType]);
 
@@ -46,7 +46,7 @@ export default function Auth() {
     }
   }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
 
-  const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana') => {
+  const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum') => {
     setIsAuthenticating(true);
     
     try {
@@ -78,10 +78,10 @@ export default function Auth() {
     } catch (error) {
       console.error('Auth error:', error);
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
-      if (type === 'porto') {
-        disconnect();
-      } else {
+      if (type === 'solana') {
         disconnectSolana();
+      } else {
+        disconnect();
       }
     } finally {
       setIsAuthenticating(false);
@@ -107,6 +107,17 @@ export default function Auth() {
     openSolanaModal(true);
   };
 
+  const handleEthereumConnect = () => {
+    setAuthType('ethereum');
+    const injectedConnector = connectors.find(c => c.id === 'injected' || c.name.toLowerCase().includes('metamask'));
+    if (injectedConnector) {
+      connect({ connector: injectedConnector });
+    } else {
+      toast.error('No Ethereum wallet detected. Please install MetaMask.');
+      setAuthType(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -117,6 +128,8 @@ export default function Auth() {
 
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isSolanaLoading = isAuthenticating && authType === 'solana';
+  const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
+  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading;
 
   const features = [
     {
@@ -219,7 +232,7 @@ export default function Auth() {
               <Button
                 onClick={handleBiometricConnect}
                 className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-                disabled={isBiometricLoading || isSolanaLoading}
+                disabled={anyLoading}
               >
                 {isBiometricLoading ? (
                   <div className="flex items-center gap-3">
@@ -234,12 +247,39 @@ export default function Auth() {
                 )}
               </Button>
 
+              {/* Ethereum Button */}
+              <Button
+                onClick={handleEthereumConnect}
+                variant="outline"
+                className="w-full h-14 text-base font-medium rounded-xl border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 bg-gradient-to-r from-[#627EEA]/10 to-[#627EEA]/5 border-[#627EEA]/30 hover:border-[#627EEA]/50"
+                disabled={anyLoading}
+              >
+                {isEthereumLoading ? (
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>{isAuthenticating ? 'Signing in...' : 'Connecting...'}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5" viewBox="0 0 256 417" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M127.961 0L125.166 9.5V285.168L127.961 287.958L255.923 212.32L127.961 0Z" fill="#627EEA"/>
+                      <path d="M127.962 0L0 212.32L127.962 287.959V154.158V0Z" fill="#8C9FEA"/>
+                      <path d="M127.961 312.187L126.386 314.107V412.306L127.961 416.905L256 236.587L127.961 312.187Z" fill="#627EEA"/>
+                      <path d="M127.962 416.905V312.187L0 236.587L127.962 416.905Z" fill="#8C9FEA"/>
+                      <path d="M127.961 287.958L255.922 212.32L127.961 154.159V287.958Z" fill="#3C3C3B"/>
+                      <path d="M0.001 212.32L127.962 287.958V154.159L0.001 212.32Z" fill="#627EEA"/>
+                    </svg>
+                    <span>Sign in with Ethereum</span>
+                  </div>
+                )}
+              </Button>
+
               {/* Solana Button */}
               <Button
                 onClick={handleSolanaConnect}
                 variant="outline"
                 className="w-full h-14 text-base font-medium rounded-xl border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 bg-gradient-to-r from-[#9945FF]/10 to-[#14F195]/10 border-[#9945FF]/30 hover:border-[#9945FF]/50"
-                disabled={isBiometricLoading || isSolanaLoading}
+                disabled={anyLoading}
               >
                 {isSolanaLoading ? (
                   <div className="flex items-center gap-3">
