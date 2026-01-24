@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Loader2 } from "lucide-react";
@@ -6,6 +6,7 @@ import { useVillages, Village } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
 import { AuthButton } from "@/components/AuthButton";
+import { PopupTimeline } from "@/components/PopupTimeline";
 
 const DEFAULT_CENTER: [number, number] = [50, 20];
 const DEFAULT_ZOOM = 2;
@@ -58,12 +59,42 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   }, [mapboxToken]);
 
   // Get village route slug
-  const getVillageRoute = (village: Village) => {
+  const getVillageRoute = (village: Village | { id: string }) => {
     // Map village IDs to routes
     const routeMap: Record<string, string> = {
       "proof-of-retreat": "/por",
     };
     return routeMap[village.id] || `/village/${village.id}`;
+  };
+
+  // Transform villages for PopupTimeline format
+  const timelineVillages = useMemo(() => {
+    return villages.map((v) => ({
+      id: v.id,
+      name: v.name,
+      logo: v.logo_url || '/placeholder.svg',
+      center: v.center as [number, number],
+      dates: v.dates,
+      location: v.location,
+      description: v.description,
+      participants: v.participants || undefined,
+      focus: v.focus || undefined,
+    }));
+  }, [villages]);
+
+  const activeVillage = timelineVillages[0] || {
+    id: "",
+    name: "",
+    logo: "",
+    center: [0, 0] as [number, number],
+    dates: "",
+    location: "",
+    description: "",
+  };
+
+  const handleTimelineVillageClick = (village: { id: string }) => {
+    const route = getVillageRoute(village);
+    navigate(route);
   };
 
   // Create village markers
@@ -205,10 +236,20 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       </div>
 
       {/* Mobile bottom actions */}
-      <div className="absolute bottom-6 right-4 z-10 flex items-center gap-3 sm:hidden pointer-events-auto scale-[2] origin-bottom-right">
+      <div className="absolute bottom-32 right-4 z-10 flex items-center gap-3 sm:hidden pointer-events-auto scale-[2] origin-bottom-right">
         <AddVillageForm onVillageAdded={() => window.location.reload()} />
         <AuthButton />
       </div>
+
+      {/* Timeline */}
+      {timelineVillages.length > 0 && (
+        <PopupTimeline
+          villages={timelineVillages}
+          activeVillage={activeVillage}
+          isZoomedIn={false}
+          onVillageClick={handleTimelineVillageClick}
+        />
+      )}
     </div>
   );
 };
