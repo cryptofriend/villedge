@@ -163,12 +163,15 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
             </a>
           </div>
         </div>
-        <div className="text-3xl font-bold text-foreground mt-1">
-          {isLoadingWallet ? (
-            <span className="text-muted-foreground">Loading...</span>
-          ) : (
-            `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-          )}
+        <div className="flex items-center gap-2 mt-1">
+          <div className="text-3xl font-bold text-foreground">
+            {isLoadingWallet ? (
+              <span className="text-muted-foreground">Loading...</span>
+            ) : (
+              `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            )}
+          </div>
+          <TopUpDialog walletAddress={walletAddress} resolvedAddress={resolvedAddress} solanaWalletAddress={solanaWalletAddress} />
         </div>
         
         {/* Balance breakdown */}
@@ -197,15 +200,14 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
         />
       </div>
 
-      {/* Top up & check donations buttons */}
-      <div className="p-4 border-b border-border flex gap-2">
-        <TopUpDialog walletAddress={walletAddress} resolvedAddress={resolvedAddress} solanaWalletAddress={solanaWalletAddress} />
+      {/* Check donations button */}
+      <div className="p-4 border-b border-border">
         <Button
           variant="outline"
           size="sm"
           onClick={handleCheckDonations}
           disabled={isCheckingDonations}
-          className="flex-1"
+          className="w-full"
         >
           <Bell className={cn("h-4 w-4 mr-2", isCheckingDonations && "animate-pulse")} />
           {isCheckingDonations ? "Checking..." : "Notify Donations"}
