@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -30,7 +30,11 @@ console.warn = (...args) => {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading } = useAuth();
+  
+  // Get the redirect path from location state (set by protected routes)
+  const from = (location.state as { from?: string })?.from || '/';
   
   // Porto/Biometric wallet
   const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -77,9 +81,9 @@ export default function Auth() {
   // Redirect if already authenticated
   useEffect(() => {
     if (user && !loading) {
-      navigate('/');
+      navigate(from, { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, from]);
 
   // When Porto/Ethereum wallet connects, authenticate with backend
   useEffect(() => {
@@ -122,7 +126,7 @@ export default function Auth() {
         }
 
         toast.success('Welcome to Villedge!');
-        navigate('/');
+        navigate(from, { replace: true });
       }
     } catch (error) {
       console.error('Auth error:', error);
