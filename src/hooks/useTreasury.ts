@@ -33,15 +33,24 @@ interface WalletBalance {
   timestamp: string;
 }
 
+interface SolanaBalance {
+  balance: number;
+  solBalance: number;
+  solPrice: number;
+  walletAddress: string;
+  timestamp: string;
+}
+
 export type ProposalReactionType = "fund" | "later" | "no_fund";
 
-// Wallet address for the treasury
+// Wallet addresses for the treasury
 const TREASURY_WALLET = "proofofretreat.eth";
+const SOLANA_TREASURY_WALLET = "6J4nRWJRSdhRuhSTVRp9zB2R6pZ8vimjGUjm3WoMSss3";
 
 export const useTreasury = (villageId: string) => {
   const queryClient = useQueryClient();
 
-  // Fetch live wallet balance from Zerion
+  // Fetch live wallet balance from Zerion (Base/ETH)
   const { data: walletBalance, isLoading: isLoadingWallet, error: walletError } = useQuery({
     queryKey: ["wallet-balance", TREASURY_WALLET],
     queryFn: async () => {
@@ -51,6 +60,25 @@ export const useTreasury = (villageId: string) => {
 
       if (error) {
         console.error("Error fetching wallet balance:", error);
+        throw error;
+      }
+
+      return data;
+    },
+    staleTime: 60 * 1000, // Cache for 1 minute
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+  });
+
+  // Fetch Solana wallet balance
+  const { data: solanaBalance, isLoading: isLoadingSolana, error: solanaError } = useQuery({
+    queryKey: ["solana-balance", SOLANA_TREASURY_WALLET],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke<SolanaBalance>("get-solana-balance", {
+        body: { walletAddress: SOLANA_TREASURY_WALLET },
+      });
+
+      if (error) {
+        console.error("Error fetching Solana balance:", error);
         throw error;
       }
 
@@ -164,7 +192,9 @@ export const useTreasury = (villageId: string) => {
   };
 
   // Use live wallet balance, fall back to DB treasury balance
-  const liveBalance = walletBalance?.balance ?? treasury?.balance ?? 0;
+  const baseBalance = walletBalance?.balance ?? 0;
+  const solBalance = solanaBalance?.balance ?? 0;
+  const totalBalance = baseBalance + solBalance;
   
   // Get the resolved hex address from the wallet balance response
   const resolvedAddress = walletBalance?.walletAddress;
@@ -173,9 +203,12 @@ export const useTreasury = (villageId: string) => {
     treasury,
     proposals,
     isLoading: isLoadingTreasury || isLoadingProposals,
-    isLoadingWallet,
-    walletError,
-    walletBalance: liveBalance,
+    isLoadingWallet: isLoadingWallet || isLoadingSolana,
+    walletError: walletError || solanaError,
+    walletBalance: totalBalance,
+    baseBalance,
+    solanaBalance: solBalance,
+    solanaWalletAddress: SOLANA_TREASURY_WALLET,
     walletAddress: TREASURY_WALLET,
     resolvedAddress,
     addProposal,

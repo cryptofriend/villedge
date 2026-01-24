@@ -34,7 +34,10 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
     isLoading, 
     isLoadingWallet,
     walletBalance,
+    baseBalance,
+    solanaBalance,
     walletAddress,
+    solanaWalletAddress,
     resolvedAddress,
     addProposal, 
     addReaction, 
@@ -103,6 +106,7 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
 
   const handleRefreshBalance = () => {
     queryClient.invalidateQueries({ queryKey: ["wallet-balance", walletAddress] });
+    queryClient.invalidateQueries({ queryKey: ["solana-balance", solanaWalletAddress] });
     refetchTxs();
   };
 
@@ -166,9 +170,22 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
             `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           )}
         </div>
-        <div className="text-xs text-muted-foreground mt-1 font-mono truncate">
-          {walletAddress}
-        </div>
+        
+        {/* Balance breakdown */}
+        {!isLoadingWallet && (baseBalance > 0 || solanaBalance > 0) && (
+          <div className="flex items-center gap-3 mt-2 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-muted-foreground">Base:</span>
+              <span className="font-medium">${baseBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <span className="text-muted-foreground">Solana:</span>
+              <span className="font-medium">${solanaBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mini chart */}
@@ -182,7 +199,7 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
 
       {/* Top up & check donations buttons */}
       <div className="p-4 border-b border-border flex gap-2">
-        <TopUpDialog walletAddress={walletAddress} resolvedAddress={resolvedAddress} />
+        <TopUpDialog walletAddress={walletAddress} resolvedAddress={resolvedAddress} solanaWalletAddress={solanaWalletAddress} />
         <Button
           variant="outline"
           size="sm"
