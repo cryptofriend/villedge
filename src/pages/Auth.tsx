@@ -6,8 +6,27 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+
+// Debug log collector
+const debugLogs: string[] = [];
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
+console.log = (...args) => {
+  debugLogs.push(`[LOG] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}`);
+  originalConsoleLog.apply(console, args);
+};
+console.error = (...args) => {
+  debugLogs.push(`[ERROR] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}`);
+  originalConsoleError.apply(console, args);
+};
+console.warn = (...args) => {
+  debugLogs.push(`[WARN] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}`);
+  originalConsoleWarn.apply(console, args);
+};
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -24,6 +43,36 @@ export default function Auth() {
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
+
+  // Log wallet state for debugging
+  useEffect(() => {
+    console.log('[Auth] Connectors available:', connectors.map(c => ({ id: c.id, name: c.name })));
+    console.log('[Auth] isConnected:', isConnected, 'address:', address);
+    console.log('[Auth] solanaConnected:', solanaConnected, 'publicKey:', publicKey?.toBase58());
+  }, [connectors, isConnected, address, solanaConnected, publicKey]);
+
+  const copyLogsToClipboard = async () => {
+    const logsText = debugLogs.slice(-50).join('\n');
+    await navigator.clipboard.writeText(logsText);
+    toast.success('Logs copied to clipboard!');
+  };
+
+  const copyWalletState = async () => {
+    const state = {
+      connectors: connectors.map(c => ({ id: c.id, name: c.name })),
+      isConnected,
+      address,
+      solanaConnected,
+      solanaPublicKey: publicKey?.toBase58(),
+      authType,
+      isAuthenticating,
+      userAgent: navigator.userAgent,
+      isIframe: window.self !== window.top,
+    };
+    await navigator.clipboard.writeText(JSON.stringify(state, null, 2));
+    toast.success('Wallet state copied to clipboard!');
+  };
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -330,6 +379,45 @@ export default function Auth() {
                     Cross-Platform
                   </span>
                 </div>
+              </div>
+
+              {/* Debug Section */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDebug(!showDebug)}
+                  className="w-full text-xs text-muted-foreground"
+                >
+                  <Bug className="h-3 w-3 mr-1" />
+                  {showDebug ? 'Hide Debug' : 'Show Debug Tools'}
+                </Button>
+                
+                {showDebug && (
+                  <div className="mt-3 space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyLogsToClipboard}
+                      className="w-full text-xs"
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy Console Logs
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyWalletState}
+                      className="w-full text-xs"
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy Wallet State
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground text-center mt-2">
+                      isIframe: {String(window.self !== window.top)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
