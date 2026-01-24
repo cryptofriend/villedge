@@ -126,7 +126,7 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress, solanaWalletAddres
                 htmlFor="network-switch" 
                 className={`text-sm font-medium cursor-pointer ${selectedNetwork === "base" ? "text-foreground" : "text-muted-foreground"}`}
               >
-                Base
+                Ethereum
               </Label>
             </div>
             <Switch
@@ -273,7 +273,7 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress, solanaWalletAddres
           </button>
 
           <p className="text-xs text-muted-foreground text-center">
-            Scan with your wallet app to send {selectedNetwork === "base" ? "ETH on Base" : "SOL"}
+            Scan with your wallet app to send {selectedNetwork === "base" ? "ETH" : "SOL"}
           </p>
         </div>
       </DialogContent>
