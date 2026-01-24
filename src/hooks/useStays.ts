@@ -41,7 +41,7 @@ export const hashSecret = async (secret: string): Promise<string> => {
   if (!secret) return "";
   const encoder = new TextEncoder();
   const data = encoder.encode(secret);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", new Uint8Array(data).buffer as ArrayBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 };
