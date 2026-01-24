@@ -4,15 +4,32 @@ import { useAccount, useDisconnect, useBalance } from 'wagmi';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { LogIn, Wallet } from 'lucide-react';
+import { LogIn, LogOut, Wallet } from 'lucide-react';
 import { ProfileDialog } from './ProfileDialog';
+import { toast } from 'sonner';
 
 export function AuthButton() {
   const navigate = useNavigate();
-  const { user, profile, isAuthenticated, loading } = useAuth();
+  const { user, profile, isAuthenticated, loading, signOut } = useAuth();
   const { address } = useAccount();
+  const { disconnect } = useDisconnect();
   const { data: balanceData } = useBalance({ address });
   const [profileOpen, setProfileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      disconnect();
+      await signOut();
+      toast.success('Signed out successfully');
+      navigate('/');
+    } catch (error) {
+      toast.error('Failed to sign out');
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -50,33 +67,44 @@ export function AuthButton() {
 
   return (
     <>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="gap-2 px-2 bg-card/90 backdrop-blur-sm border-border/50 hover:bg-card"
-        onClick={() => setProfileOpen(true)}
-      >
-        {hasCustomName ? (
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={profile?.avatar_url || undefined} alt={displayName || ''} />
-            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-        ) : (
-          <Wallet className="h-4 w-4 text-primary" />
-        )}
-        <div className="flex flex-col items-start leading-none">
-          <span className="text-xs font-medium hidden sm:inline max-w-24 truncate">
-            {displayName}
-          </span>
-          {formattedBalance && (
-            <span className="text-[10px] text-muted-foreground hidden sm:inline">
-              {formattedBalance}
-            </span>
+      <div className="flex items-center gap-1">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2 px-2 bg-card/90 backdrop-blur-sm border-border/50 hover:bg-card"
+          onClick={() => setProfileOpen(true)}
+        >
+          {hasCustomName ? (
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={profile?.avatar_url || undefined} alt={displayName || ''} />
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <Wallet className="h-4 w-4 text-primary" />
           )}
-        </div>
-      </Button>
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-xs font-medium hidden sm:inline max-w-24 truncate">
+              {displayName}
+            </span>
+            {formattedBalance && (
+              <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                {formattedBalance}
+              </span>
+            )}
+          </div>
+        </Button>
+
+        <button
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+          title="Sign Out"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
 
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </>
