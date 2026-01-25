@@ -95,6 +95,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     navigate(route);
   };
 
+  // Truncate text to a maximum length
+  const truncateText = (text: string, maxLength: number = 20) => {
+    if (!text || text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   // Create village markers
   const createVillageMarkers = useCallback(() => {
     if (!map.current || villages.length === 0) return;
@@ -105,6 +111,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     villages.forEach((village) => {
       const el = document.createElement("div");
       el.className = "village-marker";
+      const truncatedLocation = truncateText(village.location, 20);
       el.innerHTML = `
         <div style="
           display: flex;
@@ -124,7 +131,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           />
           <div style="display: flex; flex-direction: column; line-height: 1.2;">
             <span style="font-weight: 600; font-size: 12px; color: #333;">${village.name}</span>
-            <span style="font-size: 10px; color: #666;">${village.location}</span>
+            <span style="font-size: 10px; color: #666;">${truncatedLocation}</span>
           </div>
         </div>
       `;
@@ -224,9 +231,9 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
                 alt={village.name} 
                 className="h-8 w-8 rounded object-cover"
               />
-              <div>
-                <p className="text-sm font-medium text-foreground">{village.name}</p>
-                <p className="text-xs text-muted-foreground">{village.location}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground truncate">{village.name}</p>
+                <p className="text-xs text-muted-foreground truncate" title={village.location}>{village.location}</p>
               </div>
             </button>
           ))}
