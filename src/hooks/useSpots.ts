@@ -33,7 +33,7 @@ export interface SpotUpdate {
   google_maps_url?: string;
 }
 
-export const useSpots = () => {
+export const useSpots = (villageId?: string) => {
   const [spots, setSpots] = useState<DbSpot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +41,18 @@ export const useSpots = () => {
   const fetchSpots = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from("spots")
         .select("*")
         .order("created_at", { ascending: true });
+      
+      // Filter by village_id if provided
+      if (villageId) {
+        query = query.eq("village_id", villageId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -176,7 +184,7 @@ export const useSpots = () => {
 
   useEffect(() => {
     fetchSpots();
-  }, []);
+  }, [villageId]);
 
   return { spots, loading, error, addSpot, updateSpotCoordinates, deleteSpot, updateSpot, refetch: fetchSpots };
 };
