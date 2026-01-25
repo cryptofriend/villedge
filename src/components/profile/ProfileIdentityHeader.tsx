@@ -1,22 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Copy, Check, ExternalLink, Edit2, Twitter, Github, Linkedin, Instagram, Globe, MapPin } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProfileData } from "@/pages/Profile";
-import { format } from "date-fns";
+import { format, differenceInDays, startOfMonth, endOfMonth, addMonths, isWithinInterval, isBefore, isAfter } from "date-fns";
 import { useAccount } from "wagmi";
 import { usePersonalBalance } from "@/hooks/usePersonalBalance";
 import { PersonalTopUpDialog } from "@/components/PersonalTopUpDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
-interface VillageRegistration {
+interface VillageStay {
   id: string;
   village_id: string;
   village_name: string;
   start_date: string;
+  end_date: string;
   logo_url: string | null;
+  status: string | null;
 }
 
 interface ProfileIdentityHeaderProps {
@@ -53,14 +55,48 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, userId }: Profile
   const { balance, isLoading: isLoadingBalance } = usePersonalBalance(address);
   const [copied, setCopied] = useState(false);
   const [walletExpanded, setWalletExpanded] = useState(false);
-  const [villages, setVillages] = useState<VillageRegistration[]>([]);
+  const [villages, setVillages] = useState<VillageStay[]>([]);
   const [loadingVillages, setLoadingVillages] = useState(true);
+
+  const today = new Date();
+
+  // Calculate timeline range based on stays
+  const timelineData = useMemo(() => {
+    if (villages.length === 0) {
+      // Default: show 6 months centered on today
+      const start = startOfMonth(addMonths(today, -1));
+      const end = endOfMonth(addMonths(today, 4));
+      return { start, end, months: generateMonths(start, end) };
+    }
+
+    // Find the earliest start and latest end
+    const allDates = villages.flatMap(v => [new Date(v.start_date), new Date(v.end_date)]);
+    allDates.push(today);
+    
+    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    
+    const start = startOfMonth(addMonths(minDate, -1));
+    const end = endOfMonth(addMonths(maxDate, 1));
+    
+    return { start, end, months: generateMonths(start, end) };
+  }, [villages, today]);
+
+  function generateMonths(start: Date, end: Date) {
+    const months: Date[] = [];
+    let current = startOfMonth(start);
+    while (isBefore(current, end) || current.getTime() === end.getTime()) {
+      months.push(current);
+      current = addMonths(current, 1);
+    }
+    return months;
+  }
 
   const socialPlatform = getSocialPlatform(profile.social_url || "");
   const joinDate = new Date(profile.created_at);
-  const isGenesisMember = joinDate < new Date("2025-02-01"); // Example threshold
+  const isGenesisMember = joinDate < new Date("2025-02-01");
 
-  // Fetch user's village registrations
+  // Fetch user's village stays (all statuses)
   useEffect(() => {
     const fetchVillages = async () => {
       if (!userId) {
@@ -69,10 +105,10 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, userId }: Profile
       }
 
       try {
-        // Get stays for this user
+        // Get all stays for this user (all statuses)
         const { data: stays } = await supabase
           .from("stays")
-          .select("id, village_id, start_date")
+          .select("id, village_id, start_date, end_date, status")
           .eq("user_id", userId)
           .order("start_date", { ascending: true });
 
@@ -93,27 +129,21 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, userId }: Profile
 
         const villageMap = new Map(villageData?.map(v => [v.id, v]) || []);
 
-        // Build village registrations (one per unique village, earliest date)
-        const villageRegs: VillageRegistration[] = [];
-        const seenVillages = new Set<string>();
+        // Build village stays
+        const villageStays: VillageStay[] = stays.map(stay => {
+          const village = villageMap.get(stay.village_id);
+          return {
+            id: stay.id,
+            village_id: stay.village_id,
+            village_name: village?.name || stay.village_id,
+            start_date: stay.start_date,
+            end_date: stay.end_date,
+            logo_url: village?.logo_url || null,
+            status: stay.status,
+          };
+        });
 
-        for (const stay of stays) {
-          if (!seenVillages.has(stay.village_id)) {
-            seenVillages.add(stay.village_id);
-            const village = villageMap.get(stay.village_id);
-            if (village) {
-              villageRegs.push({
-                id: stay.id,
-                village_id: stay.village_id,
-                village_name: village.name,
-                start_date: stay.start_date,
-                logo_url: village.logo_url,
-              });
-            }
-          }
-        }
-
-        setVillages(villageRegs);
+        setVillages(villageStays);
       } catch (error) {
         console.error("Error fetching villages:", error);
       } finally {
@@ -123,6 +153,28 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, userId }: Profile
 
     fetchVillages();
   }, [userId]);
+
+  // Calculate bar position and width
+  const getBarStyle = (stay: VillageStay) => {
+    const totalDays = differenceInDays(timelineData.end, timelineData.start);
+    const startDate = new Date(stay.start_date);
+    const endDate = new Date(stay.end_date);
+    
+    const startOffset = Math.max(0, differenceInDays(startDate, timelineData.start));
+    const endOffset = Math.min(totalDays, differenceInDays(endDate, timelineData.start));
+    
+    const left = (startOffset / totalDays) * 100;
+    const width = ((endOffset - startOffset) / totalDays) * 100;
+    
+    return { left: `${left}%`, width: `${Math.max(width, 2)}%` };
+  };
+
+  // Calculate today marker position
+  const getTodayPosition = () => {
+    const totalDays = differenceInDays(timelineData.end, timelineData.start);
+    const todayOffset = differenceInDays(today, timelineData.start);
+    return `${(todayOffset / totalDays) * 100}%`;
+  };
 
   const copyAddress = () => {
     if (address) {
@@ -213,8 +265,8 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, userId }: Profile
             <span>Member since {format(joinDate, "MMM yyyy")}</span>
           </div>
 
-          {/* Wallet & Villages Row */}
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Wallet & Villages Stack */}
+          <div className="mt-4 space-y-3">
             {/* Wallet Section */}
             {address && (
               <div className="p-3 bg-muted/30 rounded-lg border border-border">
@@ -269,56 +321,85 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, userId }: Profile
               </div>
             )}
 
-            {/* Villages Timeline */}
+            {/* Villages Timeline (Gantt-style) */}
             <div className="p-3 bg-muted/30 rounded-lg border border-border">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground font-medium">Villages</span>
+                <span className="text-xs text-muted-foreground font-medium">Village Participation</span>
               </div>
               
               {loadingVillages ? (
                 <div className="text-xs text-muted-foreground">Loading...</div>
               ) : villages.length > 0 ? (
-                <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                  {/* Timeline line */}
-                  <div className="flex items-center gap-0">
-                    {villages.map((village, index) => (
-                      <div key={village.id} className="flex items-center">
-                        {/* Village node */}
-                        <button
-                          onClick={() => navigate(`/${village.village_id}`)}
-                          className="flex flex-col items-center gap-1 px-2 py-1 rounded-md hover:bg-muted/50 transition-colors group"
-                          title={`${village.village_name} - Joined ${format(new Date(village.start_date), "MMM yyyy")}`}
-                        >
-                          {village.logo_url ? (
-                            <img 
-                              src={village.logo_url} 
-                              alt={village.village_name}
-                              className="w-8 h-8 rounded-full object-cover ring-2 ring-background group-hover:ring-primary/50 transition-all"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-background group-hover:ring-primary/50 transition-all">
-                              <span className="text-xs font-medium text-primary">
-                                {village.village_name.slice(0, 2).toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                          <span className="text-[10px] text-muted-foreground group-hover:text-foreground whitespace-nowrap max-w-[60px] truncate">
-                            {village.village_name}
-                          </span>
-                        </button>
-                        
-                        {/* Connector line */}
-                        {index < villages.length - 1 && (
-                          <div className="w-4 h-0.5 bg-border" />
-                        )}
+                <div className="relative">
+                  {/* Month headers */}
+                  <div className="flex border-b border-border pb-1 mb-2">
+                    {timelineData.months.map((month, idx) => (
+                      <div 
+                        key={idx} 
+                        className="flex-1 text-[10px] text-muted-foreground font-medium text-center"
+                      >
+                        {format(month, "MMM")}
                       </div>
                     ))}
                   </div>
+
+                  {/* Today marker */}
+                  <div 
+                    className="absolute top-0 bottom-0 w-px bg-primary z-10"
+                    style={{ left: getTodayPosition() }}
+                  >
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                      Today
+                    </div>
+                  </div>
+
+                  {/* Village bars */}
+                  <div className="space-y-2 pt-2">
+                    {villages.map((stay) => {
+                      const barStyle = getBarStyle(stay);
+                      const isPlanning = stay.status === "planning";
+                      
+                      return (
+                        <div key={stay.id} className="relative h-8">
+                          <button
+                            onClick={() => navigate(`/${stay.village_id}`)}
+                            className={`absolute h-full flex items-center gap-2 px-2 rounded-full transition-all hover:ring-2 hover:ring-primary/50 ${
+                              isPlanning 
+                                ? "bg-muted/80 border border-dashed border-muted-foreground/30" 
+                                : "bg-primary/15 border border-primary/30"
+                            }`}
+                            style={barStyle}
+                            title={`${stay.village_name}: ${format(new Date(stay.start_date), "MMM d")} - ${format(new Date(stay.end_date), "MMM d, yyyy")}${isPlanning ? " (Planning)" : ""}`}
+                          >
+                            {stay.logo_url ? (
+                              <img 
+                                src={stay.logo_url} 
+                                alt={stay.village_name}
+                                className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                <span className="text-[8px] font-medium text-primary">
+                                  {stay.village_name.slice(0, 2).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <span className={`text-xs font-medium truncate ${isPlanning ? "text-muted-foreground" : "text-foreground"}`}>
+                              {stay.village_name}
+                            </span>
+                            {isPlanning && (
+                              <span className="text-[9px] text-muted-foreground">?</span>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
-                <div className="text-xs text-muted-foreground italic">
-                  No villages joined yet
+                <div className="text-xs text-muted-foreground italic py-2">
+                  No village participation yet
                 </div>
               )}
             </div>
