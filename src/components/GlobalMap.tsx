@@ -108,9 +108,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
     
-    villages.forEach((village) => {
+    villages.forEach((village, index) => {
       const el = document.createElement("div");
       el.className = "village-marker";
+      el.style.zIndex = String(10 + index);
+      el.style.position = "relative";
+      
       const truncatedLocation = truncateText(village.location, 20);
       el.innerHTML = `
         <div style="
@@ -123,20 +126,22 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           box-shadow: 0 4px 16px rgba(0,0,0,0.15);
           cursor: pointer;
           transition: all 0.3s ease;
+          max-width: 200px;
         ">
           <img 
             src="${village.logo_url || '/placeholder.svg'}" 
             alt="${village.name}" 
-            style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;"
+            style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;"
           />
-          <div style="display: flex; flex-direction: column; line-height: 1.2;">
-            <span style="font-weight: 600; font-size: 12px; color: #333;">${village.name}</span>
-            <span style="font-size: 10px; color: #666;">${truncatedLocation}</span>
+          <div style="display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden;">
+            <span style="font-weight: 600; font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${village.name}</span>
+            <span style="font-size: 10px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${truncatedLocation}</span>
           </div>
         </div>
       `;
 
       el.addEventListener("mouseenter", () => {
+        el.style.zIndex = "1000";
         const container = el.firstElementChild as HTMLElement;
         if (container) {
           container.style.transform = "scale(1.05)";
@@ -145,6 +150,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       });
 
       el.addEventListener("mouseleave", () => {
+        el.style.zIndex = String(10 + index);
         const container = el.firstElementChild as HTMLElement;
         if (container) {
           container.style.transform = "scale(1)";
