@@ -10,6 +10,7 @@ import Village from "./pages/Village";
 import Embed from "./pages/Embed";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
               <Route path="/embed" element={<Embed />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/profile/:userId" element={<Profile />} />
               {/* Village routes - must be after specific routes */}
               <Route path="/:villageSlug" element={<Village />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

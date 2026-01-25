@@ -72,7 +72,7 @@ export function AuthButton() {
           variant="outline" 
           size="sm" 
           className="gap-2 px-2 bg-card/90 backdrop-blur-sm border-border/50 hover:bg-card"
-          onClick={() => setProfileOpen(true)}
+          onClick={() => navigate(`/profile/${user?.id}`)}
         >
           {hasCustomName ? (
             <Avatar className="h-6 w-6">
@@ -106,6 +106,7 @@ export function AuthButton() {
         </button>
       </div>
 
+      {/* Keep ProfileDialog for quick edits if needed */}
       <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </>
   );
