@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Edit3, Loader2, Settings, Users } from "lucide-react";
+import { Edit3, Loader2, Settings, Users, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 import { Village } from "@/hooks/useVillages";
@@ -20,6 +20,7 @@ interface EditVillageDialogProps {
 export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDialogProps) => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResolvingLocation, setIsResolvingLocation] = useState(false);
   
   const [name, setName] = useState(village.name);
   const [description, setDescription] = useState(village.description);
@@ -31,6 +32,12 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
   const [twitterUrl, setTwitterUrl] = useState(village.twitter_url || "");
   const [instagramUrl, setInstagramUrl] = useState(village.instagram_url || "");
   const [applyUrl, setApplyUrl] = useState((village as any).apply_url || "");
+  
+  // Location fields
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+  const [location, setLocation] = useState(village.location);
+  const [center, setCenter] = useState<[number, number]>(village.center);
+
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
@@ -44,8 +51,47 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
       setTwitterUrl(village.twitter_url || "");
       setInstagramUrl(village.instagram_url || "");
       setApplyUrl((village as any).apply_url || "");
+      setGoogleMapsUrl("");
+      setLocation(village.location);
+      setCenter(village.center);
     }
   }, [open, village]);
+
+  const handleResolveLocation = async () => {
+    if (!googleMapsUrl.trim()) {
+      toast.error("Please enter a Google Maps URL");
+      return;
+    }
+
+    setIsResolvingLocation(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('resolve-google-maps', {
+        body: { url: googleMapsUrl.trim() },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || 'Failed to resolve location');
+      }
+
+      const placeData = data.data;
+      
+      if (placeData.coordinates) {
+        setCenter(placeData.coordinates as [number, number]);
+      }
+      
+      if (placeData.name) {
+        setLocation(placeData.name);
+      }
+
+      toast.success("Location updated! Don't forget to save.");
+    } catch (err) {
+      console.error("Error resolving location:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to resolve location");
+    } finally {
+      setIsResolvingLocation(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +117,8 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           twitter_url: twitterUrl || null,
           instagram_url: instagramUrl || null,
           apply_url: applyUrl.trim() || null,
+          location: location.trim(),
+          center: center,
         } as any)
         .eq("id", village.id);
 
@@ -151,6 +199,56 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
                   placeholder="What is this village about?"
                   rows={3}
                 />
+              </div>
+
+              {/* Location Section */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Location
+                </h4>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Current Location</Label>
+                    <Input
+                      id="location"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Location name"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Coordinates: {center[1].toFixed(4)}, {center[0].toFixed(4)}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="google-maps">Update from Google Maps</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="google-maps"
+                        value={googleMapsUrl}
+                        onChange={(e) => setGoogleMapsUrl(e.target.value)}
+                        placeholder="Paste Google Maps URL..."
+                        className="flex-1"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="secondary"
+                        onClick={handleResolveLocation}
+                        disabled={isResolvingLocation || !googleMapsUrl.trim()}
+                      >
+                        {isResolvingLocation ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Update"
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Paste a Google Maps link to update location and coordinates.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="border-t pt-4">
