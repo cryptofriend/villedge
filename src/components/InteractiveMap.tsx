@@ -926,7 +926,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Stays Calendar view */}
       {activeView === "residents" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
             <StayCalendar villageId={activeVillage.id} applyUrl={(activeVillage as any).apply_url} />
           </div>
         </div>
@@ -935,7 +935,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Scenius view */}
       {activeView === "scenius" && isZoomedIn && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -955,7 +955,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Bulletin view */}
       {activeView === "bulletin" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-primary" />
@@ -975,7 +975,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Events view */}
       {activeView === "events" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
@@ -995,7 +995,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Treasury view */}
       {activeView === "treasury" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
+          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
             <div className="flex-1 overflow-hidden">
               <TreasuryList 
                 villageId={activeVillage.id} 
