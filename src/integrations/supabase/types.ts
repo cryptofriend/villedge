@@ -530,6 +530,41 @@ export type Database = {
         }
         Relationships: []
       }
+      village_hosts: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          user_id: string
+          village_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          user_id: string
+          village_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          user_id?: string
+          village_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "village_hosts_village_id_fkey"
+            columns: ["village_id"]
+            isOneToOne: false
+            referencedRelation: "villages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       villages: {
         Row: {
           center: Json
