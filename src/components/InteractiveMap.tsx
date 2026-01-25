@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { categoryColors } from "@/data/spots";
@@ -39,6 +39,7 @@ interface InteractiveMapProps {
 
 export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMapProps) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -67,7 +68,13 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const [activeView, setActiveView] = useState<"map" | "residents" | "scenius" | "bulletin" | "events" | "treasury">("map");
+  // Parse initial tab from URL query parameter
+  const validTabs = ["map", "residents", "scenius", "bulletin", "events", "treasury"] as const;
+  type TabType = typeof validTabs[number];
+  const initialTab = searchParams.get("tab") as TabType | null;
+  const [activeView, setActiveView] = useState<TabType>(
+    initialTab && validTabs.includes(initialTab) ? initialTab : "map"
+  );
   
   // Comments for floating bubbles
   const [allComments, setAllComments] = useState<Comment[]>([]);
