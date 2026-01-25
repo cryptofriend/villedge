@@ -776,22 +776,24 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                     {/* Desktop layout */}
                     <div className="hidden sm:block">
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                          <h1 className="font-display text-2xl md:text-3xl font-semibold text-foreground">
-                            {activeVillage.name}
-                          </h1>
-                          {isHost(activeVillage.id) && (
-                            <EditVillageDialog 
-                              village={activeVillage} 
-                              onVillageUpdated={() => {
-                                refetchVillages();
-                              }} 
-                            />
-                          )}
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1">
+                            <h1 className="font-display text-2xl md:text-3xl font-semibold text-foreground">
+                              {activeVillage.name}
+                            </h1>
+                            {isHost(activeVillage.id) && (
+                              <EditVillageDialog 
+                                village={activeVillage} 
+                                onVillageUpdated={() => {
+                                  refetchVillages();
+                                }} 
+                              />
+                            )}
+                          </div>
+                          <span className="font-body text-sm text-muted-foreground">
+                            {activeVillage.dates}
+                          </span>
                         </div>
-                        <span className="font-body text-sm text-muted-foreground">
-                          {activeVillage.dates}
-                        </span>
                         <VillageSocialIcons village={activeVillage} />
                       </div>
                       <p className="font-body text-sm md:text-base text-muted-foreground truncate">
