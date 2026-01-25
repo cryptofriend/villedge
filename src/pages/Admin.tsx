@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Bot, Bell, MessageSquare, Wallet, CheckCircle2, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Bot, Bell, MessageSquare, Wallet, CheckCircle2, Save, Loader2, Settings } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const BOOGA_USER_ID = "9807c494-ba07-4438-9a89-07ac13334e78";
 
@@ -18,6 +22,11 @@ export default function Admin() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [isAuthorized, setIsAuthorized] = useState(false);
+  
+  // Settings state
+  const [chatId, setChatId] = useState("");
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -28,6 +37,71 @@ export default function Admin() {
       }
     }
   }, [user, loading, navigate]);
+
+  // Fetch current settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!isAuthorized) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("settings")
+          .select("*")
+          .eq("key", "telegram_chat_id")
+          .maybeSingle();
+        
+        if (error) throw error;
+        if (data) {
+          setChatId(data.value || "");
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    
+    fetchSettings();
+  }, [isAuthorized]);
+
+  const handleSaveChatId = async () => {
+    if (!chatId.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Chat ID cannot be empty",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("settings")
+        .update({ 
+          value: chatId.trim(),
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id 
+        })
+        .eq("key", "telegram_chat_id");
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Settings Saved",
+        description: "Telegram Chat ID updated successfully"
+      });
+    } catch (err: any) {
+      console.error("Error saving settings:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to save settings",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading || !isAuthorized) {
     return (
@@ -118,6 +192,43 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {/* Editable Chat ID */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Configuration
+                </h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="chatId">Telegram Chat ID</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="chatId"
+                        placeholder="Enter Telegram Chat ID"
+                        value={chatId}
+                        onChange={(e) => setChatId(e.target.value)}
+                        disabled={loadingSettings || saving}
+                        className="font-mono"
+                      />
+                      <Button 
+                        onClick={handleSaveChatId} 
+                        disabled={saving || loadingSettings}
+                        size="icon"
+                      >
+                        {saving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      The chat or group ID where notifications will be sent
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Connection Status */}
               <div className="bg-muted/50 rounded-lg p-4">
                 <h3 className="font-medium mb-3 flex items-center gap-2">
@@ -128,10 +239,6 @@ export default function Admin() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Bot Token</span>
                     <span className="font-mono">••••••••••••••••</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Chat ID</span>
-                    <span className="font-mono">••••••••</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Edge Function</span>
@@ -207,7 +314,10 @@ export default function Admin() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>
-              <strong>Secrets:</strong> TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID stored in Cloud secrets
+              <strong>Secrets:</strong> TELEGRAM_BOT_TOKEN stored in Cloud secrets
+            </p>
+            <p>
+              <strong>Settings:</strong> Chat ID stored in database (editable above)
             </p>
             <p>
               <strong>Identity Resolution:</strong> ENS/Basenames via resolve-ens-names function (web3.bio + ensdata.net fallback)

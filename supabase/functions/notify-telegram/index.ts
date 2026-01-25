@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +25,31 @@ interface NotificationRequest {
   villageId?: string;
 }
 
+// Get chat ID from settings table, fallback to env variable
+async function getChatId(): Promise<string | null> {
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    
+    const { data, error } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "telegram_chat_id")
+      .maybeSingle();
+    
+    if (!error && data?.value) {
+      return data.value;
+    }
+  } catch (e) {
+    console.log("Could not fetch chat ID from settings:", e);
+  }
+  
+  // Fallback to env variable
+  return Deno.env.get("TELEGRAM_CHAT_ID") || null;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
-    const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
+    const chatId = await getChatId();
 
     if (!botToken || !chatId) {
       throw new Error("Telegram credentials not configured");
