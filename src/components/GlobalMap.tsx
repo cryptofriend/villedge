@@ -163,7 +163,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         navigate(route);
       });
 
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'left' })
         .setLngLat(village.center)
         .addTo(map.current!);
 
