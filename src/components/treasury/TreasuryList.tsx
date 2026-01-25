@@ -150,14 +150,17 @@ export const TreasuryList = ({ villageId, ethWalletAddress, solWalletAddress }: 
             <span>Treasury Balance</span>
           </div>
           {hasWallets && (
-            <div className="flex items-center gap-2">
-              <button
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleRefreshBalance}
-                className="p-1 hover:bg-muted rounded transition-colors"
-                title="Refresh balance"
+                disabled={isLoadingWallet}
+                className="h-7 px-2 text-xs"
               >
-                <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", isLoadingWallet && "animate-spin")} />
-              </button>
+                <RefreshCw className={cn("h-3.5 w-3.5", isLoadingWallet && "animate-spin")} />
+                <span className="ml-1.5">Refresh</span>
+              </Button>
               {walletAddress && (
                 <a
                   href={`https://app.zerion.io/${walletAddress}/overview`}
