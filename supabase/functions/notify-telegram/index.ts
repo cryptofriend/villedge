@@ -133,8 +133,11 @@ const handler = async (req: Request): Promise<Response> => {
       
       telegramMessage += `\n\n🙏 Thank you for supporting the village!`;
     } else if (type === "bulletin") {
-      // Bulletin notification - just send the raw message
+      // Bulletin notification - send the message with village link
       telegramMessage = `📢 <b>New Bulletin Post</b>\n\n${escapeHtml(bulletinMessage || name)}`;
+      if (villageId) {
+        telegramMessage += `\n\n🔗 <a href="https://villedge.lovable.app/${villageId}?tab=bulletin">View Bulletin</a>`;
+      }
     }
 
     if (type !== "donation" && type !== "bulletin") {
