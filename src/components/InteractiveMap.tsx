@@ -926,7 +926,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Stays Calendar view */}
       {activeView === "residents" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
+          <div
+            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
+            onWheelCapture={(e) => e.stopPropagation()}
+            onTouchMoveCapture={(e) => e.stopPropagation()}
+          >
             <StayCalendar villageId={activeVillage.id} applyUrl={(activeVillage as any).apply_url} />
           </div>
         </div>
@@ -935,7 +939,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Scenius view */}
       {activeView === "scenius" && isZoomedIn && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
+          <div
+            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
+            onWheelCapture={(e) => e.stopPropagation()}
+            onTouchMoveCapture={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -945,7 +953,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 {projects.length} project{projects.length !== 1 ? "s" : ""} being built
               </p>
             </div>
-            <div className="flex-1 overflow-hidden p-4">
+            <div className="flex-1 min-h-0 overflow-hidden p-4">
               <SceniusList projects={projects} loading={projectsLoading} villageId={activeVillage?.id} />
             </div>
           </div>
@@ -955,7 +963,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Bulletin view */}
       {activeView === "bulletin" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
+          <div
+            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
+            onWheelCapture={(e) => e.stopPropagation()}
+            onTouchMoveCapture={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-primary" />
@@ -965,7 +977,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 Share messages with the village
               </p>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <BulletinList villageId={activeVillage.id} />
             </div>
           </div>
@@ -975,7 +987,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Events view */}
       {activeView === "events" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
+          <div
+            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
+            onWheelCapture={(e) => e.stopPropagation()}
+            onTouchMoveCapture={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
@@ -985,7 +1001,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 Drop a Luma link to add events
               </p>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <EventsList villageId={activeVillage.id} />
             </div>
           </div>
@@ -995,8 +1011,12 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {/* Treasury view */}
       {activeView === "treasury" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-y-auto">
-            <div className="flex-1 overflow-hidden">
+          <div
+            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
+            onWheelCapture={(e) => e.stopPropagation()}
+            onTouchMoveCapture={(e) => e.stopPropagation()}
+          >
+            <div className="flex-1 min-h-0 overflow-hidden">
               <TreasuryList 
                 villageId={activeVillage.id} 
                 ethWalletAddress={activeVillage.wallet_address}
