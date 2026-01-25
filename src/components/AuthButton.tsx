@@ -65,6 +65,11 @@ export function AuthButton() {
     ? `${(Number(balanceData.value) / 10 ** balanceData.decimals).toFixed(4)} ${balanceData.symbol}`
     : null;
 
+  // Get profile URL - use username if available, fallback to user_id
+  const profileUrl = profile?.username 
+    ? `/profile/${profile.username}` 
+    : `/profile/${user?.id}`;
+
   return (
     <>
       <div className="flex items-center gap-1">
@@ -72,7 +77,7 @@ export function AuthButton() {
           variant="outline" 
           size="sm" 
           className="gap-2 px-2 bg-card/90 backdrop-blur-sm border-border/50 hover:bg-card"
-          onClick={() => navigate(`/profile/${user?.id}`)}
+          onClick={() => navigate(profileUrl)}
         >
           {hasCustomName ? (
             <Avatar className="h-6 w-6">

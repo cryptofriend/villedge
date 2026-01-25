@@ -48,11 +48,12 @@ export interface Contribution {
 }
 
 const Profile = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const { user, profile: currentUserProfile } = useAuth();
   
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
 
@@ -72,20 +73,36 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      if (!userId) {
+      if (!username) {
         setLoading(false);
         return;
       }
 
       try {
-        // Fetch profile
-        const { data: profile, error } = await supabase
+        // First try to fetch by username
+        let { data: profile, error } = await supabase
           .from("profiles")
           .select("*")
-          .eq("user_id", userId)
+          .eq("username", username)
           .single();
 
-        if (error) throw error;
+        // If not found by username, try by user_id (for backward compatibility)
+        if (error || !profile) {
+          const { data: profileById, error: errorById } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", username)
+            .single();
+          
+          if (errorById || !profileById) {
+            setLoading(false);
+            return;
+          }
+          profile = profileById;
+        }
+
+        const userId = profile.user_id;
+        setProfileUserId(userId);
 
         // Check if this is the current user's profile
         const isOwn = user?.id === userId;
@@ -165,7 +182,7 @@ const Profile = () => {
     };
 
     fetchProfileData();
-  }, [userId, user?.id]);
+  }, [username, user?.id]);
 
   if (loading) {
     return (
@@ -250,7 +267,7 @@ const Profile = () => {
         <ProfileContributionHistory contributions={contributions} />
 
         {/* 8. Connected Network */}
-        <ProfileConnectedNetwork userId={userId || ""} />
+        <ProfileConnectedNetwork userId={profileUserId || ""} />
       </div>
     </div>
   );

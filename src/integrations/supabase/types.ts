@@ -219,6 +219,7 @@ export type Database = {
           social_url: string | null
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           asks?: string | null
@@ -233,6 +234,7 @@ export type Database = {
           social_url?: string | null
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           asks?: string | null
@@ -247,6 +249,7 @@ export type Database = {
           social_url?: string | null
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -778,6 +781,7 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }
+      generate_username: { Args: { display_name: string }; Returns: string }
       is_village_host: {
         Args: { _user_id: string; _village_id: string }
         Returns: boolean

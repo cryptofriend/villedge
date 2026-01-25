@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface Profile {
   id: string;
   user_id: string;
+  username: string | null;
   display_name: string | null;
   avatar_url: string | null;
   social_url: string | null;
@@ -107,12 +108,38 @@ export const useAuth = () => {
   const updateProfile = async (updates: Partial<Pick<Profile, 'display_name' | 'avatar_url' | 'social_url' | 'bio' | 'offerings' | 'asks' | 'project_description' | 'project_url'>>) => {
     if (!user) return { error: new Error('Not authenticated') };
     
+    // Generate username from display_name if not already set
+    let usernameToSet: string | undefined;
+    if (updates.display_name && !profile?.username) {
+      // Generate URL-safe username
+      const baseUsername = updates.display_name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .slice(0, 30) || 'user';
+      
+      // Check if username exists
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', baseUsername)
+        .single();
+      
+      if (!existing) {
+        usernameToSet = baseUsername;
+      } else {
+        // Add a suffix to make unique
+        usernameToSet = `${baseUsername}-${Date.now().toString(36).slice(-4)}`;
+      }
+    }
+    
     // Use upsert to handle both insert and update cases
     const { data, error } = await supabase
       .from('profiles')
       .upsert({
         user_id: user.id,
         ...updates,
+        ...(usernameToSet ? { username: usernameToSet } : {}),
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id',
