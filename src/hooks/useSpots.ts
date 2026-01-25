@@ -84,6 +84,7 @@ export const useSpots = (villageId?: string) => {
           coordinates: spot.coordinates,
           google_maps_url: spot.google_maps_url || null,
           image_url: spot.image_url || null,
+          village_id: villageId || null,
         })
         .select()
         .single();
