@@ -7,16 +7,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Bot, Bell, MessageSquare, Wallet, CheckCircle2, Save, Loader2, Settings } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { 
+  ArrowLeft, Bot, Bell, Save, Loader2, Settings, 
+  Users, MapPin, Globe, Activity, CheckCircle2, 
+  Clock, Wallet, MessageSquare, Send
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const BOOGA_USER_ID = "9807c494-ba07-4438-9a89-07ac13334e78";
 
-const TelegramIcon = () => (
-  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
   </svg>
 );
+
+interface VillageStats {
+  id: string;
+  name: string;
+  wallet_address: string | null;
+  solana_wallet_address: string | null;
+  logo_url: string | null;
+}
+
+interface NotificationStats {
+  totalNotified: number;
+  last24h: number;
+}
 
 export default function Admin() {
   const { user, loading } = useAuth();
@@ -27,6 +45,13 @@ export default function Admin() {
   const [chatId, setChatId] = useState("");
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  
+  // Stats state
+  const [villages, setVillages] = useState<VillageStats[]>([]);
+  const [notificationStats, setNotificationStats] = useState<NotificationStats>({ totalNotified: 0, last24h: 0 });
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalSpots, setTotalSpots] = useState(0);
 
   useEffect(() => {
     if (!loading) {
@@ -38,30 +63,71 @@ export default function Admin() {
     }
   }, [user, loading, navigate]);
 
-  // Fetch current settings
+  // Fetch all data
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchData = async () => {
       if (!isAuthorized) return;
       
       try {
-        const { data, error } = await supabase
+        // Fetch settings
+        const { data: settingsData } = await supabase
           .from("settings")
           .select("*")
           .eq("key", "telegram_chat_id")
           .maybeSingle();
         
-        if (error) throw error;
-        if (data) {
-          setChatId(data.value || "");
+        if (settingsData) {
+          setChatId(settingsData.value || "");
         }
+
+        // Fetch villages with wallets
+        const { data: villagesData } = await supabase
+          .from("villages")
+          .select("id, name, wallet_address, solana_wallet_address, logo_url")
+          .order("created_at", { ascending: false });
+        
+        if (villagesData) {
+          setVillages(villagesData);
+        }
+
+        // Fetch notification stats
+        const { count: totalNotified } = await supabase
+          .from("notified_donations")
+          .select("*", { count: "exact", head: true });
+
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { count: last24h } = await supabase
+          .from("notified_donations")
+          .select("*", { count: "exact", head: true })
+          .gte("notified_at", oneDayAgo);
+
+        setNotificationStats({
+          totalNotified: totalNotified || 0,
+          last24h: last24h || 0
+        });
+
+        // Fetch user count from profiles
+        const { count: usersCount } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+        
+        setTotalUsers(usersCount || 0);
+
+        // Fetch spots count
+        const { count: spotsCount } = await supabase
+          .from("spots")
+          .select("*", { count: "exact", head: true });
+        
+        setTotalSpots(spotsCount || 0);
+
       } catch (err) {
-        console.error("Error fetching settings:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setLoadingSettings(false);
       }
     };
     
-    fetchSettings();
+    fetchData();
   }, [isAuthorized]);
 
   const handleSaveChatId = async () => {
@@ -103,6 +169,33 @@ export default function Admin() {
     }
   };
 
+  const handleSendTestMessage = async () => {
+    setSendingTest(true);
+    try {
+      const { error } = await supabase.functions.invoke("notify-telegram", {
+        body: {
+          message: `🧪 <b>Test Notification</b>\n\nThis is a test message from the Villedge Admin Panel.\n\n📅 ${new Date().toLocaleString()}`
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Test Sent",
+        description: "Check your Telegram chat for the message"
+      });
+    } catch (err: any) {
+      console.error("Error sending test:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to send test message",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   if (loading || !isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -111,49 +204,13 @@ export default function Admin() {
     );
   }
 
-  const features = [
-    {
-      icon: Bell,
-      title: "Donation Notifications",
-      description: "Real-time alerts when someone donates to a village treasury",
-      details: [
-        "Donor name/address resolution (ENS, Basenames)",
-        "Amount in token + USD value",
-        "Chain identification",
-        "Transaction explorer link",
-        "Treasury balance update"
-      ],
-      status: "active"
-    },
-    {
-      icon: MessageSquare,
-      title: "New Spot Alerts",
-      description: "Notifications when new spots are added to the map",
-      details: [
-        "Spot name and category",
-        "Description preview",
-        "Direct link to map"
-      ],
-      status: "active"
-    },
-    {
-      icon: MessageSquare,
-      title: "Event Notifications",
-      description: "Alerts for new events added to villages",
-      details: [
-        "Event title and date/time",
-        "Location information",
-        "Description preview"
-      ],
-      status: "active"
-    }
-  ];
+  const connectedVillages = villages.filter(v => v.wallet_address || v.solana_wallet_address);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto p-6">
+    <div className="min-h-screen bg-muted/30">
+      <div className="max-w-6xl mx-auto p-4 md:p-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 mb-6">
           <Button 
             variant="ghost" 
             size="icon"
@@ -161,170 +218,309 @@ export default function Admin() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Admin Settings</h1>
-            <p className="text-muted-foreground">Manage integrations and configurations</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#0088cc] rounded-lg">
+                <TelegramIcon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Villedge Bot Admin</h1>
+                <p className="text-sm text-muted-foreground">Telegram notification bot dashboard</p>
+              </div>
+            </div>
           </div>
+          <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
+            <Activity className="h-3 w-3 mr-1 animate-pulse" />
+            Online
+          </Badge>
         </div>
 
-        {/* Telegram Integration Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-[#0088cc]/10 rounded-lg">
-                  <TelegramIcon />
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <Bell className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    Telegram Bot Integration
-                    <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Connected
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription>
-                    Automated notifications via Telegram bot
-                  </CardDescription>
+                  <p className="text-2xl font-bold">{notificationStats.totalNotified}</p>
+                  <p className="text-xs text-muted-foreground">Total Notifications</p>
                 </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Editable Chat ID */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h3 className="font-medium mb-3 flex items-center gap-2">
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <Clock className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{notificationStats.last24h}</p>
+                  <p className="text-xs text-muted-foreground">Last 24 Hours</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Globe className="h-5 w-5 text-purple-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{villages.length}</p>
+                  <p className="text-xs text-muted-foreground">Total Villages</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-500/10 rounded-lg">
+                  <Wallet className="h-5 w-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{connectedVillages.length}</p>
+                  <p className="text-xs text-muted-foreground">With Wallets</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Left Column - Bot Config */}
+          <div className="md:col-span-1 space-y-4">
+            {/* Configuration Card */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
                   <Settings className="h-4 w-4" />
-                  Configuration
-                </h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="chatId">Telegram Chat ID</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="chatId"
-                        placeholder="Enter Telegram Chat ID"
-                        value={chatId}
-                        onChange={(e) => setChatId(e.target.value)}
-                        disabled={loadingSettings || saving}
-                        className="font-mono"
-                      />
-                      <Button 
-                        onClick={handleSaveChatId} 
-                        disabled={saving || loadingSettings}
-                        size="icon"
-                      >
-                        {saving ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Save className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      The chat or group ID where notifications will be sent
-                    </p>
+                  Bot Configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="chatId" className="text-xs">Target Chat ID</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="chatId"
+                      placeholder="-100xxxxxxxxxx"
+                      value={chatId}
+                      onChange={(e) => setChatId(e.target.value)}
+                      disabled={loadingSettings || saving}
+                      className="font-mono text-sm"
+                    />
+                    <Button 
+                      onClick={handleSaveChatId} 
+                      disabled={saving || loadingSettings}
+                      size="icon"
+                      variant="outline"
+                    >
+                      {saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
-              </div>
 
-              {/* Connection Status */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h3 className="font-medium mb-3 flex items-center gap-2">
+                <Separator />
+
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleSendTestMessage}
+                  disabled={sendingTest || !chatId}
+                >
+                  {sendingTest ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  Send Test Message
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* System Status */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
                   <Bot className="h-4 w-4" />
-                  Connection Details
-                </h3>
-                <div className="grid gap-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Bot Token</span>
-                    <span className="font-mono">••••••••••••••••</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Edge Function</span>
-                    <code className="text-xs bg-muted px-2 py-0.5 rounded">notify-telegram</code>
-                  </div>
+                  System Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Bot Token</span>
+                  <Badge variant="outline" className="text-green-600">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Set
+                  </Badge>
                 </div>
-              </div>
-
-              {/* Donation Check Cron */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h3 className="font-medium mb-3 flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  Donation Monitoring
-                </h3>
-                <div className="grid gap-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Edge Function</span>
-                    <code className="text-xs bg-muted px-2 py-0.5 rounded">check-donations</code>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Schedule</span>
-                    <span>Every 5 minutes (cron)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Deduplication</span>
-                    <code className="text-xs bg-muted px-2 py-0.5 rounded">notified_donations</code>
-                  </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Notify Function</span>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded">notify-telegram</code>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Features Grid */}
-        <h2 className="text-lg font-semibold mb-4">Active Features</h2>
-        <div className="grid gap-4">
-          {features.map((feature) => (
-            <Card key={feature.title}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                    <feature.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium">{feature.title}</h3>
-                      <Badge variant="outline" className="text-xs">
-                        Active
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {feature.description}
-                    </p>
-                    <ul className="text-sm space-y-1">
-                      {feature.details.map((detail, i) => (
-                        <li key={i} className="flex items-center gap-2 text-muted-foreground">
-                          <CheckCircle2 className="h-3 w-3 text-green-500" />
-                          {detail}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Cron Schedule</span>
+                  <span className="text-xs">Every 5 min</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Total Users</span>
+                  <span className="font-medium">{totalUsers}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Total Spots</span>
+                  <span className="font-medium">{totalSpots}</span>
                 </div>
               </CardContent>
             </Card>
-          ))}
+          </div>
+
+          {/* Right Column - Connected Villages */}
+          <div className="md:col-span-2">
+            <Card className="h-full">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Connected Villages
+                  </CardTitle>
+                  <Badge variant="secondary">{connectedVillages.length} with wallets</Badge>
+                </div>
+                <CardDescription>
+                  Villages with treasury wallets configured for donation monitoring
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {connectedVillages.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Wallet className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No villages with wallets configured yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {connectedVillages.map((village) => (
+                      <div 
+                        key={village.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/village/${village.id}`)}
+                      >
+                        {village.logo_url ? (
+                          <img 
+                            src={village.logo_url} 
+                            alt={village.name}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                            <MapPin className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{village.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {village.wallet_address && (
+                              <Badge variant="outline" className="text-xs px-1.5 py-0">
+                                ETH
+                              </Badge>
+                            )}
+                            {village.solana_wallet_address && (
+                              <Badge variant="outline" className="text-xs px-1.5 py-0">
+                                SOL
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {villages.filter(v => !v.wallet_address && !v.solana_wallet_address).length > 0 && (
+                  <>
+                    <Separator className="my-4" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Villages without wallets ({villages.filter(v => !v.wallet_address && !v.solana_wallet_address).length})
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {villages
+                          .filter(v => !v.wallet_address && !v.solana_wallet_address)
+                          .map((village) => (
+                            <Badge 
+                              key={village.id} 
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-muted"
+                              onClick={() => navigate(`/village/${village.id}`)}
+                            >
+                              {village.name}
+                            </Badge>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Technical Details */}
+        {/* Features Section */}
         <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-base">Technical Architecture</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Notification Types
+            </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p>
-              <strong>Secrets:</strong> TELEGRAM_BOT_TOKEN stored in Cloud secrets
-            </p>
-            <p>
-              <strong>Settings:</strong> Chat ID stored in database (editable above)
-            </p>
-            <p>
-              <strong>Identity Resolution:</strong> ENS/Basenames via resolve-ens-names function (web3.bio + ensdata.net fallback)
-            </p>
-            <p>
-              <strong>Wallet Tracking:</strong> Zerion API for transaction monitoring and balance fetching
-            </p>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-1.5 bg-green-500/10 rounded">
+                  <Wallet className="h-4 w-4 text-green-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Donation Alerts</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Real-time notifications with ENS resolution, USD values, and tx links
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-1.5 bg-blue-500/10 rounded">
+                  <MapPin className="h-4 w-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">New Spots</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Alerts when locations are added to village maps
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-1.5 bg-purple-500/10 rounded">
+                  <Users className="h-4 w-4 text-purple-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">New Residents</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Updates when people join villages
+                  </p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
