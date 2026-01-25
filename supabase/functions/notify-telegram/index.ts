@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "spot" | "event" | "donation" | "bulletin";
-  name: string;
+  type: "spot" | "event" | "donation" | "bulletin" | "test";
+  name?: string;
   description?: string;
   location?: string;
   startTime?: string;
@@ -27,6 +27,9 @@ interface NotificationRequest {
   message?: string;
   bulletinChatId?: string;
   bulletinThreadId?: number;
+  // Test-specific fields
+  testChatId?: string;
+  testThreadId?: number;
 }
 
 // Get chat ID from settings table, fallback to env variable
@@ -67,25 +70,28 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram bot token not configured");
     }
 
-    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId, bulletinThreadId }: NotificationRequest = await req.json();
+    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId, bulletinThreadId, testChatId, testThreadId }: NotificationRequest = await req.json();
     
-    // Use bulletin-specific chat ID if provided, otherwise use default
-    const chatId = bulletinChatId || defaultChatId;
+    // Use test/bulletin-specific chat ID if provided, otherwise use default
+    const chatId = testChatId || bulletinChatId || defaultChatId;
     
     if (!chatId) {
       throw new Error("Telegram chat ID not configured");
     }
 
     let telegramMessage = "";
+    let threadId: number | undefined = testThreadId || bulletinThreadId || undefined;
 
-    if (type === "spot") {
+    if (type === "test") {
+      telegramMessage = `🧪 <b>Test Connection</b>\n\n✅ Your Telegram bot is configured correctly!\n\n📅 ${new Date().toLocaleString()}`;
+    } else if (type === "spot") {
       telegramMessage = `📍 <b>New Spot Added</b>\n\n`;
-      telegramMessage += `<b>${escapeHtml(name)}</b>\n`;
+      telegramMessage += `<b>${escapeHtml(name || "Unnamed")}</b>\n`;
       if (category) telegramMessage += `Category: ${escapeHtml(category)}\n`;
       if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
     } else if (type === "event") {
       telegramMessage = `🗓️ <b>New Event Added</b>\n\n`;
-      telegramMessage += `<b>${escapeHtml(name)}</b>\n`;
+      telegramMessage += `<b>${escapeHtml(name || "Unnamed")}</b>\n`;
       if (startTime) {
         const date = new Date(startTime);
         telegramMessage += `📅 ${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}\n`;
@@ -135,19 +141,19 @@ const handler = async (req: Request): Promise<Response> => {
       telegramMessage += `\n\n🙏 Thank you for supporting the village!`;
     } else if (type === "bulletin") {
       // Bulletin notification - send the message with village link
-      telegramMessage = `📢 <b>New Bulletin Post</b>\n\n"${escapeHtml(bulletinMessage || name)}"`;
+      telegramMessage = `📢 <b>New Bulletin Post</b>\n\n"${escapeHtml(bulletinMessage || name || "")}"`;
       if (villageId) {
         telegramMessage += `\n\n🔗 <a href="https://villedge.lovable.app/${villageId}?tab=bulletin">View Bulletin</a>`;
       }
     }
 
-    if (type !== "donation" && type !== "bulletin") {
+    if (type !== "donation" && type !== "bulletin" && type !== "test") {
       telegramMessage += `\n\n🔗 <a href="https://map.proofofretreat.me">View on map</a>`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     
-    console.log(`Sending Telegram message to chat: ${chatId}${bulletinThreadId ? ` (thread: ${bulletinThreadId})` : ''}`);
+    console.log(`Sending Telegram message to chat: ${chatId}${threadId ? ` (thread: ${threadId})` : ''}`);
     
     const requestBody: Record<string, unknown> = {
       chat_id: chatId,
@@ -156,9 +162,9 @@ const handler = async (req: Request): Promise<Response> => {
       disable_web_page_preview: true,
     };
     
-    // Add thread ID for bulletin messages sent to specific topics
-    if (bulletinThreadId) {
-      requestBody.message_thread_id = bulletinThreadId;
+    // Add thread ID for messages sent to specific topics
+    if (threadId) {
+      requestBody.message_thread_id = threadId;
     }
     
     const response = await fetch(telegramUrl, {

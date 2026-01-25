@@ -203,7 +203,7 @@ export default function Admin() {
     try {
       const { error } = await supabase.functions.invoke("notify-telegram", {
         body: {
-          message: `🧪 <b>Test Notification</b>\n\nThis is a test message from the Villedge Admin Panel.\n\n📅 ${new Date().toLocaleString()}`
+          type: "test"
         }
       });
 
@@ -222,6 +222,39 @@ export default function Admin() {
       });
     } finally {
       setSendingTest(false);
+    }
+  };
+
+  // Test a specific route
+  const [testingRoute, setTestingRoute] = useState<string | null>(null);
+  
+  const handleTestRoute = async (route: NotificationRoute) => {
+    const routeKey = `${route.notification_type}-${route.village_id}`;
+    setTestingRoute(routeKey);
+    try {
+      const { error } = await supabase.functions.invoke("notify-telegram", {
+        body: {
+          type: "test",
+          testChatId: route.chat_id,
+          testThreadId: route.thread_id
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Test Sent",
+        description: `Test message sent to ${route.notification_type} route`
+      });
+    } catch (err: any) {
+      console.error("Error testing route:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to send test message",
+        variant: "destructive"
+      });
+    } finally {
+      setTestingRoute(null);
     }
   };
 
@@ -785,6 +818,27 @@ export default function Admin() {
                           {getRoute('donation', 'global')?.thread_id && ` / thread:${getRoute('donation', 'global')?.thread_id}`}
                         </code>
                       </div>
+                      {(getRoute('donation', 'global')?.chat_id || chatId) && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleTestRoute({
+                            id: 'test',
+                            village_id: 'global',
+                            notification_type: 'donation',
+                            chat_id: getRoute('donation', 'global')?.chat_id || chatId,
+                            thread_id: getRoute('donation', 'global')?.thread_id || null,
+                            is_enabled: true
+                          })}
+                          disabled={testingRoute === 'donation-global'}
+                        >
+                          {testingRoute === 'donation-global' ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => startEditRoute('donation', 'global')}>
                         <Edit2 className="h-3 w-3" />
                       </Button>
@@ -869,6 +923,25 @@ export default function Admin() {
                           {(getRoute('bulletin', 'proof-of-retreat')?.thread_id || 734) && ` / thread:${getRoute('bulletin', 'proof-of-retreat')?.thread_id || 734}`}
                         </code>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleTestRoute({
+                          id: 'test',
+                          village_id: 'proof-of-retreat',
+                          notification_type: 'bulletin',
+                          chat_id: getRoute('bulletin', 'proof-of-retreat')?.chat_id || "-1003580489932",
+                          thread_id: getRoute('bulletin', 'proof-of-retreat')?.thread_id || 734,
+                          is_enabled: true
+                        })}
+                        disabled={testingRoute === 'bulletin-proof-of-retreat'}
+                      >
+                        {testingRoute === 'bulletin-proof-of-retreat' ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Send className="h-3 w-3" />
+                        )}
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => startEditRoute('bulletin', 'proof-of-retreat')}>
                         <Edit2 className="h-3 w-3" />
                       </Button>
@@ -959,6 +1032,20 @@ export default function Admin() {
                           <p className="text-sm text-muted-foreground">Not configured</p>
                         )}
                       </div>
+                      {getRoute('spot', 'global')?.chat_id && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleTestRoute(getRoute('spot', 'global')!)}
+                          disabled={testingRoute === 'spot-global'}
+                        >
+                          {testingRoute === 'spot-global' ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => startEditRoute('spot', 'global')}>
                         {getRoute('spot', 'global') ? <Edit2 className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                       </Button>
@@ -1049,6 +1136,20 @@ export default function Admin() {
                           <p className="text-sm text-muted-foreground">Not configured</p>
                         )}
                       </div>
+                      {getRoute('resident', 'global')?.chat_id && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleTestRoute(getRoute('resident', 'global')!)}
+                          disabled={testingRoute === 'resident-global'}
+                        >
+                          {testingRoute === 'resident-global' ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => startEditRoute('resident', 'global')}>
                         {getRoute('resident', 'global') ? <Edit2 className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
                       </Button>
