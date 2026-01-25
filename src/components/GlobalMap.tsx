@@ -11,7 +11,7 @@ import { useUserCount } from "@/hooks/useUserCount";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
-const BOOGA_USER_ID = "9807c494-ba07-4438-9a89-07ac13334e78";
+const BOOGA_USER_ID = "b015441b-3bb4-4150-94e6-d8be048035bb";
 const DEFAULT_CENTER: [number, number] = [50, 20];
 const DEFAULT_ZOOM = 2;
 
