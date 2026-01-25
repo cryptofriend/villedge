@@ -79,6 +79,11 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram chat ID not configured");
     }
 
+    // Validate chat_id format - must be numeric (can be negative for groups)
+    if (chatId.startsWith('http') || chatId.includes('t.me')) {
+      throw new Error("Invalid chat_id format: Use the numeric chat ID (e.g., -1001234567890), not a Telegram URL. Use @userinfobot or @RawDataBot to get your chat ID.");
+    }
+
     let telegramMessage = "";
     let threadId: number | undefined = testThreadId || bulletinThreadId || undefined;
 
