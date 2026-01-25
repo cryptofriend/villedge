@@ -108,6 +108,11 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
     
+    // Anchor the marker to the *logo center* (not the pill's left edge) so text width
+    // changes/zoom transforms don't make the marker appear to shift.
+    // left padding (8) + half logo (16) = 24px
+    const ANCHOR_TO_LOGO_CENTER_PX = 24;
+
     villages.forEach((village, index) => {
       const el = document.createElement("div");
       el.className = "village-marker";
@@ -127,6 +132,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           cursor: pointer;
           transition: all 0.3s ease;
           max-width: 200px;
+            transform-origin: left center;
         ">
           <img 
             src="${village.logo_url || '/placeholder.svg'}" 
@@ -163,7 +169,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         navigate(route);
       });
 
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'left' })
+      const marker = new mapboxgl.Marker({
+        element: el,
+        anchor: 'left',
+        // shift left so the anchor point sits at the logo center
+        offset: [-ANCHOR_TO_LOGO_CENTER_PX, 0],
+      })
         .setLngLat(village.center)
         .addTo(map.current!);
 
