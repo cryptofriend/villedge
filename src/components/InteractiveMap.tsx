@@ -48,11 +48,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
 
   // Data hooks
   const { villages, loading: villagesLoading, refetch: refetchVillages } = useVillages();
-  const { spots, loading: spotsLoading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots();
+  const [activeVillage, setActiveVillage] = useState<Village | null>(null);
+  const { spots, loading: spotsLoading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots(activeVillage?.id);
   const { isHost, canCreate } = usePermissions();
   
   // State
-  const [activeVillage, setActiveVillage] = useState<Village | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
