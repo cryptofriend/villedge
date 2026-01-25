@@ -988,7 +988,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
           <div className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm max-h-[55vh] sm:max-h-[65vh] flex flex-col overflow-hidden">
             <div className="flex-1 overflow-hidden">
-              <TreasuryList villageId={activeVillage.id} />
+              <TreasuryList 
+                villageId={activeVillage.id} 
+                ethWalletAddress={activeVillage.wallet_address}
+                solWalletAddress={activeVillage.solana_wallet_address}
+              />
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { Globe } from "lucide-react";
 import { Village } from "@/hooks/useVillages";
 
 interface VillageSocialIconsProps {
@@ -24,12 +25,23 @@ const InstagramIcon = () => (
 );
 
 export const VillageSocialIcons = ({ village, className = "" }: VillageSocialIconsProps) => {
-  const hasSocialLinks = village.telegram_url || village.twitter_url || village.instagram_url;
+  const hasSocialLinks = village.website_url || village.telegram_url || village.twitter_url || village.instagram_url;
   
   if (!hasSocialLinks) return null;
 
   return (
     <div className={`flex items-center gap-1.5 ${className}`}>
+      {village.website_url && (
+        <a
+          href={village.website_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          title="Website"
+        >
+          <Globe className="h-4 w-4" />
+        </a>
+      )}
       {village.telegram_url && (
         <a
           href={village.telegram_url}

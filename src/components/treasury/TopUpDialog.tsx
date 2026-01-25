@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 interface TopUpDialogProps {
-  walletAddress: string;
+  walletAddress?: string;
   resolvedAddress?: string;
   solanaWalletAddress?: string;
 }
@@ -25,7 +25,7 @@ interface TopUpDialogProps {
 export const TopUpDialog = ({ walletAddress, resolvedAddress, solanaWalletAddress }: TopUpDialogProps) => {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedNetwork, setSelectedNetwork] = useState<"base" | "solana">("base");
+  const [selectedNetwork, setSelectedNetwork] = useState<"base" | "solana">(walletAddress ? "base" : (solanaWalletAddress ? "solana" : "base"));
   const [amount, setAmount] = useState("");
   const [showPayForm, setShowPayForm] = useState(false);
 
@@ -35,8 +35,16 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress, solanaWalletAddres
   const { sendTransaction, isPending } = useSendTransaction();
 
   // Use resolved address (hex) for the QR code, fallback to walletAddress
-  const hexAddress = resolvedAddress || walletAddress;
+  const hexAddress = resolvedAddress || walletAddress || "";
   const displayAddress = selectedNetwork === "base" ? hexAddress : (solanaWalletAddress || "");
+
+  // Check if we have addresses
+  const hasBaseAddress = !!(walletAddress || resolvedAddress);
+  const hasSolanaAddress = !!solanaWalletAddress;
+
+  if (!hasBaseAddress && !hasSolanaAddress) {
+    return null; // Don't show dialog if no addresses configured
+  }
 
   const handleCopy = async () => {
     try {
@@ -118,36 +126,38 @@ export const TopUpDialog = ({ walletAddress, resolvedAddress, solanaWalletAddres
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 pt-4">
-          {/* Network switch */}
-          <div className="w-full flex items-center justify-center gap-4 p-3 bg-muted/30 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className={`w-2.5 h-2.5 rounded-full ${selectedNetwork === "base" ? "bg-blue-500" : "bg-muted"}`} />
-              <Label 
-                htmlFor="network-switch" 
-                className={`text-sm font-medium cursor-pointer ${selectedNetwork === "base" ? "text-foreground" : "text-muted-foreground"}`}
-              >
-                Ethereum
-              </Label>
+          {/* Network switch - only show if both networks are available */}
+          {hasBaseAddress && hasSolanaAddress && (
+            <div className="w-full flex items-center justify-center gap-4 p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${selectedNetwork === "base" ? "bg-blue-500" : "bg-muted"}`} />
+                <Label 
+                  htmlFor="network-switch" 
+                  className={`text-sm font-medium cursor-pointer ${selectedNetwork === "base" ? "text-foreground" : "text-muted-foreground"}`}
+                >
+                  Ethereum
+                </Label>
+              </div>
+              <Switch
+                id="network-switch"
+                checked={selectedNetwork === "solana"}
+                onCheckedChange={(checked) => {
+                  setSelectedNetwork(checked ? "solana" : "base");
+                  setShowPayForm(false);
+                  setAmount("");
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <Label 
+                  htmlFor="network-switch" 
+                  className={`text-sm font-medium cursor-pointer ${selectedNetwork === "solana" ? "text-foreground" : "text-muted-foreground"}`}
+                >
+                  Solana
+                </Label>
+                <div className={`w-2.5 h-2.5 rounded-full ${selectedNetwork === "solana" ? "bg-purple-500" : "bg-muted"}`} />
+              </div>
             </div>
-            <Switch
-              id="network-switch"
-              checked={selectedNetwork === "solana"}
-              onCheckedChange={(checked) => {
-                setSelectedNetwork(checked ? "solana" : "base");
-                setShowPayForm(false);
-                setAmount("");
-              }}
-            />
-            <div className="flex items-center gap-2">
-              <Label 
-                htmlFor="network-switch" 
-                className={`text-sm font-medium cursor-pointer ${selectedNetwork === "solana" ? "text-foreground" : "text-muted-foreground"}`}
-              >
-                Solana
-              </Label>
-              <div className={`w-2.5 h-2.5 rounded-full ${selectedNetwork === "solana" ? "bg-purple-500" : "bg-muted"}`} />
-            </div>
-          </div>
+          )}
 
           {/* Pay with wallet section - only for Base */}
           {isConnected && selectedNetwork === "base" && (
