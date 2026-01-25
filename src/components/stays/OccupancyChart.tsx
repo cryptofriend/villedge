@@ -112,17 +112,17 @@ export const OccupancyChart = ({ stays, dateRange, dayWidth }: OccupancyChartPro
       </div>
 
       {/* Chart */}
-      <div className="relative bg-muted/20 rounded-lg p-3 overflow-x-auto">
-        <div className="flex items-end gap-1" style={{ height: chartHeight, minWidth: data.length * (periodWidth + 4) }}>
+      <div className="relative bg-muted/20 rounded-lg p-3">
+        <div className="flex items-end" style={{ height: chartHeight }}>
           {/* Y-axis labels */}
-          <div className="absolute left-2 top-3 bottom-8 flex flex-col justify-between text-[10px] text-muted-foreground w-6">
+          <div className="flex-shrink-0 flex flex-col justify-between text-[10px] text-muted-foreground w-6 h-full pb-5">
             <span>{maxOccupancy}</span>
             <span>{Math.round(maxOccupancy / 2)}</span>
             <span>0</span>
           </div>
           
-          {/* Bars */}
-          <div className="ml-8 flex items-end gap-1 flex-1">
+          {/* Bars - full width with flex-1 */}
+          <div className="flex items-end gap-0.5 flex-1 ml-2">
             {data.map((item, index) => {
               const barHeight = (item.count / maxOccupancy) * (chartHeight - 20);
               const isCurrent = 'isCurrent' in item ? item.isCurrent : isToday(item.date);
@@ -130,12 +130,11 @@ export const OccupancyChart = ({ stays, dateRange, dayWidth }: OccupancyChartPro
               return (
                 <div
                   key={index}
-                  className="flex flex-col items-center gap-1"
-                  style={{ width: periodWidth }}
+                  className="flex flex-col items-center gap-1 flex-1 min-w-0"
                 >
                   <div
                     className={cn(
-                      "w-full rounded-t-md transition-all relative group cursor-default",
+                      "w-full max-w-[40px] mx-auto rounded-t-md transition-all relative group cursor-default",
                       isCurrent
                         ? "bg-primary shadow-md"
                         : item.count > 0
@@ -147,15 +146,15 @@ export const OccupancyChart = ({ stays, dateRange, dayWidth }: OccupancyChartPro
                   >
                     {/* Value label on hover */}
                     {item.count > 0 && (
-                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 px-1 rounded">
+                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 px-1 rounded whitespace-nowrap">
                         {item.count}
                       </span>
                     )}
                   </div>
                   <span className={cn(
-                    "text-[10px] truncate text-center",
+                    "text-[10px] truncate text-center w-full",
                     isCurrent ? "text-primary font-semibold" : "text-muted-foreground"
-                  )} style={{ maxWidth: periodWidth }}>
+                  )}>
                     {item.label}
                   </span>
                 </div>
