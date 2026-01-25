@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users } from "lucide-react";
+import { Loader2, Users, Settings } from "lucide-react";
 import { useVillages, Village } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
 import { AuthButton } from "@/components/AuthButton";
 import { PopupTimeline } from "@/components/PopupTimeline";
 import { useUserCount } from "@/hooks/useUserCount";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
+const BOOGA_USER_ID = "9807c494-ba07-4438-9a89-07ac13334e78";
 const DEFAULT_CENTER: [number, number] = [50, 20];
 const DEFAULT_ZOOM = 2;
 
@@ -24,7 +27,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
   const { villages, loading: villagesLoading } = useVillages();
   const { count: userCount } = useUserCount();
+  const { user } = useAuth();
   const [mapReady, setMapReady] = useState(false);
+
+  const isBooga = user?.id === BOOGA_USER_ID;
 
   // Initialize map
   useEffect(() => {
@@ -212,6 +218,17 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               </h1>
               <AddVillageForm onVillageAdded={() => window.location.reload()} />
               <AuthButton />
+              {isBooga && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => navigate("/admin")}
+                  title="Admin"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
               Explore communities around the world
