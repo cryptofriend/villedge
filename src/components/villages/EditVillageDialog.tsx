@@ -30,7 +30,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
   const [telegramUrl, setTelegramUrl] = useState(village.telegram_url || "");
   const [twitterUrl, setTwitterUrl] = useState(village.twitter_url || "");
   const [instagramUrl, setInstagramUrl] = useState(village.instagram_url || "");
-
+  const [applyUrl, setApplyUrl] = useState((village as any).apply_url || "");
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
@@ -43,6 +43,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
       setTelegramUrl(village.telegram_url || "");
       setTwitterUrl(village.twitter_url || "");
       setInstagramUrl(village.instagram_url || "");
+      setApplyUrl((village as any).apply_url || "");
     }
   }, [open, village]);
 
@@ -69,6 +70,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           telegram_url: telegramUrl || null,
           twitter_url: twitterUrl || null,
           instagram_url: instagramUrl || null,
+          apply_url: applyUrl.trim() || null,
         } as any)
         .eq("id", village.id);
 
@@ -184,6 +186,19 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
               <div className="border-t pt-4">
                 <h4 className="font-medium text-sm mb-3">Links</h4>
                 <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="apply">Apply URL</Label>
+                    <Input
+                      id="apply"
+                      value={applyUrl}
+                      onChange={(e) => setApplyUrl(e.target.value)}
+                      placeholder="https://forms.google.com/..."
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Link for the "Apply" button in Residents tab.
+                    </p>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="website">Website</Label>
                     <Input

@@ -3,14 +3,16 @@ import { format, parseISO, differenceInDays, isWithinInterval } from "date-fns";
 import { Stay } from "@/hooks/useStays";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar, Twitter, Instagram, Github, Linkedin, ExternalLink, Briefcase, Search, Loader2 } from "lucide-react";
+import { Calendar, Twitter, Instagram, Github, Linkedin, ExternalLink, Briefcase, Search, Loader2, UserPlus } from "lucide-react";
 import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 
 interface StayResidentCardsProps {
   stays: Stay[];
   loading: boolean;
+  applyUrl?: string | null;
 }
 
 // Detect social network from URL
@@ -32,7 +34,7 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
   return { type: 'other', icon: ExternalLink };
 };
 
-export const StayResidentCards = ({ stays, loading }: StayResidentCardsProps) => {
+export const StayResidentCards = ({ stays, loading, applyUrl }: StayResidentCardsProps) => {
   // Group stays by nickname and get the latest/most relevant stay
   const residents = useMemo(() => {
     const grouped = new Map<string, Stay[]>();
@@ -84,6 +86,21 @@ export const StayResidentCards = ({ stays, loading }: StayResidentCardsProps) =>
 
   return (
     <ScrollArea className="h-full">
+      {/* Apply Button */}
+      {applyUrl && (
+        <div className="mb-4">
+          <Button
+            asChild
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+          >
+            <a href={applyUrl} target="_blank" rel="noopener noreferrer">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Apply to Join
+            </a>
+          </Button>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
         {residents.map(({ nickname, primaryStay }) => {
           const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);

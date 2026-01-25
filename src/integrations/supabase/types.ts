@@ -567,6 +567,7 @@ export type Database = {
       }
       villages: {
         Row: {
+          apply_url: string | null
           center: Json
           created_at: string
           created_by: string | null
@@ -588,6 +589,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          apply_url?: string | null
           center: Json
           created_at?: string
           created_by?: string | null
@@ -609,6 +611,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          apply_url?: string | null
           center?: Json
           created_at?: string
           created_by?: string | null

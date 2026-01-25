@@ -19,6 +19,7 @@ export interface Village {
   wallet_address: string | null;
   solana_wallet_address: string | null;
   website_url: string | null;
+  apply_url: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
