@@ -182,25 +182,17 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       {/* Header overlay */}
       <div className="absolute left-0 right-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background/90 via-background/60 to-transparent p-3 pb-12 sm:p-4 sm:pb-16 md:p-6 md:pb-20">
-        <div className="flex items-start justify-between">
-          <div className="flex flex-col gap-1 pointer-events-auto w-fit max-w-[75%] sm:max-w-none">
-            <div className="flex items-center gap-2">
-              <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
-                Villedge
-              </h1>
-              <span className="hidden sm:block">
-                <AddVillageForm onVillageAdded={() => window.location.reload()} />
-              </span>
-            </div>
-            <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
-              Explore communities around the world
-            </p>
-          </div>
-          
-          {/* Auth button - right side */}
-          <div className="hidden sm:block pointer-events-auto">
+        <div className="flex flex-col gap-1 pointer-events-auto w-fit">
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
+              Villedge
+            </h1>
+            <AddVillageForm onVillageAdded={() => window.location.reload()} />
             <AuthButton />
           </div>
+          <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
+            Explore communities around the world
+          </p>
         </div>
       </div>
 
@@ -235,11 +227,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         </div>
       </div>
 
-      {/* Mobile bottom actions */}
-      <div className="absolute bottom-32 right-4 z-10 flex items-center gap-3 sm:hidden pointer-events-auto scale-[2] origin-bottom-right">
-        <AddVillageForm onVillageAdded={() => window.location.reload()} />
-        <AuthButton />
-      </div>
 
       {/* Timeline */}
       {timelineVillages.length > 0 && (
