@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 import { useVillages, Village } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
 import { AuthButton } from "@/components/AuthButton";
 import { PopupTimeline } from "@/components/PopupTimeline";
+import { useUserCount } from "@/hooks/useUserCount";
 
 const DEFAULT_CENTER: [number, number] = [50, 20];
 const DEFAULT_ZOOM = 2;
@@ -22,6 +23,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const navigate = useNavigate();
 
   const { villages, loading: villagesLoading } = useVillages();
+  const { count: userCount } = useUserCount();
   const [mapReady, setMapReady] = useState(false);
 
   // Initialize map
@@ -182,17 +184,25 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       {/* Header overlay */}
       <div className="absolute left-0 right-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background/90 via-background/60 to-transparent p-3 pb-12 sm:p-4 sm:pb-16 md:p-6 md:pb-20">
-        <div className="flex flex-col gap-1 pointer-events-auto w-fit">
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
-              Villedge
-            </h1>
-            <AddVillageForm onVillageAdded={() => window.location.reload()} />
-            <AuthButton />
+        <div className="flex items-start justify-between pointer-events-auto">
+          <div className="flex flex-col gap-1 w-fit">
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
+                Villedge
+              </h1>
+              <AddVillageForm onVillageAdded={() => window.location.reload()} />
+              <AuthButton />
+            </div>
+            <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
+              Explore communities around the world
+            </p>
           </div>
-          <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
-            Explore communities around the world
-          </p>
+          
+          {/* User count badge */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">{userCount}</span>
+          </div>
         </div>
       </div>
 
