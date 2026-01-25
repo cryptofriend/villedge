@@ -220,22 +220,6 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
         </Button>
       </div>
 
-      {/* Occupancy Chart */}
-      <div className="flex">
-        <div style={{ width: nameColumnWidth }} className="flex-shrink-0" />
-        <div className="flex-1 overflow-hidden">
-          <div
-            ref={scrollContainerRef}
-            className="overflow-x-auto"
-            style={{ width: `calc(100%)` }}
-          >
-            <div style={{ width: days.length * dayWidth }}>
-              <OccupancyChart stays={stays} dateRange={dateRange} dayWidth={dayWidth} />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Timeline */}
       <div className="flex flex-1 min-h-0">
         {/* Name Column */}
@@ -243,10 +227,16 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
           className="flex-shrink-0 border-r border-border relative"
           style={{ width: nameColumnWidth }}
         >
-          {/* Month/Day header space */}
+          {/* Occupancy + Month/Day header space */}
+          <div className={cn(
+            "border-b border-border bg-muted/10 flex items-end justify-center font-semibold text-muted-foreground pb-1",
+            isMobile ? "h-[60px] text-[9px]" : "h-[60px] text-[10px]"
+          )}>
+            Occupancy
+          </div>
           <div className={cn(
             "border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center font-semibold text-muted-foreground",
-            isMobile ? "h-12 text-[10px]" : "h-14 text-xs"
+            isMobile ? "h-6 text-[10px]" : "h-7 text-xs"
           )}>
             Name
           </div>
@@ -308,8 +298,9 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
             className="flex-shrink-0 border-r border-border relative"
             style={{ width: intentionColumnWidth }}
           >
-            {/* Header */}
-            <div className="h-14 border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+            {/* Occupancy space + Header */}
+            <div className="h-[60px] border-b border-border bg-muted/10" />
+            <div className="h-7 border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
               Intention
             </div>
             
@@ -342,6 +333,11 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
         {/* Timeline Grid */}
         <div className="flex-1 overflow-x-auto" ref={scrollContainerRef}>
           <div style={{ width: days.length * dayWidth, minWidth: "100%" }}>
+            {/* Occupancy Chart Row */}
+            <div className={cn("border-b border-border bg-muted/10", isMobile ? "h-[60px]" : "h-[60px]")}>
+              <OccupancyChart stays={stays} days={days} dayWidth={dayWidth} />
+            </div>
+
             {/* Month Headers */}
             <div className={cn("flex border-b border-border bg-muted/30 sticky top-0 z-10", isMobile ? "h-6" : "h-7")}>
               {monthHeaders.map(({ month, startIndex, span }, idx) => (
@@ -359,7 +355,7 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
             </div>
 
             {/* Day Headers */}
-            <div className={cn("flex border-b border-border bg-muted/20 sticky top-7 z-10", isMobile ? "h-6" : "h-7")}>
+            <div className={cn("flex border-b border-border bg-muted/20 sticky z-10", isMobile ? "h-6 top-6" : "h-7 top-7")}>
               {days.map((day, idx) => (
                 <div
                   key={idx}
