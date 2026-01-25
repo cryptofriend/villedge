@@ -48,7 +48,7 @@ export const SceniusList = ({ projects, loading, villageId }: SceniusListProps) 
   }
 
   return (
-    <ScrollArea className="h-full max-h-[calc(55vh-100px)] sm:max-h-[calc(65vh-100px)]">
+    <ScrollArea className="h-full">
       <div className="space-y-3 p-1">
         {/* Resident Projects - simple line items */}
         {residentProjects.map((stay) => {
