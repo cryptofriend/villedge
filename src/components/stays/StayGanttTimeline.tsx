@@ -28,18 +28,18 @@ interface StayGanttTimelineProps {
 }
 
 // Generate consistent colors based on nickname
-const getColorForNickname = (nickname: string): string => {
+const getColorForNickname = (nickname: string, status?: string | null): { bg: string; border: string; opacity: string } => {
   const colors = [
-    "bg-emerald-500",
-    "bg-blue-500",
-    "bg-amber-500",
-    "bg-purple-500",
-    "bg-rose-500",
-    "bg-cyan-500",
-    "bg-orange-500",
-    "bg-indigo-500",
-    "bg-teal-500",
-    "bg-pink-500",
+    { confirmed: "bg-emerald-500", planning: "bg-emerald-400/60" },
+    { confirmed: "bg-blue-500", planning: "bg-blue-400/60" },
+    { confirmed: "bg-amber-500", planning: "bg-amber-400/60" },
+    { confirmed: "bg-purple-500", planning: "bg-purple-400/60" },
+    { confirmed: "bg-rose-500", planning: "bg-rose-400/60" },
+    { confirmed: "bg-cyan-500", planning: "bg-cyan-400/60" },
+    { confirmed: "bg-orange-500", planning: "bg-orange-400/60" },
+    { confirmed: "bg-indigo-500", planning: "bg-indigo-400/60" },
+    { confirmed: "bg-teal-500", planning: "bg-teal-400/60" },
+    { confirmed: "bg-pink-500", planning: "bg-pink-400/60" },
   ];
   
   let hash = 0;
@@ -47,7 +47,14 @@ const getColorForNickname = (nickname: string): string => {
     hash = nickname.charCodeAt(i) + ((hash << 5) - hash);
   }
   
-  return colors[Math.abs(hash) % colors.length];
+  const colorSet = colors[Math.abs(hash) % colors.length];
+  const isPlanning = status === "planning";
+  
+  return {
+    bg: isPlanning ? colorSet.planning : colorSet.confirmed,
+    border: isPlanning ? "border-2 border-dashed border-current" : "",
+    opacity: isPlanning ? "opacity-80" : "",
+  };
 };
 
 // Detect social network from URL
@@ -399,29 +406,45 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
                   const endDate = parseISO(stay.end_date);
                   const startOffset = differenceInDays(startDate, dateRange.start);
                   const duration = differenceInDays(endDate, startDate) + 1;
+                  const colorStyle = getColorForNickname(nickname, stay.status);
+                  const isPlanning = stay.status === "planning";
 
                   return (
                     <Tooltip key={stay.id}>
                       <TooltipTrigger asChild>
-                  <div
+                        <div
                           className={cn(
-                            "absolute rounded-md flex items-center justify-center text-white font-medium cursor-pointer transition-all hover:brightness-110 shadow-sm",
+                            "absolute rounded-md flex items-center justify-center text-white font-medium cursor-pointer transition-all hover:brightness-110",
                             isMobile ? "top-1.5 h-6 text-[9px] px-1" : "top-1 h-8 text-xs px-2",
-                            getColorForNickname(nickname)
+                            colorStyle.bg,
+                            colorStyle.border,
+                            colorStyle.opacity,
+                            !isPlanning && "shadow-sm"
                           )}
                           style={{
                             left: startOffset * dayWidth + 1,
                             width: duration * dayWidth - 2,
                           }}
                         >
-                          <span className="truncate">
+                          <span className="truncate flex items-center gap-1">
+                            {isPlanning && <span className="opacity-90">?</span>}
                             {isMobile ? `${duration}d` : `${stay.villa} · ${duration}d`}
                           </span>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <div className="space-y-1">
-                          <p className="font-semibold">{stay.nickname}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{stay.nickname}</p>
+                            <span className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                              isPlanning 
+                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" 
+                                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                            )}>
+                              {isPlanning ? "Planning" : "Confirmed"}
+                            </span>
+                          </div>
                           <p className="text-muted-foreground">
                             {stay.villa} · {format(startDate, "MMM d")} – {format(endDate, "MMM d, yyyy")}
                           </p>
