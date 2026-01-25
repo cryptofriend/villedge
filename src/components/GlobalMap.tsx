@@ -60,13 +60,9 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     };
   }, [mapboxToken]);
 
-  // Get village route slug
+  // Get village route slug - all villages use /:id format now
   const getVillageRoute = (village: Village | { id: string }) => {
-    // Map village IDs to routes
-    const routeMap: Record<string, string> = {
-      "proof-of-retreat": "/por",
-    };
-    return routeMap[village.id] || `/village/${village.id}`;
+    return `/${village.id}`;
   };
 
   // Transform villages for PopupTimeline format
