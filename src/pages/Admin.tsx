@@ -572,58 +572,160 @@ export default function Admin() {
           </CardContent>
         </Card>
 
-        {/* Features Section */}
+        {/* Notification Types Section */}
         <Card className="mt-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               Notification Types
             </CardTitle>
+            <CardDescription>
+              Detailed breakdown of each notification trigger and destination
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-4 gap-4">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="p-1.5 bg-green-500/10 rounded">
-                  <Wallet className="h-4 w-4 text-green-500" />
+          <CardContent className="space-y-4">
+            {/* Donations */}
+            <div className="p-4 rounded-lg border bg-card">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <Wallet className="h-5 w-5 text-green-500" />
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Donations</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Treasury donations with ENS & USD
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">Donation Alerts</p>
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Real-time notifications with ENS resolution, USD values, and transaction links
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="p-1.5 bg-blue-500/10 rounded">
-                  <MapPin className="h-4 w-4 text-blue-500" />
+              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Activity className="h-3 w-3" /> Source & Trigger
+                  </Label>
+                  <p className="text-sm">Treasury Tab → On-chain deposit detected</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded">check-donations (cron 5min)</code>
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Spots</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    New locations added to maps
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TelegramIcon className="h-3 w-3" /> Destination
+                  </Label>
+                  <p className="text-sm">Global Admin Chat</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded">{chatId || "Not configured"}</code>
+                </div>
+              </div>
+            </div>
+
+            {/* Bulletin */}
+            <div className="p-4 rounded-lg border bg-card">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-orange-500/10 rounded-lg">
+                  <MessageSquare className="h-5 w-5 text-orange-500" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">Bulletin Posts</p>
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Anonymous board posts forwarded to village-specific channels
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="p-1.5 bg-purple-500/10 rounded">
-                  <Users className="h-4 w-4 text-purple-500" />
+              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Activity className="h-3 w-3" /> Source & Trigger
+                  </Label>
+                  <p className="text-sm">Bulletin Tab → New post submitted</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded">useBulletin.addMessage()</code>
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Residents</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    People joining villages
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TelegramIcon className="h-3 w-3" /> Destination
+                  </Label>
+                  <p className="text-sm">Proof of Retreat → Bulletin Thread</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded">-1003580489932 / thread:734</code>
+                </div>
+              </div>
+            </div>
+
+            {/* Spots */}
+            <div className="p-4 rounded-lg border bg-card">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <MapPin className="h-5 w-5 text-blue-500" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">New Spots</p>
+                    <Badge variant="outline" className="text-muted-foreground">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Planned
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Alerts when new locations are added to village maps
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="p-1.5 bg-orange-500/10 rounded">
-                  <MessageSquare className="h-4 w-4 text-orange-500" />
+              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Activity className="h-3 w-3" /> Source & Trigger
+                  </Label>
+                  <p className="text-sm">Map Tab → Spot created</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">Not implemented</code>
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Bulletin</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Anonymous board posts
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TelegramIcon className="h-3 w-3" /> Destination
+                  </Label>
+                  <p className="text-sm text-muted-foreground">—</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Residents */}
+            <div className="p-4 rounded-lg border bg-card">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Users className="h-5 w-5 text-purple-500" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">New Residents</p>
+                    <Badge variant="outline" className="text-muted-foreground">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Planned
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Updates when people join villages or register stays
                   </p>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Activity className="h-3 w-3" /> Source & Trigger
+                  </Label>
+                  <p className="text-sm">Residents Tab → Stay registered</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">Not implemented</code>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TelegramIcon className="h-3 w-3" /> Destination
+                  </Label>
+                  <p className="text-sm text-muted-foreground">—</p>
                 </div>
               </div>
             </div>
