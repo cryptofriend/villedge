@@ -183,5 +183,40 @@ export const useStays = (villageId?: string) => {
     }
   };
 
-  return { stays, loading, addStay, updateStay, deleteStay, refetch: fetchStays };
+  const toggleStayStatus = async (id: string, currentUserId: string | null): Promise<boolean> => {
+    try {
+      // Get the stay to check ownership and current status
+      const { data: existingStay, error: fetchError } = await supabase
+        .from("stays")
+        .select("status, user_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Check if user owns this stay
+      if (!existingStay.user_id || existingStay.user_id !== currentUserId) {
+        toast.error("You can only update your own stays");
+        return false;
+      }
+
+      const newStatus = existingStay.status === "confirmed" ? "planning" : "confirmed";
+
+      const { error } = await supabase
+        .from("stays")
+        .update({ status: newStatus })
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      toast.success(`Stay ${newStatus === "confirmed" ? "confirmed" : "set to planning"}!`);
+      return true;
+    } catch (err) {
+      console.error("Error toggling stay status:", err);
+      toast.error("Failed to update stay status");
+      return false;
+    }
+  };
+
+  return { stays, loading, addStay, updateStay, deleteStay, toggleStayStatus, refetch: fetchStays };
 };
