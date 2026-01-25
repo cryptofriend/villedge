@@ -511,10 +511,21 @@ export default function Admin() {
                       <p className="text-xs text-muted-foreground">proof-of-retreat</p>
                     </div>
                   </div>
-                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Active
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <a 
+                      href="https://t.me/proofofretreatbot" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-[#0088cc] hover:underline"
+                    >
+                      <TelegramIcon className="h-3.5 w-3.5" />
+                      @proofofretreatbot
+                    </a>
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  </div>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-4">
