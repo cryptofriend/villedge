@@ -36,6 +36,25 @@ export const useBulletin = (villageId: string) => {
         .single();
 
       if (error) throw error;
+      
+      // Send Telegram notification for proof-of-retreat village
+      if (villageId === "proof-of-retreat") {
+        try {
+          await supabase.functions.invoke("notify-telegram", {
+            body: {
+              type: "bulletin",
+              name: message,
+              villageId: villageId,
+              // Private channel ID with -100 prefix
+              bulletinChatId: "-1003580489932",
+            },
+          });
+        } catch (notifyError) {
+          console.error("Failed to send bulletin notification:", notifyError);
+          // Don't throw - bulletin was saved successfully
+        }
+      }
+      
       return data;
     },
     onSuccess: () => {

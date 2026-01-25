@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "spot" | "event" | "donation";
+  type: "spot" | "event" | "donation" | "bulletin";
   name: string;
   description?: string;
   location?: string;
@@ -23,6 +23,9 @@ interface NotificationRequest {
   chain?: string;
   treasuryBalance?: number;
   villageId?: string;
+  // Bulletin-specific fields
+  message?: string;
+  bulletinChatId?: string;
 }
 
 // Get chat ID from settings table, fallback to env variable
@@ -57,61 +60,68 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
-    const chatId = await getChatId();
+    const defaultChatId = await getChatId();
 
-    if (!botToken || !chatId) {
-      throw new Error("Telegram credentials not configured");
+    if (!botToken) {
+      throw new Error("Telegram bot token not configured");
     }
 
-    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId }: NotificationRequest = await req.json();
+    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId }: NotificationRequest = await req.json();
+    
+    // Use bulletin-specific chat ID if provided, otherwise use default
+    const chatId = bulletinChatId || defaultChatId;
+    
+    if (!chatId) {
+      throw new Error("Telegram chat ID not configured");
+    }
 
-    let message = "";
+    let telegramMessage = "";
 
     if (type === "spot") {
-      message = `📍 <b>New Spot Added</b>\n\n`;
-      message += `<b>${escapeHtml(name)}</b>\n`;
-      if (category) message += `Category: ${escapeHtml(category)}\n`;
-      if (description) message += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
+      telegramMessage = `📍 <b>New Spot Added</b>\n\n`;
+      telegramMessage += `<b>${escapeHtml(name)}</b>\n`;
+      if (category) telegramMessage += `Category: ${escapeHtml(category)}\n`;
+      if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
     } else if (type === "event") {
-      message = `🗓️ <b>New Event Added</b>\n\n`;
-      message += `<b>${escapeHtml(name)}</b>\n`;
+      telegramMessage = `🗓️ <b>New Event Added</b>\n\n`;
+      telegramMessage += `<b>${escapeHtml(name)}</b>\n`;
       if (startTime) {
         const date = new Date(startTime);
-        message += `📅 ${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}\n`;
-        message += `🕐 ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}\n`;
+        telegramMessage += `📅 ${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}\n`;
+        telegramMessage += `🕐 ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}\n`;
       }
-      if (location) message += `📌 ${escapeHtml(location)}\n`;
-      if (description) message += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
+      if (location) telegramMessage += `📌 ${escapeHtml(location)}\n`;
+      if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
     } else if (type === "donation") {
-      message = `💰 <b>Treasury Donation Received</b>\n\n`;
+      telegramMessage = `💰 <b>Treasury Donation Received</b>\n\n`;
       
       // Show donor name/address
       const donor = fromName || (from ? `${from.slice(0, 6)}...${from.slice(-4)}` : "Anonymous");
-      message += `From: <b>${escapeHtml(donor)}</b>\n`;
+      telegramMessage += `From: <b>${escapeHtml(donor)}</b>\n`;
       
       // Show amount
       if (amount && symbol) {
-        message += `Amount: <b>${amount.toFixed(6)} ${escapeHtml(symbol)}</b>\n`;
+        telegramMessage += `Amount: <b>${amount.toFixed(6)} ${escapeHtml(symbol)}</b>\n`;
       }
       if (amountUsd && amountUsd > 0) {
-        message += `Value: <b>$${amountUsd.toFixed(2)} USD</b>\n`;
+        telegramMessage += `Value: <b>$${amountUsd.toFixed(2)} USD</b>\n`;
       }
       
       // Show chain
       if (chain) {
-        message += `Chain: ${escapeHtml(chain)}\n`;
+        telegramMessage += `Chain: ${escapeHtml(chain)}\n`;
       }
       
       // Show treasury balance
       if (treasuryBalance && treasuryBalance > 0) {
-        message += `\n💼 <b>Treasury Balance: $${treasuryBalance.toFixed(2)} USD</b>\n`;
+        telegramMessage += `\n💼 <b>Treasury Balance: $${treasuryBalance.toFixed(2)} USD</b>\n`;
       }
       
       // Add transaction link
       if (txHash && chain) {
         const explorerUrl = getExplorerUrl(chain, txHash);
         if (explorerUrl) {
-          message += `\n🔗 <a href="${explorerUrl}">View Transaction</a>`;
+          telegramMessage += `\n🔗 <a href="${explorerUrl}">View Transaction</a>`;
         }
       }
       
@@ -119,13 +129,16 @@ const handler = async (req: Request): Promise<Response> => {
       const topUpUrl = villageId 
         ? `https://villedge.lovable.app/${villageId}?tab=treasury`
         : `https://villedge.lovable.app`;
-      message += `\n💳 <a href="${topUpUrl}">Top Up Treasury</a>`;
+      telegramMessage += `\n💳 <a href="${topUpUrl}">Top Up Treasury</a>`;
       
-      message += `\n\n🙏 Thank you for supporting the village!`;
+      telegramMessage += `\n\n🙏 Thank you for supporting the village!`;
+    } else if (type === "bulletin") {
+      // Bulletin notification - just send the raw message
+      telegramMessage = `📢 <b>New Bulletin Post</b>\n\n${escapeHtml(bulletinMessage || name)}`;
     }
 
-    if (type !== "donation") {
-      message += `\n\n🔗 <a href="https://map.proofofretreat.me">View on map</a>`;
+    if (type !== "donation" && type !== "bulletin") {
+      telegramMessage += `\n\n🔗 <a href="https://map.proofofretreat.me">View on map</a>`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -137,7 +150,7 @@ const handler = async (req: Request): Promise<Response> => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
-        text: message,
+        text: telegramMessage,
         parse_mode: "HTML",
         disable_web_page_preview: true,
       }),
