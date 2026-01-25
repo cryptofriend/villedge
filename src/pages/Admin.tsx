@@ -14,6 +14,7 @@ import {
   Clock, Wallet, MessageSquare, Send
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AdminAIChat } from "@/components/admin/AdminAIChat";
 
 const BOOGA_USER_ID = "b015441b-3bb4-4150-94e6-d8be048035bb";
 
@@ -294,7 +295,7 @@ export default function Admin() {
           </Card>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 mb-6">
           {/* Left Column - Bot Config */}
           <div className="md:col-span-1 space-y-4">
             {/* Configuration Card */}
@@ -523,6 +524,11 @@ export default function Admin() {
             </div>
           </CardContent>
         </Card>
+
+        {/* AI Assistant Chat */}
+        <div className="h-[400px]">
+          <AdminAIChat />
+        </div>
       </div>
     </div>
   );
