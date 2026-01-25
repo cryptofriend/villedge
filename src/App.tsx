@@ -23,10 +23,10 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/por" element={<Village />} />
-              <Route path="/village/:villageSlug" element={<Village />} />
               <Route path="/embed" element={<Embed />} />
               <Route path="/auth" element={<Auth />} />
+              {/* Village routes - must be after specific routes */}
+              <Route path="/:villageSlug" element={<Village />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
