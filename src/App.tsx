@@ -28,7 +28,7 @@ const App = () => (
               <Route path="/embed" element={<Embed />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
-              <Route path="/profile/:userId" element={<Profile />} />
+              <Route path="/profile/:username" element={<Profile />} />
               {/* Village routes - must be after specific routes */}
               <Route path="/:villageSlug" element={<Village />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
