@@ -101,41 +101,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     return text.substring(0, maxLength) + '...';
   };
 
-  // Calculate marker scale and opacity based on zoom level
-  const getMarkerStyles = useCallback((zoom: number) => {
-    // At zoom 2 (default), scale = 1, opacity = 1
-    // At zoom 0.5, scale = 0.6, opacity = 0.5
-    // At zoom 5+, scale = 1.1, opacity = 1
-    const minZoom = 0.5;
-    const maxZoom = 5;
-    const clampedZoom = Math.max(minZoom, Math.min(maxZoom, zoom));
-    
-    // Linear interpolation for scale: 0.6 at minZoom, 1.1 at maxZoom
-    const scale = 0.6 + ((clampedZoom - minZoom) / (maxZoom - minZoom)) * 0.5;
-    
-    // Linear interpolation for opacity: 0.5 at minZoom, 1 at maxZoom
-    const opacity = 0.5 + ((clampedZoom - minZoom) / (maxZoom - minZoom)) * 0.5;
-    
-    return { scale: Math.min(scale, 1.1), opacity: Math.min(opacity, 1) };
-  }, []);
-
-  // Update all markers based on current zoom
-  const updateMarkersForZoom = useCallback(() => {
-    if (!map.current) return;
-    
-    const zoom = map.current.getZoom();
-    const { scale, opacity } = getMarkerStyles(zoom);
-    
-    clusterMarkersRef.current.forEach((marker) => {
-      const el = marker.getElement();
-      const container = el.firstElementChild as HTMLElement;
-      if (container) {
-        container.style.transform = `scale(${scale})`;
-        container.style.opacity = String(opacity);
-      }
-    });
-  }, [getMarkerStyles]);
-
   // Create village markers
   const createVillageMarkers = useCallback(() => {
     if (!map.current || villages.length === 0) return;
@@ -147,9 +112,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     // changes/zoom transforms don't make the marker appear to shift.
     // left padding (8) + half logo (16) = 24px
     const ANCHOR_TO_LOGO_CENTER_PX = 24;
-
-    const currentZoom = map.current.getZoom();
-    const { scale: initialScale, opacity: initialOpacity } = getMarkerStyles(currentZoom);
 
     villages.forEach((village, index) => {
       const el = document.createElement("div");
@@ -168,11 +130,9 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           border-radius: 24px;
           box-shadow: 0 4px 16px rgba(0,0,0,0.15);
           cursor: pointer;
-          transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.2s ease;
+          transition: all 0.3s ease;
           max-width: 200px;
-          transform-origin: left center;
-          transform: scale(${initialScale});
-          opacity: ${initialOpacity};
+            transform-origin: left center;
         ">
           <img 
             src="${village.logo_url || '/placeholder.svg'}" 
@@ -190,11 +150,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         el.style.zIndex = "1000";
         const container = el.firstElementChild as HTMLElement;
         if (container) {
-          // On hover, boost scale slightly above current zoom-based scale
-          const zoom = map.current?.getZoom() || DEFAULT_ZOOM;
-          const { scale } = getMarkerStyles(zoom);
-          container.style.transform = `scale(${Math.min(scale * 1.1, 1.2)})`;
-          container.style.opacity = "1";
+          container.style.transform = "scale(1.05)";
           container.style.boxShadow = "0 6px 20px rgba(0,0,0,0.2)";
         }
       });
@@ -203,11 +159,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         el.style.zIndex = String(10 + index);
         const container = el.firstElementChild as HTMLElement;
         if (container) {
-          // Restore zoom-based scale
-          const zoom = map.current?.getZoom() || DEFAULT_ZOOM;
-          const { scale, opacity } = getMarkerStyles(zoom);
-          container.style.transform = `scale(${scale})`;
-          container.style.opacity = String(opacity);
+          container.style.transform = "scale(1)";
           container.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
         }
       });
@@ -228,7 +180,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       clusterMarkersRef.current.set(village.id, marker);
     });
-  }, [villages, navigate, getMarkerStyles]);
+  }, [villages, navigate]);
 
   // Create markers when villages load
   useEffect(() => {
@@ -236,20 +188,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       createVillageMarkers();
     }
   }, [mapReady, villages, createVillageMarkers]);
-
-  // Listen for zoom changes to update marker scale/opacity
-  useEffect(() => {
-    if (!map.current || !mapReady) return;
-    
-    const m = map.current;
-    const handleZoom = () => updateMarkersForZoom();
-    
-    m.on('zoom', handleZoom);
-    
-    return () => {
-      m.off('zoom', handleZoom);
-    };
-  }, [mapReady, updateMarkersForZoom]);
 
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ touchAction: 'manipulation', overscrollBehavior: 'contain' }}>
