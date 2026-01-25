@@ -478,6 +478,89 @@ export default function Admin() {
           </div>
         </div>
 
+        {/* Notification Routes Section */}
+        <Card className="mt-6">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Notification Routes
+              </CardTitle>
+              <Badge variant="secondary">Per-Village Channels</Badge>
+            </div>
+            <CardDescription>
+              Configure which Telegram channels receive notifications for each village
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Proof of Retreat - Active */}
+              <div className="p-4 rounded-lg border bg-card">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src="/lovable-uploads/proof-of-retreat-logo.png" 
+                      alt="Proof of Retreat"
+                      className="h-8 w-8 rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    <div>
+                      <p className="font-medium">Proof of Retreat</p>
+                      <p className="text-xs text-muted-foreground">proof-of-retreat</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Active
+                  </Badge>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Bulletin Notifications</Label>
+                    <div className="flex items-center gap-2">
+                      <TelegramIcon className="h-4 w-4 text-[#0088cc]" />
+                      <code className="text-xs bg-muted px-2 py-1 rounded flex-1">-1003580489932</code>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Thread ID: 734</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Donation Notifications</Label>
+                    <div className="flex items-center gap-2">
+                      <TelegramIcon className="h-4 w-4 text-[#0088cc]" />
+                      <code className="text-xs bg-muted px-2 py-1 rounded flex-1">{chatId || "Default"}</code>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Uses global chat ID</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Other villages - not configured */}
+              <div className="p-4 rounded-lg border border-dashed bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Other Villages</p>
+                      <p className="text-xs text-muted-foreground">No custom routes configured</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-muted-foreground">
+                    Default Route
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  All other villages use the global Telegram Chat ID for notifications
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Features Section */}
         <Card className="mt-6">
           <CardHeader className="pb-3">
@@ -487,15 +570,15 @@ export default function Admin() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                 <div className="p-1.5 bg-green-500/10 rounded">
                   <Wallet className="h-4 w-4 text-green-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Donation Alerts</p>
+                  <p className="font-medium text-sm">Donations</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Real-time notifications with ENS resolution, USD values, and tx links
+                    Treasury donations with ENS & USD
                   </p>
                 </div>
               </div>
@@ -504,9 +587,9 @@ export default function Admin() {
                   <MapPin className="h-4 w-4 text-blue-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">New Spots</p>
+                  <p className="font-medium text-sm">Spots</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Alerts when locations are added to village maps
+                    New locations added to maps
                   </p>
                 </div>
               </div>
@@ -515,9 +598,20 @@ export default function Admin() {
                   <Users className="h-4 w-4 text-purple-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">New Residents</p>
+                  <p className="font-medium text-sm">Residents</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Updates when people join villages
+                    People joining villages
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-1.5 bg-orange-500/10 rounded">
+                  <MessageSquare className="h-4 w-4 text-orange-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Bulletin</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Anonymous board posts
                   </p>
                 </div>
               </div>
