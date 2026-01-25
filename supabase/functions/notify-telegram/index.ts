@@ -73,19 +73,29 @@ const handler = async (req: Request): Promise<Response> => {
     const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId, bulletinThreadId, testChatId, testThreadId }: NotificationRequest = await req.json();
     
     // Use test/bulletin-specific chat ID if provided, otherwise use default
-    const chatId = testChatId || bulletinChatId || defaultChatId;
+    let chatId = testChatId || bulletinChatId || defaultChatId;
     
     if (!chatId) {
       throw new Error("Telegram chat ID not configured");
     }
 
-    // Validate chat_id format - must be numeric (can be negative for groups)
-    if (chatId.startsWith('http') || chatId.includes('t.me')) {
-      throw new Error("Invalid chat_id format: Use the numeric chat ID (e.g., -1001234567890), not a Telegram URL. Use @userinfobot or @RawDataBot to get your chat ID.");
+    // Parse Telegram URL format: https://t.me/c/{channel_id}/{thread_id}
+    let parsedThreadId: number | undefined = testThreadId || bulletinThreadId || undefined;
+    if (chatId.includes('t.me/c/')) {
+      const urlMatch = chatId.match(/t\.me\/c\/(\d+)(?:\/(\d+))?/);
+      if (urlMatch) {
+        // Convert to API format: prepend -100 to the channel ID
+        chatId = `-100${urlMatch[1]}`;
+        // Use thread from URL if not already specified
+        if (!parsedThreadId && urlMatch[2]) {
+          parsedThreadId = parseInt(urlMatch[2], 10);
+        }
+      } else {
+        throw new Error("Invalid Telegram URL format. Use: https://t.me/c/{numeric_channel_id}/{thread_id}");
+      }
     }
 
     let telegramMessage = "";
-    let threadId: number | undefined = testThreadId || bulletinThreadId || undefined;
 
     if (type === "test") {
       telegramMessage = `🧪 <b>Test Connection</b>\n\n✅ Your Telegram bot is configured correctly!\n\n📅 ${new Date().toLocaleString()}`;
@@ -158,7 +168,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     
-    console.log(`Sending Telegram message to chat: ${chatId}${threadId ? ` (thread: ${threadId})` : ''}`);
+    console.log(`Sending Telegram message to chat: ${chatId}${parsedThreadId ? ` (thread: ${parsedThreadId})` : ''}`);
     
     const requestBody: Record<string, unknown> = {
       chat_id: chatId,
@@ -168,8 +178,8 @@ const handler = async (req: Request): Promise<Response> => {
     };
     
     // Add thread ID for messages sent to specific topics
-    if (threadId) {
-      requestBody.message_thread_id = threadId;
+    if (parsedThreadId) {
+      requestBody.message_thread_id = parsedThreadId;
     }
     
     const response = await fetch(telegramUrl, {
