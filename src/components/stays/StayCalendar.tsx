@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils";
 
 interface StayCalendarProps {
   villageId: string;
+  applyUrl?: string | null;
 }
 
-export const StayCalendar = ({ villageId }: StayCalendarProps) => {
+export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
   const { stays, loading, addStay } = useStays(villageId);
   const isMobile = useIsMobile();
   
@@ -73,7 +74,7 @@ export const StayCalendar = ({ villageId }: StayCalendarProps) => {
       {/* Content */}
       <div className="flex-1 overflow-hidden p-4">
         {viewMode === "cards" ? (
-          <StayResidentCards stays={stays} loading={loading} />
+          <StayResidentCards stays={stays} loading={loading} applyUrl={applyUrl} />
         ) : (
           <StayGanttTimeline stays={stays} loading={loading} />
         )}
