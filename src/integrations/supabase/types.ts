@@ -454,6 +454,7 @@ export type Database = {
           social_profile: string | null
           start_date: string
           status: string | null
+          user_id: string | null
           villa: string
           village_id: string
         }
@@ -472,6 +473,7 @@ export type Database = {
           social_profile?: string | null
           start_date: string
           status?: string | null
+          user_id?: string | null
           villa: string
           village_id: string
         }
@@ -490,6 +492,7 @@ export type Database = {
           social_profile?: string | null
           start_date?: string
           status?: string | null
+          user_id?: string | null
           villa?: string
           village_id?: string
         }
