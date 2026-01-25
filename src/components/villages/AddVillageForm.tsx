@@ -152,8 +152,21 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     onVillageAdded?.();
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen && !user) {
+      toast.error("Please sign in to create a village", {
+        action: {
+          label: "Sign In",
+          onClick: () => navigate("/auth"),
+        },
+      });
+      return;
+    }
+    setOpen(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Plus className="h-4 w-4" />
