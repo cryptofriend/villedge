@@ -11,7 +11,7 @@ import {
 import { Stay } from "@/hooks/useStays";
 import { OccupancyChart } from "./OccupancyChart";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin } from "lucide-react";
+import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin, Check, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBestAvatar } from "@/lib/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -21,10 +21,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StayGanttTimelineProps {
   stays: Stay[];
   loading: boolean;
+  onToggleStatus?: (stayId: string) => void;
 }
 
 // Generate consistent colors based on nickname
@@ -76,9 +78,10 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
   return { type: 'other', color: 'text-muted-foreground' };
 };
 
-export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) => {
+export const StayGanttTimeline = ({ stays, loading, onToggleStatus }: StayGanttTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [nameColumnWidth, setNameColumnWidth] = useState(isMobile ? 100 : 120);
   const [intentionColumnWidth, setIntentionColumnWidth] = useState(140);
   const [isResizing, setIsResizing] = useState(false);
@@ -408,18 +411,29 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
                   const duration = differenceInDays(endDate, startDate) + 1;
                   const colorStyle = getColorForNickname(nickname, stay.status);
                   const isPlanning = stay.status === "planning";
+                  const canToggle = user?.id && stay.user_id === user.id && onToggleStatus;
+
+                  const handleClick = (e: React.MouseEvent) => {
+                    if (canToggle) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onToggleStatus(stay.id);
+                    }
+                  };
 
                   return (
                     <Tooltip key={stay.id}>
                       <TooltipTrigger asChild>
                         <div
+                          onClick={handleClick}
                           className={cn(
-                            "absolute rounded-md flex items-center justify-center text-white font-medium cursor-pointer transition-all hover:brightness-110",
+                            "absolute rounded-md flex items-center justify-center text-white font-medium transition-all hover:brightness-110",
                             isMobile ? "top-1.5 h-6 text-[9px] px-1" : "top-1 h-8 text-xs px-2",
                             colorStyle.bg,
                             colorStyle.border,
                             colorStyle.opacity,
-                            !isPlanning && "shadow-sm"
+                            !isPlanning && "shadow-sm",
+                            canToggle ? "cursor-pointer hover:ring-2 hover:ring-white/50" : "cursor-default"
                           )}
                           style={{
                             left: startOffset * dayWidth + 1,
@@ -467,6 +481,21 @@ export const StayGanttTimeline = ({ stays, loading }: StayGanttTimelineProps) =>
                               <ExternalLink className="h-3 w-3" />
                               Social Profile
                             </a>
+                          )}
+                          {canToggle && (
+                            <p className="text-xs text-primary font-medium pt-1 border-t border-border mt-2 flex items-center gap-1">
+                              {isPlanning ? (
+                                <>
+                                  <Check className="h-3 w-3" />
+                                  Click to confirm
+                                </>
+                              ) : (
+                                <>
+                                  <HelpCircle className="h-3 w-3" />
+                                  Click to set as planning
+                                </>
+                              )}
+                            </p>
                           )}
                         </div>
                       </TooltipContent>

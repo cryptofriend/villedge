@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Users, CalendarDays, Calendar } from "lucide-react";
 import { useStays } from "@/hooks/useStays";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
 import { AddStayForm } from "./AddStayForm";
 import { StayGanttTimeline } from "./StayGanttTimeline";
 import { StayResidentCards } from "./StayResidentCards";
@@ -14,11 +15,16 @@ interface StayCalendarProps {
 }
 
 export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
-  const { stays, loading, addStay } = useStays(villageId);
+  const { stays, loading, addStay, toggleStayStatus } = useStays(villageId);
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   
   // Default to cards view on mobile, timeline on desktop
   const [viewMode, setViewMode] = useState<"cards" | "timeline">(isMobile ? "cards" : "timeline");
+
+  const handleToggleStatus = async (stayId: string) => {
+    await toggleStayStatus(stayId, user?.id || null);
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -76,7 +82,7 @@ export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
         {viewMode === "cards" ? (
           <StayResidentCards stays={stays} loading={loading} applyUrl={applyUrl} />
         ) : (
-          <StayGanttTimeline stays={stays} loading={loading} />
+          <StayGanttTimeline stays={stays} loading={loading} onToggleStatus={handleToggleStatus} />
         )}
       </div>
     </div>

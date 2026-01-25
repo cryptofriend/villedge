@@ -1,8 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Check, HelpCircle } from "lucide-react";
 import { format, differenceInDays, startOfMonth, endOfMonth, addMonths, isBefore } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface VillageStay {
   id: string;
@@ -12,6 +19,7 @@ interface VillageStay {
   end_date: string;
   logo_url: string | null;
   status: string | null;
+  user_id: string | null;
 }
 
 interface ProfileVillageTimelineProps {
@@ -20,10 +28,12 @@ interface ProfileVillageTimelineProps {
 
 export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [villages, setVillages] = useState<VillageStay[]>([]);
   const [loading, setLoading] = useState(true);
 
   const today = new Date();
+  const isOwnProfile = user?.id === userId;
 
   // Calculate timeline range based on stays
   const timelineData = useMemo(() => {
@@ -58,62 +68,94 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
   }
 
   // Fetch user's village stays (all statuses)
-  useEffect(() => {
-    const fetchVillages = async () => {
-      if (!userId) {
+  const fetchVillages = async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Get all stays for this user (all statuses)
+      const { data: stays } = await supabase
+        .from("stays")
+        .select("id, village_id, start_date, end_date, status, user_id")
+        .eq("user_id", userId)
+        .order("start_date", { ascending: true });
+
+      if (!stays || stays.length === 0) {
+        setVillages([]);
         setLoading(false);
         return;
       }
 
-      try {
-        // Get all stays for this user (all statuses)
-        const { data: stays } = await supabase
-          .from("stays")
-          .select("id, village_id, start_date, end_date, status")
-          .eq("user_id", userId)
-          .order("start_date", { ascending: true });
+      // Get unique village IDs
+      const villageIds = [...new Set(stays.map(s => s.village_id))];
+      
+      // Fetch village details
+      const { data: villageData } = await supabase
+        .from("villages")
+        .select("id, name, logo_url")
+        .in("id", villageIds);
 
-        if (!stays || stays.length === 0) {
-          setVillages([]);
-          setLoading(false);
-          return;
-        }
+      const villageMap = new Map(villageData?.map(v => [v.id, v]) || []);
 
-        // Get unique village IDs
-        const villageIds = [...new Set(stays.map(s => s.village_id))];
-        
-        // Fetch village details
-        const { data: villageData } = await supabase
-          .from("villages")
-          .select("id, name, logo_url")
-          .in("id", villageIds);
+      // Build village stays
+      const villageStays: VillageStay[] = stays.map(stay => {
+        const village = villageMap.get(stay.village_id);
+        return {
+          id: stay.id,
+          village_id: stay.village_id,
+          village_name: village?.name || stay.village_id,
+          start_date: stay.start_date,
+          end_date: stay.end_date,
+          logo_url: village?.logo_url || null,
+          status: stay.status,
+          user_id: stay.user_id,
+        };
+      });
 
-        const villageMap = new Map(villageData?.map(v => [v.id, v]) || []);
+      setVillages(villageStays);
+    } catch (error) {
+      console.error("Error fetching villages:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Build village stays
-        const villageStays: VillageStay[] = stays.map(stay => {
-          const village = villageMap.get(stay.village_id);
-          return {
-            id: stay.id,
-            village_id: stay.village_id,
-            village_name: village?.name || stay.village_id,
-            start_date: stay.start_date,
-            end_date: stay.end_date,
-            logo_url: village?.logo_url || null,
-            status: stay.status,
-          };
-        });
-
-        setVillages(villageStays);
-      } catch (error) {
-        console.error("Error fetching villages:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchVillages();
   }, [userId]);
+
+  // Toggle stay status
+  const handleToggleStatus = async (stayId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isOwnProfile) return;
+
+    try {
+      const stay = villages.find(v => v.id === stayId);
+      if (!stay) return;
+
+      const newStatus = stay.status === "confirmed" ? "planning" : "confirmed";
+
+      const { error } = await supabase
+        .from("stays")
+        .update({ status: newStatus })
+        .eq("id", stayId);
+
+      if (error) throw error;
+
+      // Update local state
+      setVillages(prev => prev.map(v => 
+        v.id === stayId ? { ...v, status: newStatus } : v
+      ));
+
+      toast.success(`Stay ${newStatus === "confirmed" ? "confirmed" : "set to planning"}!`);
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      toast.error("Failed to update status");
+    }
+  };
 
   // Calculate bar position and width
   const getBarStyle = (stay: VillageStay) => {
@@ -153,6 +195,9 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-foreground">Village Participation</span>
+          {isOwnProfile && villages.length > 0 && (
+            <span className="text-xs text-muted-foreground ml-auto">Click to toggle status</span>
+          )}
         </div>
         
         {villages.length > 0 ? (
@@ -187,36 +232,65 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
                 
                 return (
                   <div key={stay.id} className="relative h-9">
-                    <button
-                      onClick={() => navigate(`/${stay.village_id}`)}
-                      className={`absolute h-full flex items-center gap-2 px-3 rounded-full transition-all hover:ring-2 hover:ring-primary/50 ${
-                        isPlanning 
-                          ? "bg-muted/80 border border-dashed border-muted-foreground/30" 
-                          : "bg-primary/15 border border-primary/30"
-                      }`}
-                      style={barStyle}
-                      title={`${stay.village_name}: ${format(new Date(stay.start_date), "MMM d")} - ${format(new Date(stay.end_date), "MMM d, yyyy")}${isPlanning ? " (Planning)" : ""}`}
-                    >
-                      {stay.logo_url ? (
-                        <img 
-                          src={stay.logo_url} 
-                          alt={stay.village_name}
-                          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[9px] font-medium text-primary">
-                            {stay.village_name.slice(0, 2).toUpperCase()}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={(e) => isOwnProfile ? handleToggleStatus(stay.id, e) : navigate(`/${stay.village_id}`)}
+                          className={`absolute h-full flex items-center gap-2 px-3 rounded-full transition-all hover:ring-2 hover:ring-primary/50 ${
+                            isPlanning 
+                              ? "bg-muted/80 border border-dashed border-muted-foreground/30" 
+                              : "bg-primary/15 border border-primary/30"
+                          }`}
+                          style={barStyle}
+                        >
+                          {stay.logo_url ? (
+                            <img 
+                              src={stay.logo_url} 
+                              alt={stay.village_name}
+                              className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[9px] font-medium text-primary">
+                                {stay.village_name.slice(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <span className={`text-xs font-medium truncate ${isPlanning ? "text-muted-foreground" : "text-foreground"}`}>
+                            {stay.village_name}
                           </span>
+                          {isPlanning && (
+                            <span className="text-[10px] text-muted-foreground">?</span>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="space-y-1">
+                          <p className="font-semibold">{stay.village_name}</p>
+                          <p className="text-muted-foreground text-sm">
+                            {format(new Date(stay.start_date), "MMM d")} - {format(new Date(stay.end_date), "MMM d, yyyy")}
+                          </p>
+                          <p className={`text-xs font-medium ${isPlanning ? "text-amber-600" : "text-emerald-600"}`}>
+                            {isPlanning ? "Planning" : "Confirmed"}
+                          </p>
+                          {isOwnProfile && (
+                            <p className="text-xs text-primary font-medium pt-1 border-t border-border mt-1 flex items-center gap-1">
+                              {isPlanning ? (
+                                <>
+                                  <Check className="h-3 w-3" />
+                                  Click to confirm
+                                </>
+                              ) : (
+                                <>
+                                  <HelpCircle className="h-3 w-3" />
+                                  Click to set as planning
+                                </>
+                              )}
+                            </p>
+                          )}
                         </div>
-                      )}
-                      <span className={`text-xs font-medium truncate ${isPlanning ? "text-muted-foreground" : "text-foreground"}`}>
-                        {stay.village_name}
-                      </span>
-                      {isPlanning && (
-                        <span className="text-[10px] text-muted-foreground">?</span>
-                      )}
-                    </button>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 );
               })}
