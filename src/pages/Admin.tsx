@@ -753,19 +753,46 @@ export default function Admin() {
                   <div className="flex items-center justify-between">
                     <p className="font-medium">Donation Alerts</p>
                     <div className="flex items-center gap-2">
-                      {getRoute('donation', 'global') && (
-                        <Switch 
-                          checked={getRoute('donation', 'global')?.is_enabled ?? true}
-                          onCheckedChange={() => {
-                            const route = getRoute('donation', 'global');
-                            if (route) toggleRouteEnabled(route);
-                          }}
-                        />
+                      <Switch 
+                        checked={getRoute('donation', 'global')?.is_enabled ?? false}
+                        onCheckedChange={async () => {
+                          const route = getRoute('donation', 'global');
+                          if (route) {
+                            toggleRouteEnabled(route);
+                          } else {
+                            // Create a new enabled route when toggling on for the first time
+                            try {
+                              const { data, error } = await supabase
+                                .from("notification_routes")
+                                .insert({
+                                  village_id: 'global',
+                                  notification_type: 'donation',
+                                  chat_id: chatId || 'pending',
+                                  thread_id: null,
+                                  is_enabled: true
+                                })
+                                .select()
+                                .single();
+                              
+                              if (error) throw error;
+                              setNotificationRoutes(prev => [...prev, data as NotificationRoute]);
+                              toast({ title: "Enabled", description: "Donation alerts enabled. Set destination chat ID." });
+                            } catch (err: any) {
+                              toast({ title: "Error", description: err.message, variant: "destructive" });
+                            }
+                          }
+                        }}
+                      />
+                      {getRoute('donation', 'global')?.is_enabled ? (
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-muted-foreground">
+                          Off
+                        </Badge>
                       )}
-                      <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Active
-                      </Badge>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
