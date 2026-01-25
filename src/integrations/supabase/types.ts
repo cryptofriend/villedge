@@ -151,6 +151,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_routes: {
+        Row: {
+          chat_id: string
+          created_at: string
+          id: string
+          is_enabled: boolean
+          notification_type: string
+          thread_id: number | null
+          updated_at: string
+          village_id: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_type: string
+          thread_id?: number | null
+          updated_at?: string
+          village_id: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_type?: string
+          thread_id?: number | null
+          updated_at?: string
+          village_id?: string
+        }
+        Relationships: []
+      }
       notified_donations: {
         Row: {
           id: string
