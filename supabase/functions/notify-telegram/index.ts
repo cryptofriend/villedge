@@ -6,6 +6,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function tryResolveChatIdViaBotApi(botToken: string, chatId: string): Promise<string> {
+  // Telegram Bot API supports passing @username to getChat; this can return a numeric chat id.
+  // If resolution fails (e.g. bot lacks access), keep the original chatId.
+  if (!chatId?.startsWith("@")) return chatId;
+
+  try {
+    const url = `https://api.telegram.org/bot${botToken}/getChat?chat_id=${encodeURIComponent(chatId)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json?.ok && json?.result?.id) {
+      return String(json.result.id);
+    }
+    console.log("Telegram getChat did not resolve username (continuing with @username)", {
+      chatId,
+      error_code: json?.error_code,
+      description: json?.description,
+    });
+  } catch (e) {
+    console.log("Telegram getChat lookup failed (continuing with @username)", e);
+  }
+
+  return chatId;
+}
+
 interface NotificationRequest {
   type: "spot" | "event" | "donation" | "bulletin" | "test";
   name?: string;
@@ -83,15 +107,29 @@ const handler = async (req: Request): Promise<Response> => {
     let parsedThreadId: number | undefined = testThreadId || bulletinThreadId || undefined;
     
     if (chatId.includes('t.me/')) {
-      // Format: https://t.me/c/{numeric_id}/{thread} - private channel
-      const privateMatch = chatId.match(/t\.me\/c\/(\d+)(?:\/(\d+))?/);
-      if (privateMatch) {
-        chatId = `-100${privateMatch[1]}`;
-        if (!parsedThreadId && privateMatch[2]) {
-          parsedThreadId = parseInt(privateMatch[2], 10);
+      // Support both Telegram link styles:
+      // - Private groups/channels (numeric): https://t.me/c/<numeric_id>/<message_or_topic_id>
+      // - Public groups/channels (username): https://t.me/<username>/<message_id>
+      // Some users also paste an invalid-but-common variant: https://t.me/c/<username>/<id>
+      // We treat that as a username and continue.
+
+      const cPathMatch = chatId.match(/t\.me\/c\/([^\/?#\s]+)(?:\/(\d+))?/);
+      if (cPathMatch) {
+        const idOrUsername = cPathMatch[1];
+        if (/^\d+$/.test(idOrUsername)) {
+          chatId = `-100${idOrUsername}`;
+        } else if (/^[a-zA-Z][a-zA-Z0-9_]{3,}$/.test(idOrUsername)) {
+          chatId = `@${idOrUsername}`;
+        } else {
+          throw new Error(
+            "Invalid Telegram URL format. For public channels use: https://t.me/<username>/<post_id>. For private groups use: https://t.me/c/<numeric_id>/<id>."
+          );
+        }
+
+        if (!parsedThreadId && cPathMatch[2]) {
+          parsedThreadId = parseInt(cPathMatch[2], 10);
         }
       } else {
-        // Format: https://t.me/{username}/{thread} - public channel
         const publicMatch = chatId.match(/t\.me\/([a-zA-Z][a-zA-Z0-9_]{3,})(?:\/(\d+))?/);
         if (publicMatch) {
           chatId = `@${publicMatch[1]}`;
@@ -99,7 +137,9 @@ const handler = async (req: Request): Promise<Response> => {
             parsedThreadId = parseInt(publicMatch[2], 10);
           }
         } else {
-          throw new Error("Invalid Telegram URL format. Use: https://t.me/username/thread or https://t.me/c/channel_id/thread");
+          throw new Error(
+            "Invalid Telegram URL format. Use: https://t.me/<username>/<post_id> or https://t.me/c/<numeric_id>/<id>."
+          );
         }
       }
     } else if (!chatId.startsWith('@') && !chatId.startsWith('-') && !/^\d+$/.test(chatId)) {
@@ -108,6 +148,10 @@ const handler = async (req: Request): Promise<Response> => {
         chatId = `@${chatId}`;
       }
     }
+
+    // If destination is a public username, try resolving to a numeric chat id via Telegram API.
+    // This can help when Telegram expects an internal id, but will still fail if the bot lacks access.
+    chatId = await tryResolveChatIdViaBotApi(botToken, chatId);
 
     let telegramMessage = "";
 
@@ -206,7 +250,15 @@ const handler = async (req: Request): Promise<Response> => {
     
     if (!result.ok) {
       console.error("Telegram API error:", result);
-      throw new Error(result.description || "Failed to send Telegram message");
+
+      const desc = String(result.description || "Failed to send Telegram message");
+      if (desc.toLowerCase().includes("chat not found")) {
+        throw new Error(
+          "Bad Request: chat not found. This usually means the @username is wrong OR the bot is not a member/admin of that chat/channel. Add the bot to the target chat (and make it an admin for channels), then retry."
+        );
+      }
+
+      throw new Error(desc);
     }
 
     console.log("Telegram notification sent successfully");
