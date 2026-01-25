@@ -79,19 +79,33 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram chat ID not configured");
     }
 
-    // Parse Telegram URL format: https://t.me/c/{channel_id}/{thread_id}
+    // Parse Telegram URL formats
     let parsedThreadId: number | undefined = testThreadId || bulletinThreadId || undefined;
-    if (chatId.includes('t.me/c/')) {
-      const urlMatch = chatId.match(/t\.me\/c\/(\d+)(?:\/(\d+))?/);
-      if (urlMatch) {
-        // Convert to API format: prepend -100 to the channel ID
-        chatId = `-100${urlMatch[1]}`;
-        // Use thread from URL if not already specified
-        if (!parsedThreadId && urlMatch[2]) {
-          parsedThreadId = parseInt(urlMatch[2], 10);
+    
+    if (chatId.includes('t.me/')) {
+      // Format: https://t.me/c/{numeric_id}/{thread} - private channel
+      const privateMatch = chatId.match(/t\.me\/c\/(\d+)(?:\/(\d+))?/);
+      if (privateMatch) {
+        chatId = `-100${privateMatch[1]}`;
+        if (!parsedThreadId && privateMatch[2]) {
+          parsedThreadId = parseInt(privateMatch[2], 10);
         }
       } else {
-        throw new Error("Invalid Telegram URL format. Use: https://t.me/c/{numeric_channel_id}/{thread_id}");
+        // Format: https://t.me/{username}/{thread} - public channel
+        const publicMatch = chatId.match(/t\.me\/([a-zA-Z][a-zA-Z0-9_]{3,})(?:\/(\d+))?/);
+        if (publicMatch) {
+          chatId = `@${publicMatch[1]}`;
+          if (!parsedThreadId && publicMatch[2]) {
+            parsedThreadId = parseInt(publicMatch[2], 10);
+          }
+        } else {
+          throw new Error("Invalid Telegram URL format. Use: https://t.me/username/thread or https://t.me/c/channel_id/thread");
+        }
+      }
+    } else if (!chatId.startsWith('@') && !chatId.startsWith('-') && !/^\d+$/.test(chatId)) {
+      // If it looks like a username without @, add it
+      if (/^[a-zA-Z][a-zA-Z0-9_]{3,}$/.test(chatId)) {
+        chatId = `@${chatId}`;
       }
     }
 
