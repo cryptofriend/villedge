@@ -18,6 +18,8 @@ export interface Stay {
   created_at: string;
   project_description: string | null;
   project_url: string | null;
+  status: "planning" | "confirmed" | null;
+  user_id: string | null;
 }
 
 export interface StayInput {
@@ -34,6 +36,8 @@ export interface StayInput {
   project_description?: string;
   project_url?: string;
   is_host?: boolean;
+  status?: "planning" | "confirmed";
+  user_id?: string;
 }
 
 // Simple hash function for secret codes

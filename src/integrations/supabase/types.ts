@@ -453,6 +453,7 @@ export type Database = {
           secret_hash: string | null
           social_profile: string | null
           start_date: string
+          status: string | null
           villa: string
           village_id: string
         }
@@ -470,6 +471,7 @@ export type Database = {
           secret_hash?: string | null
           social_profile?: string | null
           start_date: string
+          status?: string | null
           villa: string
           village_id: string
         }
@@ -487,6 +489,7 @@ export type Database = {
           secret_hash?: string | null
           social_profile?: string | null
           start_date?: string
+          status?: string | null
           villa?: string
           village_id?: string
         }
