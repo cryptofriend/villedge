@@ -225,6 +225,7 @@ const Profile = () => {
         <ProfileIdentityHeader 
           profile={profileData} 
           isOwnProfile={isOwnProfile}
+          userId={profileUserId || undefined}
         />
 
         {/* 2. Reputation Strip (Sticky) */}
