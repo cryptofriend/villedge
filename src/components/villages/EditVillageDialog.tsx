@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit3, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Edit3, Loader2, Settings, Users } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 import { Village } from "@/hooks/useVillages";
 import { supabase } from "@/integrations/supabase/client";
+import { CoHostManager } from "./CoHostManager";
 
 interface EditVillageDialogProps {
   village: Village;
@@ -99,138 +101,161 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
         <DialogHeader>
           <DialogTitle>Edit Village</DialogTitle>
           <DialogDescription>
-            Update village details and social links
+            Update village details and manage hosts
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="logo">Village Logo</Label>
-            <ImageUpload
-              value={logoUrl}
-              onChange={setLogoUrl}
-              placeholder="Upload or enter logo URL"
-              aspectRatio={1}
+        
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="hosts" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Hosts
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="details" className="mt-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="logo">Village Logo</Label>
+                <ImageUpload
+                  value={logoUrl}
+                  onChange={setLogoUrl}
+                  placeholder="Upload or enter logo URL"
+                  aspectRatio={1}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Village Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Proof of Retreat"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What is this village about?"
+                  rows={3}
+                />
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-sm mb-3">Treasury Wallets</h4>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="wallet">Ethereum Wallet</Label>
+                    <Input
+                      id="wallet"
+                      value={walletAddress}
+                      onChange={(e) => setWalletAddress(e.target.value)}
+                      placeholder="0x... or yourname.eth"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      ENS names and hex addresses are supported.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="solana-wallet">Solana Wallet</Label>
+                    <Input
+                      id="solana-wallet"
+                      value={solanaWalletAddress}
+                      onChange={(e) => setSolanaWalletAddress(e.target.value)}
+                      placeholder="Solana address (e.g., 6J4n...)"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Used for Solana treasury tracking and donations.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-sm mb-3">Links</h4>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      placeholder="https://yourvillage.com"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="telegram">Telegram</Label>
+                    <Input
+                      id="telegram"
+                      value={telegramUrl}
+                      onChange={(e) => setTelegramUrl(e.target.value)}
+                      placeholder="https://t.me/yourchannel"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="twitter">X (Twitter)</Label>
+                    <Input
+                      id="twitter"
+                      value={twitterUrl}
+                      onChange={(e) => setTwitterUrl(e.target.value)}
+                      placeholder="https://x.com/yourhandle"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="instagram">Instagram</Label>
+                    <Input
+                      id="instagram"
+                      value={instagramUrl}
+                      onChange={(e) => setInstagramUrl(e.target.value)}
+                      placeholder="https://instagram.com/yourhandle"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="hosts" className="mt-4">
+            <CoHostManager 
+              villageId={village.id} 
+              villageOwnerId={(village as any).created_by}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="name">Village Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Proof of Retreat"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this village about?"
-              rows={3}
-            />
-          </div>
-
-          <div className="border-t pt-4">
-            <h4 className="font-medium text-sm mb-3">Treasury Wallets</h4>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="wallet">Ethereum Wallet</Label>
-                <Input
-                  id="wallet"
-                  value={walletAddress}
-                  onChange={(e) => setWalletAddress(e.target.value)}
-                  placeholder="0x... or yourname.eth"
-                />
-                <p className="text-xs text-muted-foreground">
-                  ENS names and hex addresses are supported.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="solana-wallet">Solana Wallet</Label>
-                <Input
-                  id="solana-wallet"
-                  value={solanaWalletAddress}
-                  onChange={(e) => setSolanaWalletAddress(e.target.value)}
-                  placeholder="Solana address (e.g., 6J4n...)"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used for Solana treasury tracking and donations.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <h4 className="font-medium text-sm mb-3">Links</h4>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder="https://yourvillage.com"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="telegram">Telegram</Label>
-                <Input
-                  id="telegram"
-                  value={telegramUrl}
-                  onChange={(e) => setTelegramUrl(e.target.value)}
-                  placeholder="https://t.me/yourchannel"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="twitter">X (Twitter)</Label>
-                <Input
-                  id="twitter"
-                  value={twitterUrl}
-                  onChange={(e) => setTwitterUrl(e.target.value)}
-                  placeholder="https://x.com/yourhandle"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram</Label>
-                <Input
-                  id="instagram"
-                  value={instagramUrl}
-                  onChange={(e) => setInstagramUrl(e.target.value)}
-                  placeholder="https://instagram.com/yourhandle"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          </div>
-        </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
