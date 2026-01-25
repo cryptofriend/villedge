@@ -26,6 +26,7 @@ interface NotificationRequest {
   // Bulletin-specific fields
   message?: string;
   bulletinChatId?: string;
+  bulletinThreadId?: number;
 }
 
 // Get chat ID from settings table, fallback to env variable
@@ -66,7 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram bot token not configured");
     }
 
-    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId }: NotificationRequest = await req.json();
+    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId, bulletinThreadId }: NotificationRequest = await req.json();
     
     // Use bulletin-specific chat ID if provided, otherwise use default
     const chatId = bulletinChatId || defaultChatId;
@@ -146,17 +147,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     
-    console.log(`Sending Telegram message to chat: ${chatId}`);
+    console.log(`Sending Telegram message to chat: ${chatId}${bulletinThreadId ? ` (thread: ${bulletinThreadId})` : ''}`);
+    
+    const requestBody: Record<string, unknown> = {
+      chat_id: chatId,
+      text: telegramMessage,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    };
+    
+    // Add thread ID for bulletin messages sent to specific topics
+    if (bulletinThreadId) {
+      requestBody.message_thread_id = bulletinThreadId;
+    }
     
     const response = await fetch(telegramUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: telegramMessage,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const result = await response.json();

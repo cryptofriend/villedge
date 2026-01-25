@@ -45,8 +45,9 @@ export const useBulletin = (villageId: string) => {
               type: "bulletin",
               name: message,
               villageId: villageId,
-              // Private channel ID with -100 prefix
+              // Private channel ID with -100 prefix, thread ID for bulletin topic
               bulletinChatId: "-1003580489932",
+              bulletinThreadId: 734,
             },
           });
         } catch (notifyError) {
