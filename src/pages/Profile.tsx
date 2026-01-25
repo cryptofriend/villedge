@@ -12,6 +12,7 @@ import { ProfileCapabilities } from "@/components/profile/ProfileCapabilities";
 import { ProfileOpenNeeds } from "@/components/profile/ProfileOpenNeeds";
 import { ProfileContributionHistory } from "@/components/profile/ProfileContributionHistory";
 import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNetwork";
+import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
 
 export interface ProfileData extends ProfileType {
   // Extended fields for the full profile page
@@ -225,10 +226,12 @@ const Profile = () => {
         <ProfileIdentityHeader 
           profile={profileData} 
           isOwnProfile={isOwnProfile}
-          userId={profileUserId || undefined}
         />
 
-        {/* 2. Reputation Strip (Sticky) */}
+        {/* 2. Village Timeline */}
+        <ProfileVillageTimeline userId={profileUserId || undefined} />
+
+        {/* 3. Reputation Strip (Sticky) */}
         <ProfileReputationStrip 
           reputationScore={profileData.reputation_score || 0}
           contributionCount={profileData.contribution_count || 0}
