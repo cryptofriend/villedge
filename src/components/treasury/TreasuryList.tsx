@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface TreasuryListProps {
   villageId: string;
+  ethWalletAddress?: string | null;
+  solWalletAddress?: string | null;
 }
 
 type ActiveTab = "proposals" | "transactions" | "leaderboard";
@@ -28,7 +30,7 @@ const REACTIONS: { type: ProposalReactionType; icon: typeof ThumbsUp; label: str
   { type: "no_fund", icon: ThumbsDown, label: "Do Not Fund", activeColor: "text-red-500" },
 ];
 
-export const TreasuryList = ({ villageId }: TreasuryListProps) => {
+export const TreasuryList = ({ villageId, ethWalletAddress, solWalletAddress }: TreasuryListProps) => {
   const { 
     proposals, 
     isLoading, 
@@ -42,9 +44,9 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
     addProposal, 
     addReaction, 
     getReactionCounts 
-  } = useTreasury(villageId);
+  } = useTreasury(villageId, ethWalletAddress, solWalletAddress);
   
-  const { incoming, outgoing, isLoading: isLoadingTxs, refetch: refetchTxs } = useWalletTransactions(walletAddress);
+  const { incoming, outgoing, isLoading: isLoadingTxs, refetch: refetchTxs } = useWalletTransactions(walletAddress ?? undefined);
   
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
@@ -135,6 +137,9 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
       setIsCheckingDonations(false);
     }
   };
+
+  const hasWallets = ethWalletAddress || solWalletAddress;
+
   return (
     <div className="flex flex-col h-full">
       {/* Treasury balance header */}
@@ -144,49 +149,65 @@ export const TreasuryList = ({ villageId }: TreasuryListProps) => {
             <Coins className="h-3.5 w-3.5" />
             <span>Treasury Balance</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleRefreshBalance}
-              className="p-1 hover:bg-muted rounded transition-colors"
-              title="Refresh balance"
-            >
-              <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", isLoadingWallet && "animate-spin")} />
-            </button>
-            <a
-              href={`https://app.zerion.io/${walletAddress}/overview`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1 hover:bg-muted rounded transition-colors"
-              title="View on Zerion"
-            >
-              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-            </a>
-          </div>
+          {hasWallets && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefreshBalance}
+                className="p-1 hover:bg-muted rounded transition-colors"
+                title="Refresh balance"
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", isLoadingWallet && "animate-spin")} />
+              </button>
+              {walletAddress && (
+                <a
+                  href={`https://app.zerion.io/${walletAddress}/overview`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 hover:bg-muted rounded transition-colors"
+                  title="View on Zerion"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                </a>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <div className="text-3xl font-bold text-foreground">
-            {isLoadingWallet ? (
-              <span className="text-muted-foreground">Loading...</span>
-            ) : (
-              `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            )}
-          </div>
-          <TopUpDialog walletAddress={walletAddress} resolvedAddress={resolvedAddress} solanaWalletAddress={solanaWalletAddress} />
+          {hasWallets ? (
+            <>
+              <div className="text-3xl font-bold text-foreground">
+                {isLoadingWallet ? (
+                  <span className="text-muted-foreground">Loading...</span>
+                ) : (
+                  `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                )}
+              </div>
+              <TopUpDialog walletAddress={walletAddress ?? undefined} resolvedAddress={resolvedAddress} solanaWalletAddress={solanaWalletAddress ?? undefined} />
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No wallet addresses configured. Edit village settings to add treasury wallets.
+            </p>
+          )}
         </div>
         
         {/* Balance breakdown */}
-        {!isLoadingWallet && (baseBalance > 0 || solanaBalance > 0) && (
+        {hasWallets && !isLoadingWallet && (baseBalance > 0 || solanaBalance > 0) && (
           <div className="flex items-center gap-3 mt-2 text-xs">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-muted-foreground">Ethereum:</span>
-              <span className="font-medium">${baseBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-purple-500" />
-              <span className="text-muted-foreground">Solana:</span>
-              <span className="font-medium">${solanaBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
+            {baseBalance > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-muted-foreground">Ethereum:</span>
+                <span className="font-medium">${baseBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
+            {solanaBalance > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                <span className="text-muted-foreground">Solana:</span>
+                <span className="font-medium">${solanaBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
           </div>
         )}
       </div>

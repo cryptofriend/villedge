@@ -43,19 +43,17 @@ interface SolanaBalance {
 
 export type ProposalReactionType = "fund" | "later" | "no_fund";
 
-// Wallet addresses for the treasury
-const TREASURY_WALLET = "proofofretreat.eth";
-const SOLANA_TREASURY_WALLET = "6J4nRWJRSdhRuhSTVRp9zB2R6pZ8vimjGUjm3WoMSss3";
-
-export const useTreasury = (villageId: string) => {
+export const useTreasury = (villageId: string, ethWalletAddress?: string | null, solWalletAddress?: string | null) => {
   const queryClient = useQueryClient();
 
   // Fetch live wallet balance from Zerion (Base/ETH)
   const { data: walletBalance, isLoading: isLoadingWallet, error: walletError } = useQuery({
-    queryKey: ["wallet-balance", TREASURY_WALLET],
+    queryKey: ["wallet-balance", ethWalletAddress],
     queryFn: async () => {
+      if (!ethWalletAddress) return null;
+      
       const { data, error } = await supabase.functions.invoke<WalletBalance>("get-wallet-balance", {
-        body: { walletAddress: TREASURY_WALLET },
+        body: { walletAddress: ethWalletAddress },
       });
 
       if (error) {
@@ -65,16 +63,19 @@ export const useTreasury = (villageId: string) => {
 
       return data;
     },
+    enabled: !!ethWalletAddress,
     staleTime: 60 * 1000, // Cache for 1 minute
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
   // Fetch Solana wallet balance
   const { data: solanaBalance, isLoading: isLoadingSolana, error: solanaError } = useQuery({
-    queryKey: ["solana-balance", SOLANA_TREASURY_WALLET],
+    queryKey: ["solana-balance", solWalletAddress],
     queryFn: async () => {
+      if (!solWalletAddress) return null;
+      
       const { data, error } = await supabase.functions.invoke<SolanaBalance>("get-solana-balance", {
-        body: { walletAddress: SOLANA_TREASURY_WALLET },
+        body: { walletAddress: solWalletAddress },
       });
 
       if (error) {
@@ -84,6 +85,7 @@ export const useTreasury = (villageId: string) => {
 
       return data;
     },
+    enabled: !!solWalletAddress,
     staleTime: 60 * 1000, // Cache for 1 minute
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
@@ -208,8 +210,8 @@ export const useTreasury = (villageId: string) => {
     walletBalance: totalBalance,
     baseBalance,
     solanaBalance: solBalance,
-    solanaWalletAddress: SOLANA_TREASURY_WALLET,
-    walletAddress: TREASURY_WALLET,
+    solanaWalletAddress: solWalletAddress,
+    walletAddress: ethWalletAddress,
     resolvedAddress,
     addProposal,
     addReaction,

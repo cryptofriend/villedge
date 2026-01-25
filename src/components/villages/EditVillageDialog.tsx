@@ -22,10 +22,12 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
   const [name, setName] = useState(village.name);
   const [description, setDescription] = useState(village.description);
   const [logoUrl, setLogoUrl] = useState(village.logo_url || "");
+  const [walletAddress, setWalletAddress] = useState(village.wallet_address || "");
+  const [solanaWalletAddress, setSolanaWalletAddress] = useState(village.solana_wallet_address || "");
+  const [websiteUrl, setWebsiteUrl] = useState(village.website_url || "");
   const [telegramUrl, setTelegramUrl] = useState(village.telegram_url || "");
   const [twitterUrl, setTwitterUrl] = useState(village.twitter_url || "");
   const [instagramUrl, setInstagramUrl] = useState(village.instagram_url || "");
-  const [walletAddress, setWalletAddress] = useState(village.wallet_address || "");
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -33,10 +35,12 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
       setName(village.name);
       setDescription(village.description);
       setLogoUrl(village.logo_url || "");
+      setWalletAddress(village.wallet_address || "");
+      setSolanaWalletAddress(village.solana_wallet_address || "");
+      setWebsiteUrl(village.website_url || "");
       setTelegramUrl(village.telegram_url || "");
       setTwitterUrl(village.twitter_url || "");
       setInstagramUrl(village.instagram_url || "");
-      setWalletAddress(village.wallet_address || "");
     }
   }, [open, village]);
 
@@ -57,11 +61,13 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           name: name.trim(),
           description: description.trim(),
           logo_url: logoUrl || null,
+          wallet_address: walletAddress.trim() || null,
+          solana_wallet_address: solanaWalletAddress.trim() || null,
+          website_url: websiteUrl.trim() || null,
           telegram_url: telegramUrl || null,
           twitter_url: twitterUrl || null,
           instagram_url: instagramUrl || null,
-          wallet_address: walletAddress.trim() || null,
-        })
+        } as any)
         .eq("id", village.id);
 
       if (error) throw error;
@@ -130,24 +136,48 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           </div>
 
           <div className="border-t pt-4">
-            <h4 className="font-medium text-sm mb-3">Treasury</h4>
-            <div className="space-y-2">
-              <Label htmlFor="wallet">Wallet Address</Label>
-              <Input
-                id="wallet"
-                value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
-                placeholder="0x... or yourname.eth"
-              />
-              <p className="text-xs text-muted-foreground">
-                ENS names and hex addresses are supported. Used for treasury tracking and donation notifications.
-              </p>
+            <h4 className="font-medium text-sm mb-3">Treasury Wallets</h4>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="wallet">Ethereum Wallet</Label>
+                <Input
+                  id="wallet"
+                  value={walletAddress}
+                  onChange={(e) => setWalletAddress(e.target.value)}
+                  placeholder="0x... or yourname.eth"
+                />
+                <p className="text-xs text-muted-foreground">
+                  ENS names and hex addresses are supported.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="solana-wallet">Solana Wallet</Label>
+                <Input
+                  id="solana-wallet"
+                  value={solanaWalletAddress}
+                  onChange={(e) => setSolanaWalletAddress(e.target.value)}
+                  placeholder="Solana address (e.g., 6J4n...)"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used for Solana treasury tracking and donations.
+                </p>
+              </div>
             </div>
           </div>
 
           <div className="border-t pt-4">
-            <h4 className="font-medium text-sm mb-3">Social Links</h4>
+            <h4 className="font-medium text-sm mb-3">Links</h4>
             <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  placeholder="https://yourvillage.com"
+                />
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="telegram">Telegram</Label>
                 <Input

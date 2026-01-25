@@ -539,10 +539,12 @@ export type Database = {
           luma_calendar_id: string | null
           name: string
           participants: string | null
+          solana_wallet_address: string | null
           telegram_url: string | null
           twitter_url: string | null
           updated_at: string
           wallet_address: string | null
+          website_url: string | null
         }
         Insert: {
           center: Json
@@ -558,10 +560,12 @@ export type Database = {
           luma_calendar_id?: string | null
           name: string
           participants?: string | null
+          solana_wallet_address?: string | null
           telegram_url?: string | null
           twitter_url?: string | null
           updated_at?: string
           wallet_address?: string | null
+          website_url?: string | null
         }
         Update: {
           center?: Json
@@ -577,10 +581,12 @@ export type Database = {
           luma_calendar_id?: string | null
           name?: string
           participants?: string | null
+          solana_wallet_address?: string | null
           telegram_url?: string | null
           twitter_url?: string | null
           updated_at?: string
           wallet_address?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }
