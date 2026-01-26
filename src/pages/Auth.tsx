@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug } from 'lucide-react';
@@ -45,8 +46,12 @@ export default function Auth() {
   const { publicKey, connected: solanaConnected, connecting: solanaConnecting, disconnect: disconnectSolana } = useWallet();
   const { setVisible: openSolanaModal } = useWalletModal();
   
+  // TON wallet
+  const [tonConnectUI] = useTonConnectUI();
+  const tonWallet = useTonWallet();
+  
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'ton' | null>(null);
   const [showDebug, setShowDebug] = useState(false);
 
   // Log wallet state for debugging
@@ -54,7 +59,8 @@ export default function Auth() {
     console.log('[Auth] Connectors available:', connectors.map(c => ({ id: c.id, name: c.name })));
     console.log('[Auth] isConnected:', isConnected, 'address:', address);
     console.log('[Auth] solanaConnected:', solanaConnected, 'publicKey:', publicKey?.toBase58());
-  }, [connectors, isConnected, address, solanaConnected, publicKey]);
+    console.log('[Auth] tonWallet:', tonWallet?.account?.address);
+  }, [connectors, isConnected, address, solanaConnected, publicKey, tonWallet]);
 
   const copyLogsToClipboard = async () => {
     const logsText = debugLogs.slice(-50).join('\n');
@@ -69,6 +75,8 @@ export default function Auth() {
       address,
       solanaConnected,
       solanaPublicKey: publicKey?.toBase58(),
+      tonConnected: !!tonWallet,
+      tonAddress: tonWallet?.account?.address,
       authType,
       isAuthenticating,
       userAgent: navigator.userAgent,
@@ -99,7 +107,16 @@ export default function Auth() {
     }
   }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
 
-  const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum') => {
+  // When TON wallet connects, authenticate with backend
+  useEffect(() => {
+    if (tonWallet && !user && !isAuthenticating && authType === 'ton') {
+      // TON address is in raw format, convert to user-friendly format
+      const tonAddress = tonWallet.account.address;
+      authenticateWithBackend(tonAddress, 'ton');
+    }
+  }, [tonWallet, user, isAuthenticating, authType]);
+
+  const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum' | 'ton') => {
     setIsAuthenticating(true);
     
     try {
@@ -133,6 +150,8 @@ export default function Auth() {
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
       if (type === 'solana') {
         disconnectSolana();
+      } else if (type === 'ton') {
+        tonConnectUI.disconnect();
       } else {
         disconnect();
       }
@@ -171,6 +190,17 @@ export default function Auth() {
     }
   };
 
+  const handleTonConnect = async () => {
+    setAuthType('ton');
+    try {
+      await tonConnectUI.openModal();
+    } catch (error) {
+      console.error('TON connect error:', error);
+      toast.error('Failed to open TON wallet modal');
+      setAuthType(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -182,7 +212,8 @@ export default function Auth() {
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isSolanaLoading = (solanaConnecting || isAuthenticating) && authType === 'solana';
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
-  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading;
+  const isTonLoading = isAuthenticating && authType === 'ton';
+  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTonLoading;
 
   const features = [
     {
@@ -296,6 +327,29 @@ export default function Auth() {
                   <div className="flex items-center gap-3">
                     <Fingerprint className="h-5 w-5" />
                     <span>Sign in with Biometric</span>
+                  </div>
+                )}
+              </Button>
+
+              {/* TON Button */}
+              <Button
+                onClick={handleTonConnect}
+                variant="outline"
+                className="w-full h-12 text-base font-medium rounded-xl border-2 hover:bg-[#0098EA]/10 hover:border-[#0098EA] transition-all duration-200"
+                disabled={anyLoading}
+              >
+                {isTonLoading ? (
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Signing in...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56Z" fill="#0098EA"/>
+                      <path d="M37.5603 15.6277H18.4386C14.9228 15.6277 12.6944 19.4202 14.4632 22.4861L26.2644 42.9409C27.0345 44.2765 28.9644 44.2765 29.7345 42.9409L41.5765 22.4861C43.3045 19.4202 41.0761 15.6277 37.5603 15.6277ZM26.2031 36.8879L24.6468 33.6171L17.6224 20.7283C17.0117 19.6143 17.8517 18.2458 19.1399 18.2458H26.2031V36.8879ZM38.3764 20.7283L31.3519 33.6171L29.7956 36.8879V18.2458H36.8589C38.1471 18.2458 38.9871 19.6143 38.3764 20.7283Z" fill="white"/>
+                    </svg>
+                    <span>Sign in with TON</span>
                   </div>
                 )}
               </Button>
