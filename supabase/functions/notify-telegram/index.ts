@@ -162,6 +162,8 @@ const handler = async (req: Request): Promise<Response> => {
       telegramMessage += `<b>${escapeHtml(name || "Unnamed")}</b>\n`;
       if (category) telegramMessage += `Category: ${escapeHtml(category)}\n`;
       if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
+      // Mini-app deep link for map spots
+      telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/app">View on Map</a>`;
     } else if (type === "event") {
       telegramMessage = `🗓️ <b>New Event Added</b>\n\n`;
       telegramMessage += `<b>${escapeHtml(name || "Unnamed")}</b>\n`;
@@ -172,6 +174,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
       if (location) telegramMessage += `📌 ${escapeHtml(location)}\n`;
       if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
+      // Mini-app deep link for events (using residents link as specified)
+      telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/residents">View Events</a>`;
     } else if (type === "donation") {
       telegramMessage = `💰 <b>Treasury Donation Received</b>\n\n`;
       
@@ -213,15 +217,10 @@ const handler = async (req: Request): Promise<Response> => {
       
       telegramMessage += `\n\n🙏 Thank you for supporting the village!`;
     } else if (type === "bulletin") {
-      // Bulletin notification - send the message with village link
+      // Bulletin notification - send the message with mini-app link
       telegramMessage = `📢 <b>New Bulletin Post</b>\n\n"${escapeHtml(bulletinMessage || name || "")}"`;
-      if (villageId) {
-        telegramMessage += `\n\n🔗 <a href="https://villedge.lovable.app/${villageId}?tab=bulletin">View Bulletin</a>`;
-      }
-    }
-
-    if (type !== "donation" && type !== "bulletin" && type !== "test") {
-      telegramMessage += `\n\n🔗 <a href="https://map.proofofretreat.me">View on map</a>`;
+      // Mini-app deep link for bulletin
+      telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/bulletin">View Bulletin</a>`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
