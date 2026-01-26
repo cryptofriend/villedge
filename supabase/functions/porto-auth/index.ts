@@ -143,27 +143,43 @@ Deno.serve(async (req) => {
       userId = newUser.user.id;
       console.log("porto-auth: Created new user:", userId);
 
-      // Create profile for new user
+      // Determine wallet type enum value
+      const walletTypeEnum = walletType === 'ton' ? 'ton' : 
+                             walletType === 'solana' ? 'solana' : 
+                             walletType === 'ethereum' ? 'ethereum' : 'porto';
+
+      // Generate a unique username from the wallet address
+      const baseUsername = `${walletTypeEnum}-${normalizedAddress.slice(-8).toLowerCase()}`;
+      
+      // Check if username exists and make unique if needed
+      const { data: existingUsername } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', baseUsername)
+        .maybeSingle();
+      
+      const finalUsername = existingUsername 
+        ? `${baseUsername}-${Date.now().toString(36).slice(-4)}`
+        : baseUsername;
+
+      // Create profile for new user with username
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           user_id: userId,
           display_name: truncatedAddress,
           avatar_url: avatarUrl,
+          username: finalUsername,
         });
       
       if (profileError) {
         console.error("porto-auth: Error creating profile:", profileError);
         // Don't throw - user was created, profile creation failure is not critical
       } else {
-        console.log("porto-auth: Created profile for new user");
+        console.log("porto-auth: Created profile for new user with username:", finalUsername);
       }
 
       // Auto-link the wallet to user_wallets table
-      const walletTypeEnum = walletType === 'ton' ? 'ton' : 
-                             walletType === 'solana' ? 'solana' : 
-                             walletType === 'ethereum' ? 'ethereum' : 'porto';
-      
       const { error: walletError } = await supabase
         .from('user_wallets')
         .insert({
