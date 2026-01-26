@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.admin-ai-chat]
 verify_jwt = false
+
+[functions.notify-daily-events]
+verify_jwt = false
+
+[functions.get-solana-balance]
+verify_jwt = false
