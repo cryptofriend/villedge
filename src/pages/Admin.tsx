@@ -17,7 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
 import { Switch } from "@/components/ui/switch";
 
-const BOOGA_USER_ID = "b015441b-3bb4-4150-94e6-d8be048035bb";
+const BOOGA_USER_ID = "9807c494-ba07-4438-9a89-07ac13334e78";
 
 const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
