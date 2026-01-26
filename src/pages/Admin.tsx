@@ -10,12 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { 
   ArrowLeft, Bot, Bell, Save, Loader2, Settings, 
-  Users, MapPin, Globe, Activity, CheckCircle2, 
-  Clock, Wallet, MessageSquare, Send, Edit2, X, Plus, Calendar
+  MapPin, Globe, Activity, CheckCircle2, 
+  Clock, Wallet, MessageSquare, Send, Calendar, Users
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
-import { Switch } from "@/components/ui/switch";
+import { BotNotificationSection } from "@/components/admin/BotNotificationSection";
 
 const BOOGA_USER_ID = "9807c494-ba07-4438-9a89-07ac13334e78";
 
@@ -47,8 +47,6 @@ interface NotificationRoute {
   is_enabled: boolean;
 }
 
-type NotificationType = 'donation' | 'bulletin' | 'spot' | 'resident' | 'daily_events' | 'weekly_events';
-
 export default function Admin() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -68,10 +66,6 @@ export default function Admin() {
   
   // Notification routes state
   const [notificationRoutes, setNotificationRoutes] = useState<NotificationRoute[]>([]);
-  const [editingRoute, setEditingRoute] = useState<{type: NotificationType, villageId: string} | null>(null);
-  const [editChatId, setEditChatId] = useState("");
-  const [editThreadId, setEditThreadId] = useState("");
-  const [savingRoute, setSavingRoute] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -225,137 +219,6 @@ export default function Admin() {
     }
   };
 
-  // Test a specific route
-  const [testingRoute, setTestingRoute] = useState<string | null>(null);
-  
-  const handleTestRoute = async (route: NotificationRoute) => {
-    const routeKey = `${route.notification_type}-${route.village_id}`;
-    setTestingRoute(routeKey);
-    try {
-      const { error } = await supabase.functions.invoke("notify-telegram", {
-        body: {
-          type: "test",
-          testChatId: route.chat_id,
-          testThreadId: route.thread_id
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Test Sent",
-        description: `Test message sent to ${route.notification_type} route`
-      });
-    } catch (err: any) {
-      console.error("Error testing route:", err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to send test message",
-        variant: "destructive"
-      });
-    } finally {
-      setTestingRoute(null);
-    }
-  };
-
-  // Get route for a specific notification type and village
-  const getRoute = (type: NotificationType, villageId: string = 'global'): NotificationRoute | undefined => {
-    return notificationRoutes.find(r => r.notification_type === type && r.village_id === villageId);
-  };
-
-  // Start editing a route
-  const startEditRoute = (type: NotificationType, villageId: string = 'global') => {
-    const existingRoute = getRoute(type, villageId);
-    setEditChatId(existingRoute?.chat_id || chatId || "");
-    setEditThreadId(existingRoute?.thread_id?.toString() || "");
-    setEditingRoute({ type, villageId });
-  };
-
-  // Cancel editing
-  const cancelEditRoute = () => {
-    setEditingRoute(null);
-    setEditChatId("");
-    setEditThreadId("");
-  };
-
-  // Save route
-  const handleSaveRoute = async () => {
-    if (!editingRoute || !editChatId.trim()) {
-      toast({ title: "Error", description: "Chat ID is required", variant: "destructive" });
-      return;
-    }
-
-    setSavingRoute(true);
-    try {
-      const existingRoute = getRoute(editingRoute.type, editingRoute.villageId);
-      const threadId = editThreadId.trim() ? parseInt(editThreadId.trim()) : null;
-
-      if (existingRoute) {
-        // Update existing route
-        const { error } = await supabase
-          .from("notification_routes")
-          .update({ 
-            chat_id: editChatId.trim(),
-            thread_id: threadId,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", existingRoute.id);
-
-        if (error) throw error;
-
-        setNotificationRoutes(prev => 
-          prev.map(r => r.id === existingRoute.id 
-            ? { ...r, chat_id: editChatId.trim(), thread_id: threadId }
-            : r
-          )
-        );
-      } else {
-        // Create new route
-        const { data, error } = await supabase
-          .from("notification_routes")
-          .insert({
-            village_id: editingRoute.villageId,
-            notification_type: editingRoute.type,
-            chat_id: editChatId.trim(),
-            thread_id: threadId,
-            is_enabled: true
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        setNotificationRoutes(prev => [...prev, data as NotificationRoute]);
-      }
-
-      toast({ title: "Route Saved", description: `Notification route for ${editingRoute.type} updated` });
-      cancelEditRoute();
-    } catch (err: any) {
-      console.error("Error saving route:", err);
-      toast({ title: "Error", description: err.message || "Failed to save route", variant: "destructive" });
-    } finally {
-      setSavingRoute(false);
-    }
-  };
-
-  // Toggle route enabled/disabled
-  const toggleRouteEnabled = async (route: NotificationRoute) => {
-    try {
-      const { error } = await supabase
-        .from("notification_routes")
-        .update({ is_enabled: !route.is_enabled })
-        .eq("id", route.id);
-
-      if (error) throw error;
-
-      setNotificationRoutes(prev => 
-        prev.map(r => r.id === route.id ? { ...r, is_enabled: !r.is_enabled } : r)
-      );
-    } catch (err: any) {
-      console.error("Error toggling route:", err);
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-  };
-
   if (loading || !isAuthorized) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -365,6 +228,152 @@ export default function Admin() {
   }
 
   const connectedVillages = villages.filter(v => v.wallet_address || v.solana_wallet_address);
+
+  // Bot configurations
+  const proofOfRetreatBot = {
+    villageId: 'proof-of-retreat',
+    villageName: 'Proof of Retreat',
+    botUsername: '@proofofretreatbot',
+    logoUrl: '/lovable-uploads/proof-of-retreat-logo.png',
+    notificationTypes: [
+      {
+        type: 'donation' as const,
+        label: 'Donation Alerts',
+        description: 'Real-time alerts with ENS & transaction links',
+        icon: <Wallet className="h-4 w-4 text-green-500" />,
+        iconBg: 'bg-green-500/10',
+        source: 'Treasury Tab',
+        trigger: 'check-donations (cron 5min)',
+        isActive: true,
+        defaultChatId: '-1003580489932',
+      },
+      {
+        type: 'bulletin' as const,
+        label: 'Bulletin Posts',
+        description: 'New community messages',
+        icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
+        iconBg: 'bg-blue-500/10',
+        source: 'Bulletin Tab',
+        trigger: 'useBulletin.addMessage()',
+        isActive: true,
+        defaultChatId: '-1003580489932',
+        defaultThreadId: 734,
+      },
+      {
+        type: 'daily_events' as const,
+        label: 'Daily Events Digest',
+        description: 'Morning summary at 00:01 AM VN',
+        icon: <Calendar className="h-4 w-4 text-cyan-500" />,
+        iconBg: 'bg-cyan-500/10',
+        source: 'Events Table',
+        trigger: 'notify-daily-events (00:01 VN)',
+        isActive: true,
+        defaultChatId: '-1003580489932',
+        defaultThreadId: 71,
+      },
+      {
+        type: 'weekly_events' as const,
+        label: 'Weekly Events Digest',
+        description: 'Sunday summary at 8 PM VN',
+        icon: <Calendar className="h-4 w-4 text-purple-500" />,
+        iconBg: 'bg-purple-500/10',
+        source: 'Events Table',
+        trigger: 'notify-weekly-events (Sun 8PM VN)',
+        isActive: true,
+        defaultChatId: '-1003580489932',
+        defaultThreadId: 71,
+      },
+      {
+        type: 'spot' as const,
+        label: 'New Spots',
+        description: 'Map location updates',
+        icon: <MapPin className="h-4 w-4 text-orange-500" />,
+        iconBg: 'bg-orange-500/10',
+        source: 'Map Tab',
+        trigger: 'Planned',
+        isActive: false,
+      },
+      {
+        type: 'resident' as const,
+        label: 'New Residents',
+        description: 'Join & stay notifications',
+        icon: <Users className="h-4 w-4 text-purple-500" />,
+        iconBg: 'bg-purple-500/10',
+        source: 'Residents Tab',
+        trigger: 'Planned',
+        isActive: false,
+      },
+    ]
+  };
+
+  const protovilleBot = {
+    villageId: 'protoville',
+    villageName: 'ProtoVille',
+    botUsername: undefined,
+    logoUrl: undefined,
+    notificationTypes: [
+      {
+        type: 'donation' as const,
+        label: 'Donation Alerts',
+        description: 'Real-time alerts with ENS & transaction links',
+        icon: <Wallet className="h-4 w-4 text-green-500" />,
+        iconBg: 'bg-green-500/10',
+        source: 'Treasury Tab',
+        trigger: 'check-donations (cron 5min)',
+        isActive: false,
+      },
+      {
+        type: 'bulletin' as const,
+        label: 'Bulletin Posts',
+        description: 'New community messages',
+        icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
+        iconBg: 'bg-blue-500/10',
+        source: 'Bulletin Tab',
+        trigger: 'useBulletin.addMessage()',
+        isActive: false,
+      },
+      {
+        type: 'daily_events' as const,
+        label: 'Daily Events Digest',
+        description: 'Morning summary at 00:01 AM VN',
+        icon: <Calendar className="h-4 w-4 text-cyan-500" />,
+        iconBg: 'bg-cyan-500/10',
+        source: 'Events Table',
+        trigger: 'notify-daily-events (00:01 VN)',
+        isActive: false,
+      },
+      {
+        type: 'weekly_events' as const,
+        label: 'Weekly Events Digest',
+        description: 'Sunday summary at 8 PM VN',
+        icon: <Calendar className="h-4 w-4 text-purple-500" />,
+        iconBg: 'bg-purple-500/10',
+        source: 'Events Table',
+        trigger: 'notify-weekly-events (Sun 8PM VN)',
+        isActive: false,
+      },
+      {
+        type: 'spot' as const,
+        label: 'New Spots',
+        description: 'Map location updates',
+        icon: <MapPin className="h-4 w-4 text-orange-500" />,
+        iconBg: 'bg-orange-500/10',
+        source: 'Map Tab',
+        trigger: 'Planned',
+        isActive: false,
+      },
+      {
+        type: 'resident' as const,
+        label: 'New Residents',
+        description: 'Join & stay notifications',
+        icon: <Users className="h-4 w-4 text-purple-500" />,
+        iconBg: 'bg-purple-500/10',
+        source: 'Residents Tab',
+        trigger: 'Planned',
+        isActive: false,
+      },
+    ]
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -462,12 +471,12 @@ export default function Admin() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Settings className="h-4 w-4" />
-                  Bot Configuration
+                  Global Settings
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="chatId" className="text-xs">Target Chat ID</Label>
+                  <Label htmlFor="chatId" className="text-xs">Fallback Chat ID</Label>
                   <div className="flex gap-2">
                     <Input
                       id="chatId"
@@ -573,7 +582,7 @@ export default function Admin() {
                       <div 
                         key={village.id}
                         className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/village/${village.id}`)}
+                        onClick={() => navigate(`/${village.id}`)}
                       >
                         {village.logo_url ? (
                           <img 
@@ -622,7 +631,7 @@ export default function Admin() {
                               key={village.id} 
                               variant="secondary"
                               className="cursor-pointer hover:bg-muted"
-                              onClick={() => navigate(`/village/${village.id}`)}
+                              onClick={() => navigate(`/${village.id}`)}
                             >
                               {village.name}
                             </Badge>
@@ -637,823 +646,39 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Notification Routes Section */}
+        {/* Bot Notification Sections */}
         <Card className="mt-6">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Bell className="h-4 w-4" />
-                Notification Routes
+                Notification Bots
               </CardTitle>
-              <Badge variant="secondary">Per-Village Channels</Badge>
+              <Badge variant="secondary">Per-Village Configuration</Badge>
             </div>
             <CardDescription>
-              Configure which Telegram channels receive notifications for each village
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Proof of Retreat - Active */}
-              <div className="p-4 rounded-lg border bg-card">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src="/lovable-uploads/proof-of-retreat-logo.png" 
-                      alt="Proof of Retreat"
-                      className="h-8 w-8 rounded-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                    <div>
-                      <p className="font-medium">Proof of Retreat</p>
-                      <p className="text-xs text-muted-foreground">proof-of-retreat</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <a 
-                      href="https://t.me/proofofretreatbot" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-[#0088cc] hover:underline"
-                    >
-                      <TelegramIcon className="h-3.5 w-3.5" />
-                      @proofofretreatbot
-                    </a>
-                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Active
-                    </Badge>
-                  </div>
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Bulletin Notifications</Label>
-                    <div className="flex items-center gap-2">
-                      <TelegramIcon className="h-4 w-4 text-[#0088cc]" />
-                      <code className="text-xs bg-muted px-2 py-1 rounded flex-1">-1003580489932</code>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Thread ID: 734</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Donation Notifications</Label>
-                    <div className="flex items-center gap-2">
-                      <TelegramIcon className="h-4 w-4 text-[#0088cc]" />
-                      <code className="text-xs bg-muted px-2 py-1 rounded flex-1">{chatId || "Default"}</code>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Uses global chat ID</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Other villages - not configured */}
-              <div className="p-4 rounded-lg border border-dashed bg-muted/30">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-muted-foreground">Other Villages</p>
-                      <p className="text-xs text-muted-foreground">No custom routes configured</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-muted-foreground">
-                    Default Route
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  All other villages use the global Telegram Chat ID for notifications
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notification Types Section */}
-        <Card className="mt-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Notification Types
-            </CardTitle>
-            <CardDescription>
-              Click Edit to configure destination chat for each notification type
+              Configure Telegram notification settings for each village bot
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Donations */}
-            <div className="p-4 rounded-lg border bg-card">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Wallet className="h-5 w-5 text-green-500" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">Donation Alerts</p>
-                    <div className="flex items-center gap-2">
-                      <Switch 
-                        checked={getRoute('donation', 'global')?.is_enabled ?? false}
-                        onCheckedChange={async () => {
-                          const route = getRoute('donation', 'global');
-                          if (route) {
-                            toggleRouteEnabled(route);
-                          } else {
-                            // Create a new enabled route when toggling on for the first time
-                            try {
-                              const { data, error } = await supabase
-                                .from("notification_routes")
-                                .insert({
-                                  village_id: 'global',
-                                  notification_type: 'donation',
-                                  chat_id: chatId || 'pending',
-                                  thread_id: null,
-                                  is_enabled: true
-                                })
-                                .select()
-                                .single();
-                              
-                              if (error) throw error;
-                              setNotificationRoutes(prev => [...prev, data as NotificationRoute]);
-                              toast({ title: "Enabled", description: "Donation alerts enabled. Set destination chat ID." });
-                            } catch (err: any) {
-                              toast({ title: "Error", description: err.message, variant: "destructive" });
-                            }
-                          }
-                        }}
-                      />
-                      {getRoute('donation', 'global')?.is_enabled ? (
-                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-muted-foreground">
-                          Off
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Real-time notifications with ENS resolution, USD values, and transaction links
-                  </p>
-                </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Activity className="h-3 w-3" /> Source & Trigger
-                  </Label>
-                  <p className="text-sm">Treasury Tab → On-chain deposit detected</p>
-                  <code className="text-xs bg-muted px-2 py-0.5 rounded">check-donations (cron 5min)</code>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <TelegramIcon className="h-3 w-3" /> Destination
-                  </Label>
-                  {editingRoute?.type === 'donation' && editingRoute?.villageId === 'global' ? (
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Chat ID (e.g., -100xxx)"
-                        value={editChatId}
-                        onChange={(e) => setEditChatId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <Input
-                        placeholder="Thread ID (optional)"
-                        value={editThreadId}
-                        onChange={(e) => setEditThreadId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveRoute} disabled={savingRoute}>
-                          {savingRoute ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                          <span className="ml-1">Save</span>
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={cancelEditRoute}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <p className="text-sm">Global Admin Chat</p>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded">
-                          {getRoute('donation', 'global')?.chat_id || chatId || "Uses global setting"}
-                          {getRoute('donation', 'global')?.thread_id && ` / thread:${getRoute('donation', 'global')?.thread_id}`}
-                        </code>
-                      </div>
-                      {(getRoute('donation', 'global')?.chat_id || chatId) && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleTestRoute({
-                            id: 'test',
-                            village_id: 'global',
-                            notification_type: 'donation',
-                            chat_id: getRoute('donation', 'global')?.chat_id || chatId,
-                            thread_id: getRoute('donation', 'global')?.thread_id || null,
-                            is_enabled: true
-                          })}
-                          disabled={testingRoute === 'donation-global'}
-                        >
-                          {testingRoute === 'donation-global' ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Send className="h-3 w-3" />
-                          )}
-                        </Button>
-                      )}
-                      <Button size="sm" variant="ghost" onClick={() => startEditRoute('donation', 'global')}>
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Bulletin */}
-            <div className="p-4 rounded-lg border bg-card">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="p-2 bg-orange-500/10 rounded-lg">
-                  <MessageSquare className="h-5 w-5 text-orange-500" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">Bulletin Posts</p>
-                    <div className="flex items-center gap-2">
-                      {getRoute('bulletin', 'proof-of-retreat') && (
-                        <Switch 
-                          checked={getRoute('bulletin', 'proof-of-retreat')?.is_enabled ?? true}
-                          onCheckedChange={() => {
-                            const route = getRoute('bulletin', 'proof-of-retreat');
-                            if (route) toggleRouteEnabled(route);
-                          }}
-                        />
-                      )}
-                      <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Active
-                      </Badge>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Anonymous board posts forwarded to village-specific channels
-                  </p>
-                </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Activity className="h-3 w-3" /> Source & Trigger
-                  </Label>
-                  <p className="text-sm">Bulletin Tab → New post submitted</p>
-                  <code className="text-xs bg-muted px-2 py-0.5 rounded">useBulletin.addMessage()</code>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <TelegramIcon className="h-3 w-3" /> Destination
-                  </Label>
-                  {editingRoute?.type === 'bulletin' && editingRoute?.villageId === 'proof-of-retreat' ? (
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Chat ID (e.g., -100xxx)"
-                        value={editChatId}
-                        onChange={(e) => setEditChatId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <Input
-                        placeholder="Thread ID (optional)"
-                        value={editThreadId}
-                        onChange={(e) => setEditThreadId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveRoute} disabled={savingRoute}>
-                          {savingRoute ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                          <span className="ml-1">Save</span>
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={cancelEditRoute}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <p className="text-sm">Proof of Retreat → Bulletin Thread</p>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded">
-                          {getRoute('bulletin', 'proof-of-retreat')?.chat_id || "-1003580489932"}
-                          {(getRoute('bulletin', 'proof-of-retreat')?.thread_id || 734) && ` / thread:${getRoute('bulletin', 'proof-of-retreat')?.thread_id || 734}`}
-                        </code>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => handleTestRoute({
-                          id: 'test',
-                          village_id: 'proof-of-retreat',
-                          notification_type: 'bulletin',
-                          chat_id: getRoute('bulletin', 'proof-of-retreat')?.chat_id || "-1003580489932",
-                          thread_id: getRoute('bulletin', 'proof-of-retreat')?.thread_id || 734,
-                          is_enabled: true
-                        })}
-                        disabled={testingRoute === 'bulletin-proof-of-retreat'}
-                      >
-                        {testingRoute === 'bulletin-proof-of-retreat' ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Send className="h-3 w-3" />
-                        )}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => startEditRoute('bulletin', 'proof-of-retreat')}>
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Spots */}
-            <div className="p-4 rounded-lg border bg-card">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <MapPin className="h-5 w-5 text-blue-500" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">New Spots</p>
-                    <div className="flex items-center gap-2">
-                      {getRoute('spot', 'global') && (
-                        <Switch 
-                          checked={getRoute('spot', 'global')?.is_enabled ?? false}
-                          onCheckedChange={() => {
-                            const route = getRoute('spot', 'global');
-                            if (route) toggleRouteEnabled(route);
-                          }}
-                        />
-                      )}
-                      <Badge variant="outline" className="text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Planned
-                      </Badge>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Alerts when new locations are added to village maps
-                  </p>
-                </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Activity className="h-3 w-3" /> Source & Trigger
-                  </Label>
-                  <p className="text-sm">Map Tab → Spot created</p>
-                  <code className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">Not implemented</code>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <TelegramIcon className="h-3 w-3" /> Destination
-                  </Label>
-                  {editingRoute?.type === 'spot' && editingRoute?.villageId === 'global' ? (
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Chat ID (e.g., -100xxx)"
-                        value={editChatId}
-                        onChange={(e) => setEditChatId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <Input
-                        placeholder="Thread ID (optional)"
-                        value={editThreadId}
-                        onChange={(e) => setEditThreadId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveRoute} disabled={savingRoute}>
-                          {savingRoute ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                          <span className="ml-1">Save</span>
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={cancelEditRoute}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        {getRoute('spot', 'global') ? (
-                          <>
-                            <p className="text-sm">Configured</p>
-                            <code className="text-xs bg-muted px-2 py-0.5 rounded">
-                              {getRoute('spot', 'global')?.chat_id}
-                              {getRoute('spot', 'global')?.thread_id && ` / thread:${getRoute('spot', 'global')?.thread_id}`}
-                            </code>
-                          </>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Not configured</p>
-                        )}
-                      </div>
-                      {getRoute('spot', 'global')?.chat_id && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleTestRoute(getRoute('spot', 'global')!)}
-                          disabled={testingRoute === 'spot-global'}
-                        >
-                          {testingRoute === 'spot-global' ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Send className="h-3 w-3" />
-                          )}
-                        </Button>
-                      )}
-                      <Button size="sm" variant="ghost" onClick={() => startEditRoute('spot', 'global')}>
-                        {getRoute('spot', 'global') ? <Edit2 className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Residents */}
-            <div className="p-4 rounded-lg border bg-card">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="p-2 bg-purple-500/10 rounded-lg">
-                  <Users className="h-5 w-5 text-purple-500" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">New Residents</p>
-                    <div className="flex items-center gap-2">
-                      {getRoute('resident', 'global') && (
-                        <Switch 
-                          checked={getRoute('resident', 'global')?.is_enabled ?? false}
-                          onCheckedChange={() => {
-                            const route = getRoute('resident', 'global');
-                            if (route) toggleRouteEnabled(route);
-                          }}
-                        />
-                      )}
-                      <Badge variant="outline" className="text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Planned
-                      </Badge>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Updates when people join villages or register stays
-                  </p>
-                </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Activity className="h-3 w-3" /> Source & Trigger
-                  </Label>
-                  <p className="text-sm">Residents Tab → Stay registered</p>
-                  <code className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">Not implemented</code>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <TelegramIcon className="h-3 w-3" /> Destination
-                  </Label>
-                  {editingRoute?.type === 'resident' && editingRoute?.villageId === 'global' ? (
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Chat ID (e.g., -100xxx)"
-                        value={editChatId}
-                        onChange={(e) => setEditChatId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <Input
-                        placeholder="Thread ID (optional)"
-                        value={editThreadId}
-                        onChange={(e) => setEditThreadId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveRoute} disabled={savingRoute}>
-                          {savingRoute ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                          <span className="ml-1">Save</span>
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={cancelEditRoute}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        {getRoute('resident', 'global') ? (
-                          <>
-                            <p className="text-sm">Configured</p>
-                            <code className="text-xs bg-muted px-2 py-0.5 rounded">
-                              {getRoute('resident', 'global')?.chat_id}
-                              {getRoute('resident', 'global')?.thread_id && ` / thread:${getRoute('resident', 'global')?.thread_id}`}
-                            </code>
-                          </>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Not configured</p>
-                        )}
-                      </div>
-                      {getRoute('resident', 'global')?.chat_id && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleTestRoute(getRoute('resident', 'global')!)}
-                          disabled={testingRoute === 'resident-global'}
-                        >
-                          {testingRoute === 'resident-global' ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Send className="h-3 w-3" />
-                          )}
-                        </Button>
-                      )}
-                      <Button size="sm" variant="ghost" onClick={() => startEditRoute('resident', 'global')}>
-                        {getRoute('resident', 'global') ? <Edit2 className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Daily Events */}
-            <div className="p-4 rounded-lg border bg-card">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="p-2 bg-cyan-500/10 rounded-lg">
-                  <Calendar className="h-5 w-5 text-cyan-500" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">Daily Events Digest</p>
-                    <div className="flex items-center gap-2">
-                      <Switch 
-                        checked={getRoute('daily_events', 'global')?.is_enabled ?? true}
-                        onCheckedChange={async () => {
-                          const route = getRoute('daily_events', 'global');
-                          if (route) {
-                            toggleRouteEnabled(route);
-                          } else {
-                            // Create a new enabled route when toggling on for the first time
-                            try {
-                              const { data, error } = await supabase
-                                .from("notification_routes")
-                                .insert({
-                                  village_id: 'global',
-                                  notification_type: 'daily_events',
-                                  chat_id: '-1003580489932',
-                                  thread_id: 71,
-                                  is_enabled: true
-                                })
-                                .select()
-                                .single();
-                              
-                              if (error) throw error;
-                              setNotificationRoutes(prev => [...prev, data as NotificationRoute]);
-                              toast({ title: "Enabled", description: "Daily events digest enabled." });
-                            } catch (err: any) {
-                              toast({ title: "Error", description: err.message, variant: "destructive" });
-                            }
-                          }
-                        }}
-                      />
-                      {getRoute('daily_events', 'global')?.is_enabled !== false ? (
-                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-muted-foreground">
-                          Off
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Morning summary of all events scheduled for today (00:01 AM Vietnam time)
-                  </p>
-                </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Activity className="h-3 w-3" /> Source & Trigger
-                  </Label>
-                  <p className="text-sm">Events Table → Daily at 00:01 AM (Vietnam)</p>
-                  <code className="text-xs bg-muted px-2 py-0.5 rounded">notify-daily-events (cron)</code>
-                  <p className="text-xs text-muted-foreground">Test: Shows upcoming week</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <TelegramIcon className="h-3 w-3" /> Destination
-                  </Label>
-                  {editingRoute?.type === 'daily_events' && editingRoute?.villageId === 'global' ? (
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Chat ID (e.g., -100xxx)"
-                        value={editChatId}
-                        onChange={(e) => setEditChatId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <Input
-                        placeholder="Thread ID (optional)"
-                        value={editThreadId}
-                        onChange={(e) => setEditThreadId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveRoute} disabled={savingRoute}>
-                          {savingRoute ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                          <span className="ml-1">Save</span>
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={cancelEditRoute}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <p className="text-sm">Events Channel Thread</p>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded">
-                          {getRoute('daily_events', 'global')?.chat_id || "-1003580489932"}
-                          {` / thread:${getRoute('daily_events', 'global')?.thread_id || 71}`}
-                        </code>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={async () => {
-                          const routeKey = 'daily_events-global';
-                          setTestingRoute(routeKey);
-                          try {
-                            const { error } = await supabase.functions.invoke("notify-daily-events", {
-                              body: { mode: "week" }
-                            });
-                            if (error) throw error;
-                            toast({ title: "Test Sent", description: "Weekly events preview notification triggered" });
-                          } catch (err: any) {
-                            toast({ title: "Error", description: err.message, variant: "destructive" });
-                          } finally {
-                            setTestingRoute(null);
-                          }
-                        }}
-                        disabled={testingRoute === 'daily_events-global'}
-                      >
-                        {testingRoute === 'daily_events-global' ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Send className="h-3 w-3" />
-                        )}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => startEditRoute('daily_events', 'global')}>
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Weekly Events */}
-            <div className="p-4 rounded-lg border bg-card">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="p-2 bg-purple-500/10 rounded-lg">
-                  <Calendar className="h-5 w-5 text-purple-500" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">Weekly Events Digest</p>
-                    <div className="flex items-center gap-2">
-                      <Switch 
-                        checked={getRoute('weekly_events', 'global')?.is_enabled ?? true}
-                        onCheckedChange={async () => {
-                          const route = getRoute('weekly_events', 'global');
-                          if (route) {
-                            await supabase
-                              .from('notification_routes')
-                              .update({ is_enabled: !route.is_enabled })
-                              .eq('id', route.id);
-                            // Refresh routes
-                            const { data: routesData } = await supabase
-                              .from("notification_routes")
-                              .select("*");
-                            if (routesData) {
-                              setNotificationRoutes(routesData as NotificationRoute[]);
-                            }
-                          }
-                        }}
-                      />
-                      {getRoute('weekly_events', 'global')?.is_enabled ? (
-                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-muted-foreground">
-                          Off
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Weekly summary of upcoming events (Every Sunday 8:00 PM Vietnam time)
-                  </p>
-                </div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Activity className="h-3 w-3" /> Source & Trigger
-                  </Label>
-                  <p className="text-sm">Events Table → Sunday at 8:00 PM (Vietnam)</p>
-                  <code className="text-xs bg-muted px-2 py-0.5 rounded">notify-weekly-events (cron)</code>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <TelegramIcon className="h-3 w-3" /> Destination
-                  </Label>
-                  {editingRoute?.type === 'weekly_events' && editingRoute?.villageId === 'global' ? (
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Chat ID (e.g., -100xxx)"
-                        value={editChatId}
-                        onChange={(e) => setEditChatId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <Input
-                        placeholder="Thread ID (optional)"
-                        value={editThreadId}
-                        onChange={(e) => setEditThreadId(e.target.value)}
-                        className="h-8 text-sm font-mono"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveRoute} disabled={savingRoute}>
-                          {savingRoute ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                          <span className="ml-1">Save</span>
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={cancelEditRoute}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <p className="text-sm">Events Channel Thread</p>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded">
-                          {getRoute('weekly_events', 'global')?.chat_id || "-1003580489932"}
-                          {` / thread:${getRoute('weekly_events', 'global')?.thread_id || 71}`}
-                        </code>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={async () => {
-                          const routeKey = 'weekly_events-global';
-                          setTestingRoute(routeKey);
-                          try {
-                            const { error } = await supabase.functions.invoke("notify-daily-events", {
-                              body: { mode: "week", routeType: "weekly_events" }
-                            });
-                            if (error) throw error;
-                            toast({ title: "Test Sent", description: "Weekly events notification triggered" });
-                          } catch (err: any) {
-                            toast({ title: "Error", description: err.message, variant: "destructive" });
-                          } finally {
-                            setTestingRoute(null);
-                          }
-                        }}
-                        disabled={testingRoute === 'weekly_events-global'}
-                      >
-                        {testingRoute === 'weekly_events-global' ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Send className="h-3 w-3" />
-                        )}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => startEditRoute('weekly_events', 'global')}>
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <BotNotificationSection 
+              config={proofOfRetreatBot}
+              notificationRoutes={notificationRoutes}
+              setNotificationRoutes={setNotificationRoutes}
+              globalChatId={chatId}
+            />
+            
+            <BotNotificationSection 
+              config={protovilleBot}
+              notificationRoutes={notificationRoutes}
+              setNotificationRoutes={setNotificationRoutes}
+              globalChatId={chatId}
+            />
           </CardContent>
         </Card>
 
-        {/* AI Assistant Chat */}
-        <div className="h-[400px]">
+        {/* AI Chat Assistant */}
+        <div className="mt-6">
           <AdminAIChat />
         </div>
       </div>
