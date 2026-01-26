@@ -230,16 +230,16 @@ const EventCard = ({ event, isPast }: EventCardProps) => {
             <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
           </div>
           
-          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-            <span>{timeDisplay}</span>
+          <div className="flex flex-col gap-0.5 mt-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <CalendarDays className="h-3 w-3 shrink-0" />
+              <span>{timeDisplay}</span>
+            </div>
             {event.location && (
-              <>
-                <span>•</span>
-                <span className="flex items-center gap-1 truncate">
-                  <MapPin className="h-3 w-3" />
-                  {event.location}
-                </span>
-              </>
+              <div className="flex items-center gap-1.5">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate" title={event.location}>{event.location}</span>
+              </div>
             )}
           </div>
         </div>
