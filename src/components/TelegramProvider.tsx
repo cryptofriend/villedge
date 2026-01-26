@@ -29,77 +29,9 @@ interface TelegramProviderProps {
 
 export function TelegramProvider({ children }: TelegramProviderProps) {
   const telegram = useTelegramMiniApp();
-  const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
-  const [telegramAuthError, setTelegramAuthError] = useState<string | null>(null);
-
-  // Auto-login via Telegram ID
-  useEffect(() => {
-    if (!telegram.isTelegram || !telegram.user) return;
-
-    const autoLogin = async () => {
-      try {
-        // Check if already logged in
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          console.log('[Telegram] User already logged in');
-          return;
-        }
-
-        setIsAutoLoggingIn(true);
-        console.log('[Telegram] Starting auto-login for user:', telegram.user?.id);
-
-        // Create a deterministic address from Telegram ID
-        const telegramAddress = `telegram_${telegram.user.id}`;
-        
-        const { data, error } = await supabase.functions.invoke('porto-auth', {
-          body: { 
-            address: telegramAddress,
-            telegramUser: telegram.user,
-          },
-        });
-
-        if (error) {
-          console.error('[Telegram] Auth error:', error);
-          setTelegramAuthError(error.message);
-          return;
-        }
-
-        if (data?.actionLink) {
-          // Extract tokens from the action link
-          const url = new URL(data.actionLink);
-          const hashParams = new URLSearchParams(url.hash.substring(1));
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-
-          if (accessToken && refreshToken) {
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-
-            if (sessionError) {
-              console.error('[Telegram] Session error:', sessionError);
-              setTelegramAuthError(sessionError.message);
-            } else {
-              console.log('[Telegram] Auto-login successful');
-              telegram.haptic.notification('success');
-              toast({
-                title: 'Welcome!',
-                description: `Signed in as ${telegram.user?.first_name || 'Telegram User'}`,
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.error('[Telegram] Auto-login failed:', err);
-        setTelegramAuthError(err instanceof Error ? err.message : 'Auto-login failed');
-      } finally {
-        setIsAutoLoggingIn(false);
-      }
-    };
-
-    autoLogin();
-  }, [telegram.isTelegram, telegram.user]);
+  // Removed auto-login - now handled explicitly via AuthDialog
+  const [isAutoLoggingIn] = useState(false);
+  const [telegramAuthError] = useState<string | null>(null);
 
   // Sync theme with Telegram
   useEffect(() => {

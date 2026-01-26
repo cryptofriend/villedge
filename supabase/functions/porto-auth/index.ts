@@ -102,37 +102,48 @@ Deno.serve(async (req) => {
       // Ensure profile exists and update if needed
       const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('avatar_url, display_name')
+        .select('avatar_url, display_name, telegram_id, wallet_address')
         .eq('user_id', userId)
         .single();
       
       if (!existingProfile) {
         // Profile doesn't exist, create it
-        await supabase
-          .from('profiles')
-          .insert({
-            user_id: userId,
-            display_name: displayName,
-            avatar_url: avatarUrl,
-          });
+        const profileData: Record<string, unknown> = {
+          user_id: userId,
+          display_name: displayName,
+          avatar_url: avatarUrl,
+        };
+        
+        if (isTelegramAuth && telegramUser) {
+          profileData.telegram_id = String(telegramUser.id);
+        } else {
+          profileData.wallet_address = normalizedAddress;
+        }
+        
+        await supabase.from('profiles').insert(profileData);
         console.log("porto-auth: Created missing profile for existing user");
       } else {
-        // Update avatar and display name for Telegram users if they have photo
-        if (isTelegramAuth && telegramUser?.photo_url && existingProfile.avatar_url !== telegramUser.photo_url) {
+        // Update profile with new data
+        const updates: Record<string, unknown> = {};
+        
+        if (isTelegramAuth && telegramUser) {
+          if (telegramUser.photo_url && existingProfile.avatar_url !== telegramUser.photo_url) {
+            updates.avatar_url = telegramUser.photo_url;
+          }
+          if (!existingProfile.telegram_id) {
+            updates.telegram_id = String(telegramUser.id);
+          }
+          updates.display_name = displayName;
+        } else if (!existingProfile.wallet_address) {
+          updates.wallet_address = normalizedAddress;
+        }
+        
+        if (Object.keys(updates).length > 0) {
           await supabase
             .from('profiles')
-            .update({ 
-              avatar_url: telegramUser.photo_url,
-              display_name: displayName,
-            })
+            .update(updates)
             .eq('user_id', userId);
-          console.log("porto-auth: Updated profile from Telegram data");
-        } else if (!existingProfile.avatar_url) {
-          await supabase
-            .from('profiles')
-            .update({ avatar_url: avatarUrl })
-            .eq('user_id', userId);
-          console.log("porto-auth: Updated profile avatar for existing user");
+          console.log("porto-auth: Updated profile:", updates);
         }
       }
     } else {
@@ -162,19 +173,26 @@ Deno.serve(async (req) => {
       userId = newUser.user.id;
       console.log("porto-auth: Created new user:", userId);
 
-      // Create profile for new user
+      // Create profile for new user with linking fields
+      const profileData: Record<string, unknown> = {
+        user_id: userId,
+        display_name: displayName,
+        avatar_url: avatarUrl,
+        username: telegramUser?.username || null,
+      };
+      
+      if (isTelegramAuth && telegramUser) {
+        profileData.telegram_id = String(telegramUser.id);
+      } else {
+        profileData.wallet_address = normalizedAddress;
+      }
+      
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          user_id: userId,
-          display_name: displayName,
-          avatar_url: avatarUrl,
-          username: telegramUser?.username || null,
-        });
+        .insert(profileData);
       
       if (profileError) {
         console.error("porto-auth: Error creating profile:", profileError);
-        // Don't throw - user was created, profile creation failure is not critical
       } else {
         console.log("porto-auth: Created profile for new user");
       }
