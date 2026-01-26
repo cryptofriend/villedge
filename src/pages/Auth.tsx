@@ -234,7 +234,7 @@ export default function Auth() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-background/50 backdrop-blur-sm">
+    <div className="min-h-screen flex bg-background/15 backdrop-blur-sm">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 relative overflow-hidden backdrop-blur-sm">
         {/* Decorative elements */}
