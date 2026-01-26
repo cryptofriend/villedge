@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, Profile as ProfileType } from "@/hooks/useAuth";
 import { ProfileIdentityHeader } from "@/components/profile/ProfileIdentityHeader";
-import { ProfileReputationStrip } from "@/components/profile/ProfileReputationStrip";
-import { ProfileMission } from "@/components/profile/ProfileMission";
-import { ProfileQuests } from "@/components/profile/ProfileQuests";
-import { ProfileCapabilities } from "@/components/profile/ProfileCapabilities";
-import { ProfileOpenNeeds } from "@/components/profile/ProfileOpenNeeds";
-import { ProfileContributionHistory } from "@/components/profile/ProfileContributionHistory";
+import { ProfileActivityHistory } from "@/components/profile/ProfileActivityHistory";
 import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNetwork";
 import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
 import { ProfileLinkedWallets } from "@/components/profile/ProfileLinkedWallets";
@@ -18,60 +13,26 @@ import { ProfileLinkedWallets } from "@/components/profile/ProfileLinkedWallets"
 export interface ProfileData extends ProfileType {
   // Extended fields for the full profile page
   title?: string | null;
-  mission?: string | null;
-  capabilities?: string[] | null;
-  reputation_score?: number;
-  contribution_count?: number;
-  voting_power?: number;
-  trust_level?: number;
 }
 
-export interface Quest {
+export interface UserActivity {
   id: string;
-  title: string;
-  status: "open" | "in_progress" | "completed";
-  tag?: string;
-}
-
-export interface OpenNeed {
-  id: string;
-  description: string;
-  reward?: string;
-  status: "open" | "closed";
-}
-
-export interface Contribution {
-  id: string;
-  type: "village_join" | "contribution" | "event" | "proposal";
+  type: "village_join" | "village_create" | "stay_register" | "spot_add" | "event_create" | "bulletin_post";
   title: string;
   village_name?: string;
   date: string;
-  passed?: boolean;
 }
 
 const Profile = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { user, profile: currentUserProfile } = useAuth();
+  const { user } = useAuth();
   
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
-
-  // Mock data for MVP - these would come from the database in production
-  const [quests, setQuests] = useState<Quest[]>([
-    { id: "1", title: "Design governance framework", status: "in_progress", tag: "Community" },
-    { id: "2", title: "Build contributor dashboard", status: "open", tag: "UX" },
-    { id: "3", title: "Host weekly standup", status: "completed", tag: "Community" },
-  ]);
-
-  const [openNeeds, setOpenNeeds] = useState<OpenNeed[]>([
-    { id: "1", description: "Looking for a Solidity developer to review treasury contracts", reward: "Reputation + Co-authorship", status: "open" },
-    { id: "2", description: "Need help with video editing for community updates", status: "open" },
-  ]);
-
-  const [contributions, setContributions] = useState<Contribution[]>([]);
+  const [activities, setActivities] = useState<UserActivity[]>([]);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -110,25 +71,10 @@ const Profile = () => {
         const isOwn = user?.id === userId;
         setIsOwnProfile(isOwn);
 
-        // Extend with mock reputation data for MVP
-        const extendedProfile: ProfileData = {
-          ...profile,
-          reputation_score: 847,
-          contribution_count: 23,
-          voting_power: 156,
-          trust_level: 3,
-          mission: profile.bio || null, // Use bio as mission for now
-          capabilities: profile.offerings ? profile.offerings.split(",").map(s => s.trim()) : [],
-        };
+        setProfileData(profile);
 
-        setProfileData(extendedProfile);
-
-        // Fetch contribution history (villages joined via stays)
-        const { data: stays } = await supabase
-          .from("stays")
-          .select("id, village_id, start_date, nickname")
-          .eq("user_id", userId)
-          .order("start_date", { ascending: false });
+        // Fetch user activity history
+        const activityHistory: UserActivity[] = [];
 
         // Fetch villages user created
         const { data: createdVillages } = await supabase
@@ -136,45 +82,80 @@ const Profile = () => {
           .select("id, name, created_at")
           .eq("created_by", userId);
 
-        // Build contribution history
-        const contributionHistory: Contribution[] = [];
-
         if (createdVillages) {
           createdVillages.forEach(v => {
-            contributionHistory.push({
-              id: `village-${v.id}`,
-              type: "village_join",
-              title: `Created ${v.name}`,
+            activityHistory.push({
+              id: `village-create-${v.id}`,
+              type: "village_create",
+              title: `Created village "${v.name}"`,
               village_name: v.name,
               date: v.created_at,
             });
           });
         }
 
-        if (stays) {
-          // Get village names
+        // Fetch stays (registrations)
+        const { data: stays } = await supabase
+          .from("stays")
+          .select("id, village_id, start_date, created_at")
+          .eq("user_id", userId);
+
+        if (stays && stays.length > 0) {
           const villageIds = [...new Set(stays.map(s => s.village_id))];
           const { data: villages } = await supabase
             .from("villages")
             .select("id, name")
             .in("id", villageIds);
-
           const villageMap = new Map(villages?.map(v => [v.id, v.name]) || []);
 
           stays.forEach(s => {
-            contributionHistory.push({
+            activityHistory.push({
               id: `stay-${s.id}`,
-              type: "village_join",
-              title: `Joined as resident`,
+              type: "stay_register",
+              title: `Registered for stay`,
               village_name: villageMap.get(s.village_id) || s.village_id,
-              date: s.start_date,
+              date: s.created_at,
             });
           });
         }
 
+        // Fetch spots created by user (via bulletin author_name match with display_name)
+        // For now, we can't directly link spots to users, so skip this
+
+        // Fetch events created (if we had user_id on events, we'd fetch here)
+
+        // Fetch bulletin posts by display_name
+        if (profile.display_name) {
+          const { data: bulletinPosts } = await supabase
+            .from("bulletin")
+            .select("id, village_id, created_at, message")
+            .eq("author_name", profile.display_name)
+            .order("created_at", { ascending: false })
+            .limit(20);
+
+          if (bulletinPosts && bulletinPosts.length > 0) {
+            const villageIds = [...new Set(bulletinPosts.map(b => b.village_id))];
+            const { data: villages } = await supabase
+              .from("villages")
+              .select("id, name")
+              .in("id", villageIds);
+            const villageMap = new Map(villages?.map(v => [v.id, v.name]) || []);
+
+            bulletinPosts.forEach(b => {
+              activityHistory.push({
+                id: `bulletin-${b.id}`,
+                type: "bulletin_post",
+                title: `Posted in bulletin: "${b.message.slice(0, 40)}${b.message.length > 40 ? '...' : ''}"`,
+                village_name: villageMap.get(b.village_id) || b.village_id,
+                date: b.created_at,
+              });
+            });
+          }
+        }
+
         // Sort by date descending
-        contributionHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setContributions(contributionHistory);
+        activityHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setActivities(activityHistory);
 
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -223,61 +204,26 @@ const Profile = () => {
 
       {/* Main Content */}
       <div className="max-w-3xl mx-auto px-4 py-8 pt-16 space-y-0">
-        {/* 1. Identity Header */}
+        {/* 1. Identity Header with editable username and wallet balance */}
         <ProfileIdentityHeader 
           profile={profileData} 
           isOwnProfile={isOwnProfile}
+          onProfileUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
         />
 
         {/* 2. Village Timeline */}
         <ProfileVillageTimeline userId={profileUserId || undefined} />
 
-        {/* 3. Reputation Strip (Sticky) */}
-        <ProfileReputationStrip 
-          reputationScore={profileData.reputation_score || 0}
-          contributionCount={profileData.contribution_count || 0}
-          votingPower={profileData.voting_power || 0}
-          trustLevel={profileData.trust_level || 1}
-        />
-
-        {/* 3. Current Mission */}
-        <ProfileMission 
-          mission={profileData.mission}
-          isOwnProfile={isOwnProfile}
-          onUpdate={(mission) => setProfileData(prev => prev ? { ...prev, mission } : null)}
-        />
-
-        {/* 4. Active Quests */}
-        <ProfileQuests 
-          quests={quests}
-          isOwnProfile={isOwnProfile}
-          onUpdate={setQuests}
-        />
-
-        {/* 5. Linked Wallets */}
+        {/* 3. Linked Wallets */}
         <ProfileLinkedWallets
           userId={profileUserId || undefined}
           isOwnProfile={isOwnProfile}
         />
 
-        {/* 6. Capabilities */}
-        <ProfileCapabilities 
-          capabilities={profileData.capabilities || []}
-          isOwnProfile={isOwnProfile}
-          onUpdate={(capabilities) => setProfileData(prev => prev ? { ...prev, capabilities } : null)}
-        />
+        {/* 4. Activity History */}
+        <ProfileActivityHistory activities={activities} />
 
-        {/* 6. Open Needs */}
-        <ProfileOpenNeeds 
-          needs={openNeeds}
-          isOwnProfile={isOwnProfile}
-          onUpdate={setOpenNeeds}
-        />
-
-        {/* 7. Contribution History */}
-        <ProfileContributionHistory contributions={contributions} />
-
-        {/* 8. Connected Network */}
+        {/* 5. Connected Network */}
         <ProfileConnectedNetwork userId={profileUserId || ""} />
       </div>
     </div>

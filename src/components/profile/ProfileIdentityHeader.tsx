@@ -1,17 +1,24 @@
 import { useState } from "react";
-import { Copy, Check, ExternalLink, Edit2, Twitter, Github, Linkedin, Instagram, Globe } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Copy, Check, ExternalLink, Edit2, Save, X, Twitter, Github, Linkedin, Instagram, Globe, Wallet } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ProfileData } from "@/pages/Profile";
 import { format } from "date-fns";
 import { useAccount } from "wagmi";
+import { useTonWallet } from "@tonconnect/ui-react";
 import { usePersonalBalance } from "@/hooks/usePersonalBalance";
 import { PersonalTopUpDialog } from "@/components/PersonalTopUpDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ProfileIdentityHeaderProps {
   profile: ProfileData;
   isOwnProfile: boolean;
+  onProfileUpdate?: (updates: Partial<ProfileData>) => void;
 }
 
 // Detect social platform from URL
@@ -36,27 +43,128 @@ const getSocialPlatform = (url: string) => {
   return null;
 };
 
-export const ProfileIdentityHeader = ({ profile, isOwnProfile }: ProfileIdentityHeaderProps) => {
-  const { address } = useAccount();
-  const { balance, isLoading: isLoadingBalance } = usePersonalBalance(address);
+export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }: ProfileIdentityHeaderProps) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { address: evmAddress } = useAccount();
+  const tonWallet = useTonWallet();
+  
+  // Use the primary connected wallet for balance
+  const tonAddress = tonWallet?.account?.address;
+  const activeAddress = evmAddress || tonAddress;
+  
+  const { balance, isLoading: isLoadingBalance } = usePersonalBalance(activeAddress);
+  
   const [copied, setCopied] = useState(false);
   const [walletExpanded, setWalletExpanded] = useState(false);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [editUsername, setEditUsername] = useState(profile.username || "");
+  const [isSaving, setIsSaving] = useState(false);
 
   const socialPlatform = getSocialPlatform(profile.social_url || "");
   const joinDate = new Date(profile.created_at);
   const isGenesisMember = joinDate < new Date("2025-02-01");
 
   const copyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address);
+    if (activeAddress) {
+      navigator.clipboard.writeText(activeAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const truncatedAddress = address
-    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+  const truncatedAddress = activeAddress
+    ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`
     : "";
+
+  const handleSaveUsername = async () => {
+    if (!user || !editUsername.trim()) return;
+    
+    // Validate username format
+    const usernameRegex = /^[a-z0-9-]+$/;
+    const cleanUsername = editUsername.trim().toLowerCase();
+    
+    if (!usernameRegex.test(cleanUsername)) {
+      toast.error("Username can only contain lowercase letters, numbers, and hyphens");
+      return;
+    }
+    
+    if (cleanUsername.length < 3) {
+      toast.error("Username must be at least 3 characters");
+      return;
+    }
+    
+    if (cleanUsername.length > 30) {
+      toast.error("Username must be 30 characters or less");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Check if username is already taken
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", cleanUsername)
+        .neq("user_id", user.id)
+        .maybeSingle();
+
+      if (existing) {
+        toast.error("Username is already taken");
+        setIsSaving(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ username: cleanUsername })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Username updated!");
+      setIsEditingUsername(false);
+      onProfileUpdate?.({ username: cleanUsername });
+      
+      // Navigate to new URL
+      navigate(`/profile/${cleanUsername}`, { replace: true });
+    } catch (error) {
+      console.error("Error updating username:", error);
+      toast.error("Failed to update username");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getExplorerUrl = () => {
+    if (evmAddress) {
+      return `https://basescan.org/address/${evmAddress}`;
+    }
+    if (tonAddress) {
+      return `https://tonscan.org/address/${tonAddress}`;
+    }
+    return "#";
+  };
+
+  const getChainBadge = () => {
+    if (evmAddress) {
+      return (
+        <Badge variant="secondary" className="bg-blue-600/10 text-blue-600 border-blue-600/20 text-xs">
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1" />
+          Base
+        </Badge>
+      );
+    }
+    if (tonAddress) {
+      return (
+        <Badge variant="secondary" className="bg-sky-500/10 text-sky-500 border-sky-500/20 text-xs">
+          <div className="w-1.5 h-1.5 rounded-full bg-sky-500 mr-1" />
+          TON
+        </Badge>
+      );
+    }
+    return null;
+  };
 
   return (
     <section className="relative pb-6 border-b border-border">
@@ -98,9 +206,59 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile }: ProfileIdentity
                 {profile.display_name || "Anonymous"}
               </h1>
 
+              {/* Editable Username */}
+              <div className="flex items-center gap-2 mt-1">
+                {isEditingUsername ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">@</span>
+                    <Input
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                      className="h-7 w-40 text-sm"
+                      placeholder="username"
+                      maxLength={30}
+                      autoFocus
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={handleSaveUsername}
+                      disabled={isSaving}
+                    >
+                      <Save className="h-3.5 w-3.5 text-primary" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={() => {
+                        setIsEditingUsername(false);
+                        setEditUsername(profile.username || "");
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-muted-foreground">@{profile.username || "—"}</span>
+                    {isOwnProfile && (
+                      <button
+                        onClick={() => setIsEditingUsername(true)}
+                        className="p-1 hover:bg-muted rounded transition-colors"
+                        title="Edit username"
+                      >
+                        <Edit2 className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Title / Role */}
               {profile.project_description && (
-                <p className="text-base text-muted-foreground mt-0.5 truncate">
+                <p className="text-base text-muted-foreground mt-1 truncate">
                   {profile.project_description.slice(0, 60)}
                 </p>
               )}
@@ -120,14 +278,6 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile }: ProfileIdentity
                 </a>
               )}
             </div>
-
-            {/* Edit Button */}
-            {isOwnProfile && (
-              <Button variant="outline" size="sm" className="shrink-0">
-                <Edit2 className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </Button>
-            )}
           </div>
 
           {/* Join Date */}
@@ -135,15 +285,16 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile }: ProfileIdentity
             <span>Member since {format(joinDate, "MMM yyyy")}</span>
           </div>
 
-          {/* Wallet Section */}
-          {address && (
+          {/* Wallet Section with Balance */}
+          {activeAddress && (
             <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border">
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => setWalletExpanded(!walletExpanded)}
                   className="flex items-center gap-2 text-sm font-mono text-foreground hover:text-primary transition-colors"
                 >
-                  {walletExpanded ? address : truncatedAddress}
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  {walletExpanded ? activeAddress : truncatedAddress}
                 </button>
                 <div className="flex items-center gap-2">
                   <button
@@ -158,11 +309,11 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile }: ProfileIdentity
                     )}
                   </button>
                   <a
-                    href={`https://basescan.org/address/${address}`}
+                    href={getExplorerUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1.5 hover:bg-muted rounded transition-colors"
-                    title="View on Basescan"
+                    title="View on explorer"
                   >
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                   </a>
@@ -173,18 +324,15 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile }: ProfileIdentity
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center gap-2">
                   {isLoadingBalance ? (
-                    <span className="text-sm text-muted-foreground">Loading...</span>
+                    <span className="text-sm text-muted-foreground">Loading balance...</span>
                   ) : (
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-lg font-semibold text-foreground">
                       ${balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   )}
-                  {isOwnProfile && <PersonalTopUpDialog walletAddress={address} />}
+                  {isOwnProfile && evmAddress && <PersonalTopUpDialog walletAddress={evmAddress} />}
                 </div>
-                <Badge variant="secondary" className="bg-blue-600/10 text-blue-600 border-blue-600/20 text-xs">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1" />
-                  Base
-                </Badge>
+                {getChainBadge()}
               </div>
             </div>
           )}
