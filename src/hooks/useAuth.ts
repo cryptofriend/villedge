@@ -14,6 +14,8 @@ export interface Profile {
   asks: string | null;
   project_description: string | null;
   project_url: string | null;
+  telegram_id: string | null;
+  wallet_address: string | null;
   created_at: string;
   updated_at: string;
 }
