@@ -31,8 +31,14 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/profile/:username" element={<Profile />} />
-                {/* Village routes - must be after specific routes */}
+                {/* Village routes with category deep links */}
                 <Route path="/:villageSlug" element={<Village />} />
+                <Route path="/:villageSlug/map" element={<Village />} />
+                <Route path="/:villageSlug/residents" element={<Village />} />
+                <Route path="/:villageSlug/scenius" element={<Village />} />
+                <Route path="/:villageSlug/bulletin" element={<Village />} />
+                <Route path="/:villageSlug/events" element={<Village />} />
+                <Route path="/:villageSlug/treasury" element={<Village />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
