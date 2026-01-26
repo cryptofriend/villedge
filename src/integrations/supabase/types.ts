@@ -599,6 +599,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_wallets: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          is_primary: boolean
+          user_id: string
+          wallet_address: string
+          wallet_type: Database["public"]["Enums"]["wallet_type"]
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_primary?: boolean
+          user_id: string
+          wallet_address: string
+          wallet_type: Database["public"]["Enums"]["wallet_type"]
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_primary?: boolean
+          user_id?: string
+          wallet_address?: string
+          wallet_type?: Database["public"]["Enums"]["wallet_type"]
+        }
+        Relationships: []
+      }
       village_hosts: {
         Row: {
           created_at: string
@@ -794,7 +824,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      wallet_type: "porto" | "ethereum" | "solana" | "ton"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -921,6 +951,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      wallet_type: ["porto", "ethereum", "solana", "ton"],
+    },
   },
 } as const

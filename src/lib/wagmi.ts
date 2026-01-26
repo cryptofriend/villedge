@@ -1,6 +1,6 @@
 import { http, createConfig, createStorage } from 'wagmi';
 import { base, mainnet } from 'wagmi/chains';
-import { porto } from 'porto/wagmi';
+import { porto as portoConnector } from 'porto/wagmi';
 import { injected } from 'wagmi/connectors';
 import { Mode } from 'porto';
 
@@ -45,10 +45,13 @@ const dialogMode = Mode.dialog({
   },
 });
 
+// Export the porto connector for use in wallet linking
+export const porto = portoConnector({ mode: dialogMode });
+
 export const wagmiConfig = createConfig({
   chains: [base, mainnet],
   connectors: [
-    porto({ mode: dialogMode }),
+    porto,
     injected({ target: 'metaMask' }),
   ],
   storage: createStorage({ storage: localStorage }),

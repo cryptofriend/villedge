@@ -149,6 +149,26 @@ Deno.serve(async (req) => {
       } else {
         console.log("porto-auth: Created profile for new user");
       }
+
+      // Auto-link the wallet to user_wallets table
+      const walletTypeEnum = walletType === 'ton' ? 'ton' : 
+                             walletType === 'solana' ? 'solana' : 
+                             walletType === 'ethereum' ? 'ethereum' : 'porto';
+      
+      const { error: walletError } = await supabase
+        .from('user_wallets')
+        .insert({
+          user_id: userId,
+          wallet_address: normalizedAddress,
+          wallet_type: walletTypeEnum,
+          is_primary: true, // First wallet is primary
+        });
+      
+      if (walletError) {
+        console.error("porto-auth: Error linking wallet:", walletError);
+      } else {
+        console.log("porto-auth: Linked wallet for new user:", walletTypeEnum);
+      }
     }
 
     // Generate magic link for authentication

@@ -13,6 +13,7 @@ import { ProfileOpenNeeds } from "@/components/profile/ProfileOpenNeeds";
 import { ProfileContributionHistory } from "@/components/profile/ProfileContributionHistory";
 import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNetwork";
 import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
+import { ProfileLinkedWallets } from "@/components/profile/ProfileLinkedWallets";
 
 export interface ProfileData extends ProfileType {
   // Extended fields for the full profile page
@@ -253,7 +254,13 @@ const Profile = () => {
           onUpdate={setQuests}
         />
 
-        {/* 5. Capabilities */}
+        {/* 5. Linked Wallets */}
+        <ProfileLinkedWallets
+          userId={profileUserId || undefined}
+          isOwnProfile={isOwnProfile}
+        />
+
+        {/* 6. Capabilities */}
         <ProfileCapabilities 
           capabilities={profileData.capabilities || []}
           isOwnProfile={isOwnProfile}
