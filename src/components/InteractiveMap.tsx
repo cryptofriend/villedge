@@ -18,6 +18,7 @@ import { VillageSocialIcons } from "./VillageSocialIcons";
 import { EditVillageDialog } from "./villages/EditVillageDialog";
 import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar, Coins } from "lucide-react";
 import { TreasuryList } from "./treasury/TreasuryList";
+import { ExpandablePanel } from "./ExpandablePanel";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
 import { useVillages, Village } from "@/hooks/useVillages";
@@ -940,24 +941,16 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
       {/* Stays Calendar view */}
       {activeView === "residents" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div
-            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
-            onWheelCapture={(e) => e.stopPropagation()}
-            onTouchMoveCapture={(e) => e.stopPropagation()}
-          >
+          <ExpandablePanel>
             <StayCalendar villageId={activeVillage.id} applyUrl={(activeVillage as any).apply_url} />
-          </div>
+          </ExpandablePanel>
         </div>
       )}
 
       {/* Scenius view */}
       {activeView === "scenius" && isZoomedIn && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div
-            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
-            onWheelCapture={(e) => e.stopPropagation()}
-            onTouchMoveCapture={(e) => e.stopPropagation()}
-          >
+          <ExpandablePanel>
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -970,18 +963,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
             <div className="flex-1 min-h-0 overflow-hidden p-4">
               <SceniusList projects={projects} loading={projectsLoading} villageId={activeVillage?.id} />
             </div>
-          </div>
+          </ExpandablePanel>
         </div>
       )}
 
       {/* Bulletin view */}
       {activeView === "bulletin" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div
-            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
-            onWheelCapture={(e) => e.stopPropagation()}
-            onTouchMoveCapture={(e) => e.stopPropagation()}
-          >
+          <ExpandablePanel>
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-primary" />
@@ -994,18 +983,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
             <div className="flex-1 min-h-0 overflow-hidden">
               <BulletinList villageId={activeVillage.id} />
             </div>
-          </div>
+          </ExpandablePanel>
         </div>
       )}
 
       {/* Events view */}
       {activeView === "events" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div
-            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
-            onWheelCapture={(e) => e.stopPropagation()}
-            onTouchMoveCapture={(e) => e.stopPropagation()}
-          >
+          <ExpandablePanel>
             <div className="p-4 border-b border-border">
               <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
@@ -1018,18 +1003,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
             <div className="flex-1 min-h-0 overflow-hidden">
               <EventsList villageId={activeVillage.id} />
             </div>
-          </div>
+          </ExpandablePanel>
         </div>
       )}
 
       {/* Treasury view */}
       {activeView === "treasury" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <div
-            className="w-full rounded-xl bg-card/95 shadow-lg backdrop-blur-sm h-[55vh] sm:h-[65vh] flex flex-col min-h-0 overflow-hidden"
-            onWheelCapture={(e) => e.stopPropagation()}
-            onTouchMoveCapture={(e) => e.stopPropagation()}
-          >
+          <ExpandablePanel>
             <div className="flex-1 min-h-0 overflow-hidden">
               <TreasuryList 
                 villageId={activeVillage.id} 
@@ -1037,7 +1018,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                 solWalletAddress={activeVillage.solana_wallet_address}
               />
             </div>
-          </div>
+          </ExpandablePanel>
         </div>
       )}
 
