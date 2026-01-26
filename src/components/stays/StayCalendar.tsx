@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Users, CalendarDays, Calendar } from "lucide-react";
-import { useStays } from "@/hooks/useStays";
+import { useStays, Stay } from "@/hooks/useStays";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
 import { AddStayForm } from "./AddStayForm";
 import { StayGanttTimeline } from "./StayGanttTimeline";
 import { StayResidentCards } from "./StayResidentCards";
+import { EditStayDialog } from "./EditStayDialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -15,15 +16,22 @@ interface StayCalendarProps {
 }
 
 export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
-  const { stays, loading, addStay, toggleStayStatus } = useStays(villageId);
+  const { stays, loading, addStay, updateStayByOwner } = useStays(villageId);
   const { user } = useAuth();
   const isMobile = useIsMobile();
   
   // Default to cards view on mobile, timeline on desktop
   const [viewMode, setViewMode] = useState<"cards" | "timeline">(isMobile ? "cards" : "timeline");
+  const [editingStay, setEditingStay] = useState<Stay | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const handleToggleStatus = async (stayId: string) => {
-    await toggleStayStatus(stayId, user?.id || null);
+  const handleEditStay = (stay: Stay) => {
+    setEditingStay(stay);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveStay = async (stayId: string, updates: { start_date: string; end_date: string; status: "planning" | "confirmed" }) => {
+    return await updateStayByOwner(stayId, updates, user?.id || null);
   };
 
   return (
@@ -82,9 +90,17 @@ export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
         {viewMode === "cards" ? (
           <StayResidentCards stays={stays} loading={loading} applyUrl={applyUrl} />
         ) : (
-          <StayGanttTimeline stays={stays} loading={loading} onToggleStatus={handleToggleStatus} />
+          <StayGanttTimeline stays={stays} loading={loading} onEditStay={handleEditStay} />
         )}
       </div>
+
+      {/* Edit Stay Dialog */}
+      <EditStayDialog
+        stay={editingStay}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSave={handleSaveStay}
+      />
     </div>
   );
 };

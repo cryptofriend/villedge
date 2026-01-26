@@ -26,7 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 interface StayGanttTimelineProps {
   stays: Stay[];
   loading: boolean;
-  onToggleStatus?: (stayId: string) => void;
+  onEditStay?: (stay: Stay) => void;
 }
 
 // Generate consistent colors based on nickname
@@ -78,7 +78,7 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
   return { type: 'other', color: 'text-muted-foreground' };
 };
 
-export const StayGanttTimeline = ({ stays, loading, onToggleStatus }: StayGanttTimelineProps) => {
+export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -405,13 +405,13 @@ export const StayGanttTimeline = ({ stays, loading, onToggleStatus }: StayGanttT
                   const duration = differenceInDays(endDate, startDate) + 1;
                   const colorStyle = getColorForNickname(nickname, stay.status);
                   const isPlanning = stay.status === "planning";
-                  const canToggle = user?.id && stay.user_id === user.id && onToggleStatus;
+                  const canEdit = user?.id && stay.user_id === user.id && onEditStay;
 
                   const handleClick = (e: React.MouseEvent) => {
-                    if (canToggle) {
+                    if (canEdit) {
                       e.preventDefault();
                       e.stopPropagation();
-                      onToggleStatus(stay.id);
+                      onEditStay(stay);
                     }
                   };
 
@@ -427,7 +427,7 @@ export const StayGanttTimeline = ({ stays, loading, onToggleStatus }: StayGanttT
                             colorStyle.border,
                             colorStyle.opacity,
                             !isPlanning && "shadow-sm",
-                            canToggle ? "cursor-pointer hover:ring-2 hover:ring-white/50" : "cursor-default"
+                            canEdit ? "cursor-pointer hover:ring-2 hover:ring-white/50" : "cursor-default"
                           )}
                           style={{
                             left: startOffset * dayWidth + 1,
@@ -476,19 +476,9 @@ export const StayGanttTimeline = ({ stays, loading, onToggleStatus }: StayGanttT
                               Social Profile
                             </a>
                           )}
-                          {canToggle && (
+                          {canEdit && (
                             <p className="text-xs text-primary font-medium pt-1 border-t border-border mt-2 flex items-center gap-1">
-                              {isPlanning ? (
-                                <>
-                                  <Check className="h-3 w-3" />
-                                  Click to confirm
-                                </>
-                              ) : (
-                                <>
-                                  <HelpCircle className="h-3 w-3" />
-                                  Click to set as planning
-                                </>
-                              )}
+                              Click to edit stay
                             </p>
                           )}
                         </div>

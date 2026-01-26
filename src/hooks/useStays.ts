@@ -218,5 +218,42 @@ export const useStays = (villageId?: string) => {
     }
   };
 
-  return { stays, loading, addStay, updateStay, deleteStay, toggleStayStatus, refetch: fetchStays };
+  const updateStayByOwner = async (
+    id: string,
+    updates: Partial<StayInput>,
+    currentUserId: string | null
+  ): Promise<boolean> => {
+    try {
+      // Get the stay to check ownership
+      const { data: existingStay, error: fetchError } = await supabase
+        .from("stays")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Check if user owns this stay
+      if (!existingStay.user_id || existingStay.user_id !== currentUserId) {
+        toast.error("You can only update your own stays");
+        return false;
+      }
+
+      const { error } = await supabase
+        .from("stays")
+        .update(updates)
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      toast.success("Stay updated successfully!");
+      return true;
+    } catch (err) {
+      console.error("Error updating stay:", err);
+      toast.error("Failed to update stay");
+      return false;
+    }
+  };
+
+  return { stays, loading, addStay, updateStay, deleteStay, toggleStayStatus, updateStayByOwner, refetch: fetchStays };
 };
