@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PortoProvider } from "@/components/PortoProvider";
 import { SolanaProvider } from "@/components/SolanaProvider";
-import { TelegramProvider } from "@/components/TelegramProvider";
 import Index from "./pages/Index";
 import Village from "./pages/Village";
 import Embed from "./pages/Embed";
@@ -18,29 +17,27 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TelegramProvider>
-      <PortoProvider>
-        <SolanaProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/embed" element={<Embed />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/profile/:username" element={<Profile />} />
-                {/* Village routes - must be after specific routes */}
-                <Route path="/:villageSlug" element={<Village />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </SolanaProvider>
-      </PortoProvider>
-    </TelegramProvider>
+    <PortoProvider>
+      <SolanaProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/embed" element={<Embed />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/profile/:username" element={<Profile />} />
+              {/* Village routes - must be after specific routes */}
+              <Route path="/:villageSlug" element={<Village />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </SolanaProvider>
+    </PortoProvider>
   </QueryClientProvider>
 );
 

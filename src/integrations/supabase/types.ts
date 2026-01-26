@@ -217,11 +217,9 @@ export type Database = {
           project_description: string | null
           project_url: string | null
           social_url: string | null
-          telegram_id: string | null
           updated_at: string
           user_id: string
           username: string | null
-          wallet_address: string | null
         }
         Insert: {
           asks?: string | null
@@ -234,11 +232,9 @@ export type Database = {
           project_description?: string | null
           project_url?: string | null
           social_url?: string | null
-          telegram_id?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
-          wallet_address?: string | null
         }
         Update: {
           asks?: string | null
@@ -251,11 +247,9 @@ export type Database = {
           project_description?: string | null
           project_url?: string | null
           social_url?: string | null
-          telegram_id?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null
-          wallet_address?: string | null
         }
         Relationships: []
       }

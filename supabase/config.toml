@@ -32,6 +32,3 @@ verify_jwt = false
 
 [functions.get-solana-balance]
 verify_jwt = false
-
-[functions.telegram-web-auth]
-verify_jwt = false

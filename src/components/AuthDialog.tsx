@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -6,25 +6,8 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Shield, Fingerprint, Globe, Sparkles } from 'lucide-react';
+import { Loader2, Shield, Fingerprint, Globe, Sparkles, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTelegramSafe } from '@/components/TelegramProvider';
-
-// Telegram bot username for URL authorization
-const TELEGRAM_BOT_USERNAME = 'villedge_bot';
-
-// URL authorization callback path
-const TELEGRAM_AUTH_CALLBACK_PATH = '/auth/telegram/callback';
-
-interface TelegramAuthData {
-  id: string;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-  auth_date: string;
-  hash: string;
-}
 
 interface AuthDialogProps {
   open: boolean;
@@ -34,7 +17,6 @@ interface AuthDialogProps {
 
 export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { user } = useAuth();
-  const telegram = useTelegramSafe();
   
   // Porto/Biometric wallet
   const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -46,85 +28,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { setVisible: openSolanaModal } = useWalletModal();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'telegram-web' | null>(null);
-
-  // Telegram state
-  const isTelegram = telegram?.isTelegram && telegram?.user;
-
-  // Handle Telegram URL authorization callback (when returning from Telegram)
-  const handleTelegramUrlAuth = useCallback(async (authData: TelegramAuthData) => {
-    console.log('Telegram URL Auth callback received:', authData);
-    setAuthType('telegram-web');
-    setIsAuthenticating(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('telegram-web-auth', {
-        body: { telegramAuthData: authData },
-      });
-
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || 'Authentication failed');
-      }
-
-      if (data?.actionLink) {
-        const url = new URL(data.actionLink);
-        const token = url.searchParams.get('token');
-        const tokenType = url.searchParams.get('type');
-
-        if (token && tokenType) {
-          const { error: sessionError } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: tokenType as 'magiclink',
-          });
-
-          if (sessionError) throw sessionError;
-        }
-        
-        toast.success(`Welcome, ${authData.first_name}!`);
-      }
-    } catch (error) {
-      console.error('Telegram URL auth error:', error);
-      toast.error(error instanceof Error ? error.message : 'Authentication failed');
-    } finally {
-      setIsAuthenticating(false);
-      setAuthType(null);
-    }
-  }, []);
-
-  // Check for Telegram auth callback in URL params on mount
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const telegramId = urlParams.get('id');
-    const hash = urlParams.get('hash');
-    
-    if (telegramId && hash) {
-      // Extract all Telegram auth params
-      const authData: TelegramAuthData = {
-        id: urlParams.get('id') || '',
-        first_name: urlParams.get('first_name') || '',
-        last_name: urlParams.get('last_name') || undefined,
-        username: urlParams.get('username') || undefined,
-        photo_url: urlParams.get('photo_url') || undefined,
-        auth_date: urlParams.get('auth_date') || '',
-        hash: hash,
-      };
-      
-      // Clean up URL
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, '', cleanUrl);
-      
-      handleTelegramUrlAuth(authData);
-    }
-  }, [handleTelegramUrlAuth]);
-
-  // Handle web users clicking Telegram button - redirect to bot
-  const handleTelegramWebLogin = () => {
-    // Create a deep link to the bot with a login request
-    // The bot will then send a Login URL button back to the user
-    const callbackUrl = `${window.location.origin}/auth`;
-    const botUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=login_${encodeURIComponent(callbackUrl)}`;
-    window.open(botUrl, '_blank');
-  };
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | null>(null);
 
   // Close dialog when user authenticates
   useEffect(() => {
@@ -190,55 +94,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
     }
   };
 
-  const handleTelegramLogin = async () => {
-    if (!telegram?.user) return;
-    
-    setAuthType('telegram');
-    setIsAuthenticating(true);
-    
-    try {
-      const telegramAddress = `telegram_${telegram.user.id}`;
-      
-      const { data, error } = await supabase.functions.invoke('porto-auth', {
-        body: { 
-          address: telegramAddress,
-          telegramUser: telegram.user,
-        },
-      });
-
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || 'Authentication failed');
-      }
-
-      if (data?.actionLink) {
-        // Extract tokens from the action link
-        const url = new URL(data.actionLink);
-        const hashParams = new URLSearchParams(url.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-
-        if (accessToken && refreshToken) {
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) throw sessionError;
-          
-          telegram.haptic?.notification('success');
-          toast.success(`Welcome, ${telegram.user.first_name}!`);
-        }
-      }
-    } catch (error) {
-      console.error('Telegram auth error:', error);
-      toast.error(error instanceof Error ? error.message : 'Authentication failed');
-      telegram.haptic?.notification('error');
-    } finally {
-      setIsAuthenticating(false);
-      setAuthType(null);
-    }
-  };
-
   const handleBiometricConnect = () => {
     setAuthType('biometric');
     const portoConnector = connectors.find(c => c.id === 'porto' || c.name.toLowerCase().includes('porto'));
@@ -253,7 +108,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   };
 
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
-  const isTelegramLoading = isAuthenticating && (authType === 'telegram' || authType === 'telegram-web');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -282,7 +136,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
           <Button
             onClick={handleBiometricConnect}
             className="w-full h-12 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl"
-            disabled={isBiometricLoading || isTelegramLoading}
+            disabled={isBiometricLoading}
           >
             {isBiometricLoading ? (
               <div className="flex items-center gap-2">
@@ -296,82 +150,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
               </div>
             )}
           </Button>
-
-          {/* Telegram Button - always visible */}
-          {isTelegram && telegram.user && (
-            /* Telegram user preview - only when in Telegram */
-            <div className="flex items-center gap-3 p-3 bg-[#0088cc]/5 rounded-xl border border-[#0088cc]/20">
-              <div className="w-10 h-10 rounded-full bg-[#0088cc]/10 flex items-center justify-center overflow-hidden">
-                {telegram.user?.photo_url ? (
-                  <img 
-                    src={telegram.user.photo_url} 
-                    alt={telegram.user.first_name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                  </svg>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground text-sm truncate">
-                  {telegram.user?.first_name} {telegram.user?.last_name || ''}
-                </p>
-                {telegram.user?.username && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    @{telegram.user.username}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Telegram Button - show inline button for Mini App, widget for web */}
-          {isTelegram ? (
-            <Button
-              onClick={handleTelegramLogin}
-              variant="outline"
-              className="w-full h-12 text-base font-medium border-[#0088cc]/30 hover:bg-[#0088cc]/10 rounded-xl transition-all duration-200"
-              disabled={isTelegramLoading || isBiometricLoading}
-            >
-              {isTelegramLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-[#0088cc]" />
-                  <span>Creating account...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                  </svg>
-                  <span>Continue with Telegram</span>
-                </div>
-              )}
-            </Button>
-          ) : (
-            /* Telegram button for web users - opens bot deep link */
-            <Button
-              onClick={handleTelegramWebLogin}
-              variant="outline"
-              className="w-full h-12 text-base font-medium border-[#0088cc]/30 hover:bg-[#0088cc]/10 rounded-xl transition-all duration-200"
-              disabled={isTelegramLoading || isBiometricLoading}
-            >
-              {isTelegramLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-[#0088cc]" />
-                  <span>Signing in with Telegram...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                  </svg>
-                  <span>Sign in with Telegram</span>
-                </div>
-              )}
-            </Button>
-          )}
 
           {/* Divider */}
           <div className="relative">

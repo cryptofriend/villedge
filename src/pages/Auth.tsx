@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
@@ -8,19 +8,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-// Telegram bot username for URL authorization
-const TELEGRAM_BOT_USERNAME = 'villedge_bot';
-
-interface TelegramAuthData {
-  id: string;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-  auth_date: string;
-  hash: string;
-}
 
 // Debug log collector
 const debugLogs: string[] = [];
@@ -59,80 +46,8 @@ export default function Auth() {
   const { setVisible: openSolanaModal } = useWalletModal();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram-web' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | null>(null);
   const [showDebug, setShowDebug] = useState(false);
-
-  // Handle Telegram URL authorization callback
-  const handleTelegramUrlAuth = useCallback(async (authData: TelegramAuthData) => {
-    console.log('Telegram URL Auth callback received:', authData);
-    setAuthType('telegram-web');
-    setIsAuthenticating(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('telegram-web-auth', {
-        body: { telegramAuthData: authData },
-      });
-
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || 'Authentication failed');
-      }
-
-      if (data?.actionLink) {
-        const url = new URL(data.actionLink);
-        const token = url.searchParams.get('token');
-        const tokenType = url.searchParams.get('type');
-
-        if (token && tokenType) {
-          const { error: sessionError } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: tokenType as 'magiclink',
-          });
-
-          if (sessionError) throw sessionError;
-        }
-        
-        toast.success(`Welcome, ${authData.first_name}!`);
-        navigate(from, { replace: true });
-      }
-    } catch (error) {
-      console.error('Telegram URL auth error:', error);
-      toast.error(error instanceof Error ? error.message : 'Authentication failed');
-    } finally {
-      setIsAuthenticating(false);
-      setAuthType(null);
-    }
-  }, [from, navigate]);
-
-  // Check for Telegram auth callback in URL params on mount
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const telegramId = urlParams.get('id');
-    const hash = urlParams.get('hash');
-    
-    if (telegramId && hash) {
-      const authData: TelegramAuthData = {
-        id: urlParams.get('id') || '',
-        first_name: urlParams.get('first_name') || '',
-        last_name: urlParams.get('last_name') || undefined,
-        username: urlParams.get('username') || undefined,
-        photo_url: urlParams.get('photo_url') || undefined,
-        auth_date: urlParams.get('auth_date') || '',
-        hash: hash,
-      };
-      
-      // Clean up URL
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, '', cleanUrl);
-      
-      handleTelegramUrlAuth(authData);
-    }
-  }, [handleTelegramUrlAuth]);
-
-  // Handle web users clicking Telegram button - opens bot deep link
-  const handleTelegramWebLogin = () => {
-    const botUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=login`;
-    window.open(botUrl, '_blank');
-  };
 
   // Log wallet state for debugging
   useEffect(() => {
@@ -267,8 +182,7 @@ export default function Auth() {
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isSolanaLoading = (solanaConnecting || isAuthenticating) && authType === 'solana';
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
-  const isTelegramLoading = isAuthenticating && authType === 'telegram-web';
-  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTelegramLoading;
+  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading;
 
   const features = [
     {
@@ -382,28 +296,6 @@ export default function Auth() {
                   <div className="flex items-center gap-3">
                     <Fingerprint className="h-5 w-5" />
                     <span>Sign in with Biometric</span>
-                  </div>
-                )}
-              </Button>
-
-              {/* Telegram Button */}
-              <Button
-                onClick={handleTelegramWebLogin}
-                variant="outline"
-                className="w-full h-14 text-base font-medium border-[#0088cc]/30 hover:bg-[#0088cc]/10 rounded-xl transition-all duration-200"
-                disabled={anyLoading}
-              >
-                {isTelegramLoading ? (
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 animate-spin text-[#0088cc]" />
-                    <span>Signing in with Telegram...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                    </svg>
-                    <span>Sign in with Telegram</span>
                   </div>
                 )}
               </Button>
