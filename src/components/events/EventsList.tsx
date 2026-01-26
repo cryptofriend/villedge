@@ -5,8 +5,11 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { format, isSameDay, parseISO, isAfter, isBefore, startOfDay } from "date-fns";
+import { toZonedTime, format as formatTz } from "date-fns-tz";
 import { CalendarDays, Plus, ExternalLink, MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const VIETNAM_TZ = "Asia/Ho_Chi_Minh";
 
 interface EventsListProps {
   villageId: string;
@@ -59,16 +62,26 @@ export const EventsList = ({ villageId }: EventsListProps) => {
     }
   };
 
-  // Group events by date
-  const today = startOfDay(new Date());
-  const upcomingEvents = events.filter(e => isAfter(parseISO(e.start_time), today) || isSameDay(parseISO(e.start_time), today));
-  const pastEvents = events.filter(e => isBefore(parseISO(e.start_time), today) && !isSameDay(parseISO(e.start_time), today));
+  // Convert to Vietnam timezone for comparison
+  // Convert to Vietnam timezone for comparison
+  const nowInVN = toZonedTime(new Date(), VIETNAM_TZ);
+  const todayInVN = startOfDay(nowInVN);
+  
+  const upcomingEvents = events.filter(e => {
+    const eventTimeInVN = toZonedTime(parseISO(e.start_time), VIETNAM_TZ);
+    return isAfter(eventTimeInVN, todayInVN) || isSameDay(eventTimeInVN, todayInVN);
+  });
+  const pastEvents = events.filter(e => {
+    const eventTimeInVN = toZonedTime(parseISO(e.start_time), VIETNAM_TZ);
+    return isBefore(eventTimeInVN, todayInVN) && !isSameDay(eventTimeInVN, todayInVN);
+  });
 
   const groupEventsByDate = (eventsList: typeof events) => {
     const grouped = new Map<string, typeof events>();
     
     eventsList.forEach(event => {
-      const dateKey = format(parseISO(event.start_time), "yyyy-MM-dd");
+      const eventTimeInVN = toZonedTime(parseISO(event.start_time), VIETNAM_TZ);
+      const dateKey = format(eventTimeInVN, "yyyy-MM-dd");
       if (!grouped.has(dateKey)) {
         grouped.set(dateKey, []);
       }
@@ -184,7 +197,7 @@ interface EventCardProps {
 }
 
 const EventCard = ({ event, isPast }: EventCardProps) => {
-  const startTime = parseISO(event.start_time);
+  const startTimeInVN = toZonedTime(parseISO(event.start_time), VIETNAM_TZ);
   
   return (
     <a
@@ -213,7 +226,7 @@ const EventCard = ({ event, isPast }: EventCardProps) => {
           </div>
           
           <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-            <span>{format(startTime, "h:mm a")}</span>
+            <span>{format(startTimeInVN, "h:mm a")} (VN)</span>
             {event.location && (
               <>
                 <span>•</span>
