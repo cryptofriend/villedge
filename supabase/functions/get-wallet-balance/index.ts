@@ -28,6 +28,25 @@ async function resolveEns(ensName: string): Promise<string | null> {
   }
 }
 
+// Check if address is a TON address (format: 0:hex or EQ... or UQ...)
+function isTonAddress(address: string): boolean {
+  // TON addresses start with "0:" followed by 64 hex chars, or with EQ/UQ for user-friendly format
+  const tonRawFormat = /^0:[a-fA-F0-9]{64}$/;
+  const tonUserFriendly = /^(EQ|UQ)[a-zA-Z0-9_-]{46}$/;
+  return tonRawFormat.test(address) || tonUserFriendly.test(address);
+}
+
+// Check if address is a valid EVM address (0x followed by 40 hex chars)
+function isEvmAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/i.test(address);
+}
+
+// Check if address is a Solana address (base58, 32-44 chars, no 0x prefix)
+function isSolanaAddress(address: string): boolean {
+  // Solana addresses are base58 encoded, typically 32-44 characters
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address) && !address.startsWith('0x');
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -41,6 +60,21 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Wallet address is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Handle TON addresses - Zerion doesn't support TON, return 0 balance
+    if (isTonAddress(walletAddress)) {
+      console.log(`TON address detected: ${walletAddress} - Zerion doesn't support TON`);
+      return new Response(
+        JSON.stringify({ 
+          balance: 0,
+          walletAddress: walletAddress,
+          chain: 'ton',
+          note: 'TON balance fetching not yet supported',
+          timestamp: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -66,6 +100,20 @@ serve(async (req) => {
       }
       resolvedAddress = address;
       console.log(`Resolved to: ${resolvedAddress}`);
+    }
+
+    // Validate that the address is EVM or Solana compatible
+    if (!isEvmAddress(resolvedAddress) && !isSolanaAddress(resolvedAddress) && !resolvedAddress.endsWith('.eth')) {
+      console.log(`Unsupported address format: ${resolvedAddress}`);
+      return new Response(
+        JSON.stringify({ 
+          balance: 0,
+          walletAddress: resolvedAddress,
+          note: 'Unsupported address format for balance fetching',
+          timestamp: new Date().toISOString()
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`Fetching wallet balance for: ${resolvedAddress}`);
