@@ -10,10 +10,12 @@ interface OccupancyChartProps {
   stays: Stay[];
   dateRange: { start: Date; end: Date };
   dayWidth: number;
+  isMobile?: boolean;
 }
 
-export const OccupancyChart = ({ stays, dateRange, dayWidth }: OccupancyChartProps) => {
-  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>("month");
+export const OccupancyChart = ({ stays, dateRange, dayWidth, isMobile = false }: OccupancyChartProps) => {
+  // On mobile, always use day view; on desktop, default to month
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(isMobile ? "day" : "month");
 
   // Calculate occupancy data based on zoom level
   const { data, labels, periodWidth } = useMemo(() => {
@@ -88,27 +90,29 @@ export const OccupancyChart = ({ stays, dateRange, dayWidth }: OccupancyChartPro
 
   return (
     <div className="mb-4">
-      {/* Zoom Controls */}
+      {/* Zoom Controls - Only show filter options on desktop */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-muted-foreground">Occupancy Overview</span>
-        <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
-          {(["month", "week", "day"] as ZoomLevel[]).map((level) => (
-            <Button
-              key={level}
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoomLevel(level)}
-              className={cn(
-                "h-6 px-2.5 text-xs font-medium transition-all",
-                zoomLevel === level 
-                  ? "bg-background shadow-sm text-foreground" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {level.charAt(0).toUpperCase() + level.slice(1)}
-            </Button>
-          ))}
-        </div>
+        {!isMobile && (
+          <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
+            {(["month", "week", "day"] as ZoomLevel[]).map((level) => (
+              <Button
+                key={level}
+                variant="ghost"
+                size="sm"
+                onClick={() => setZoomLevel(level)}
+                className={cn(
+                  "h-6 px-2.5 text-xs font-medium transition-all",
+                  zoomLevel === level 
+                    ? "bg-background shadow-sm text-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {level.charAt(0).toUpperCase() + level.slice(1)}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Chart */}
