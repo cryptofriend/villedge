@@ -174,8 +174,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
       if (location) telegramMessage += `📌 ${escapeHtml(location)}\n`;
       if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
-      // Mini-app deep link for events (using residents link as specified)
-      telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/residents">View Events</a>`;
+      // Mini-app deep link for events
+      telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/events">View Events</a>`;
     } else if (type === "donation") {
       telegramMessage = `💰 <b>Treasury Donation Received</b>\n\n`;
       
