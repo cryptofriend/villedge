@@ -37,11 +37,13 @@ Deno.serve(async (req) => {
       throw new Error("TELEGRAM_BOT_TOKEN not configured");
     }
 
-    // Parse request body for mode
+    // Parse request body for mode and route type
     let mode = "today";
+    let routeType = "daily_events";
     try {
       const body = await req.json();
       mode = body.mode || "today";
+      routeType = body.routeType || "daily_events";
     } catch {
       // Default to today if no body
     }
@@ -84,11 +86,11 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${events?.length || 0} events for ${isWeekMode ? 'upcoming week' : 'today'}`);
 
-    // Check for notification route
+    // Check for notification route (use routeType to determine which route to check)
     const { data: route } = await supabase
       .from("notification_routes")
       .select("*")
-      .eq("notification_type", "daily_events")
+      .eq("notification_type", routeType)
       .eq("is_enabled", true)
       .single();
 

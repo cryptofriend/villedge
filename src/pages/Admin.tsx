@@ -47,7 +47,7 @@ interface NotificationRoute {
   is_enabled: boolean;
 }
 
-type NotificationType = 'donation' | 'bulletin' | 'spot' | 'resident' | 'daily_events';
+type NotificationType = 'donation' | 'bulletin' | 'spot' | 'resident' | 'daily_events' | 'weekly_events';
 
 export default function Admin() {
   const { user, loading } = useAuth();
@@ -1316,6 +1316,132 @@ export default function Admin() {
                         )}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => startEditRoute('daily_events', 'global')}>
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Weekly Events */}
+            <div className="p-4 rounded-lg border bg-card">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Calendar className="h-5 w-5 text-purple-500" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">Weekly Events Digest</p>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={getRoute('weekly_events', 'global')?.is_enabled ?? true}
+                        onCheckedChange={async () => {
+                          const route = getRoute('weekly_events', 'global');
+                          if (route) {
+                            await supabase
+                              .from('notification_routes')
+                              .update({ is_enabled: !route.is_enabled })
+                              .eq('id', route.id);
+                            // Refresh routes
+                            const { data: routesData } = await supabase
+                              .from("notification_routes")
+                              .select("*");
+                            if (routesData) {
+                              setNotificationRoutes(routesData as NotificationRoute[]);
+                            }
+                          }
+                        }}
+                      />
+                      {getRoute('weekly_events', 'global')?.is_enabled ? (
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-muted-foreground">
+                          Off
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Weekly summary of upcoming events (Every Sunday 8:00 PM Vietnam time)
+                  </p>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Activity className="h-3 w-3" /> Source & Trigger
+                  </Label>
+                  <p className="text-sm">Events Table → Sunday at 8:00 PM (Vietnam)</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded">notify-weekly-events (cron)</code>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TelegramIcon className="h-3 w-3" /> Destination
+                  </Label>
+                  {editingRoute?.type === 'weekly_events' && editingRoute?.villageId === 'global' ? (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Chat ID (e.g., -100xxx)"
+                        value={editChatId}
+                        onChange={(e) => setEditChatId(e.target.value)}
+                        className="h-8 text-sm font-mono"
+                      />
+                      <Input
+                        placeholder="Thread ID (optional)"
+                        value={editThreadId}
+                        onChange={(e) => setEditThreadId(e.target.value)}
+                        className="h-8 text-sm font-mono"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleSaveRoute} disabled={savingRoute}>
+                          {savingRoute ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          <span className="ml-1">Save</span>
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={cancelEditRoute}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm">Events Channel Thread</p>
+                        <code className="text-xs bg-muted px-2 py-0.5 rounded">
+                          {getRoute('weekly_events', 'global')?.chat_id || "-1003580489932"}
+                          {` / thread:${getRoute('weekly_events', 'global')?.thread_id || 71}`}
+                        </code>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={async () => {
+                          const routeKey = 'weekly_events-global';
+                          setTestingRoute(routeKey);
+                          try {
+                            const { error } = await supabase.functions.invoke("notify-daily-events", {
+                              body: { mode: "week", routeType: "weekly_events" }
+                            });
+                            if (error) throw error;
+                            toast({ title: "Test Sent", description: "Weekly events notification triggered" });
+                          } catch (err: any) {
+                            toast({ title: "Error", description: err.message, variant: "destructive" });
+                          } finally {
+                            setTestingRoute(null);
+                          }
+                        }}
+                        disabled={testingRoute === 'weekly_events-global'}
+                      >
+                        {testingRoute === 'weekly_events-global' ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Send className="h-3 w-3" />
+                        )}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => startEditRoute('weekly_events', 'global')}>
                         <Edit2 className="h-3 w-3" />
                       </Button>
                     </div>
