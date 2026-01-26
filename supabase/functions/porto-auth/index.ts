@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { address } = await req.json();
+    const { address, walletType } = await req.json();
 
     if (!address || typeof address !== "string") {
       console.error("porto-auth: Missing or invalid address");
@@ -56,16 +56,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    const normalizedAddress = address.toLowerCase();
+    // TON addresses are case-sensitive, others should be lowercased
+    const isTon = walletType === 'ton';
+    const normalizedAddress = isTon ? address : address.toLowerCase();
     const truncatedAddress = `${normalizedAddress.slice(0, 6)}...${normalizedAddress.slice(-4)}`;
-    console.log("porto-auth: Authenticating address:", truncatedAddress);
+    console.log("porto-auth: Authenticating address:", truncatedAddress, "type:", walletType || 'porto');
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Generate a deterministic email from the wallet address
-    const walletEmail = `${normalizedAddress}@porto.wallet`;
+    // Use wallet type in domain for clarity (all go through same auth flow)
+    const emailDomain = walletType === 'ton' ? 'ton.wallet' : 
+                        walletType === 'solana' ? 'solana.wallet' : 
+                        walletType === 'ethereum' ? 'eth.wallet' : 'porto.wallet';
+    const walletEmail = `${normalizedAddress}@${emailDomain}`;
     
     // Generate avatar based on wallet address
     const avatarUrl = getAvatarUrl(normalizedAddress);
