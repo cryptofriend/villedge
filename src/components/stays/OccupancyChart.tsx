@@ -1,10 +1,7 @@
-import { useMemo, useState } from "react";
-import { format, parseISO, eachDayOfInterval, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachWeekOfInterval, eachMonthOfInterval, isSameMonth, isSameWeek } from "date-fns";
+import { useMemo } from "react";
+import { format, parseISO, eachDayOfInterval, isToday } from "date-fns";
 import { Stay } from "@/hooks/useStays";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-type ZoomLevel = "day" | "week" | "month";
 
 interface OccupancyChartProps {
   stays: Stay[];
@@ -14,73 +11,18 @@ interface OccupancyChartProps {
 }
 
 export const OccupancyChart = ({ stays, dateRange, dayWidth, isMobile = false }: OccupancyChartProps) => {
-  // On mobile, always use day view; on desktop, default to month
-  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(isMobile ? "day" : "month");
-
-  // Calculate occupancy data based on zoom level
-  const { data, labels, periodWidth } = useMemo(() => {
-    if (zoomLevel === "day") {
-      const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
-      const dayData = days.map((day) => {
-        const count = stays.filter((stay) => {
-          const startDate = parseISO(stay.start_date);
-          const endDate = parseISO(stay.end_date);
-          return day >= startDate && day <= endDate;
-        }).length;
-        return { date: day, count, label: format(day, "d"), fullLabel: format(day, "MMM d") };
-      });
-      return { data: dayData, labels: dayData, periodWidth: dayWidth };
-    }
-    
-    if (zoomLevel === "week") {
-      const weeks = eachWeekOfInterval({ start: dateRange.start, end: dateRange.end }, { weekStartsOn: 1 });
-      const weekData = weeks.map((weekStart) => {
-        const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-        // Get max occupancy during the week
-        const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
-        const maxCount = Math.max(...days.map((day) => {
-          return stays.filter((stay) => {
-            const startDate = parseISO(stay.start_date);
-            const endDate = parseISO(stay.end_date);
-            return day >= startDate && day <= endDate;
-          }).length;
-        }), 0);
-        const isCurrent = isSameWeek(new Date(), weekStart, { weekStartsOn: 1 });
-        return { 
-          date: weekStart, 
-          count: maxCount, 
-          label: format(weekStart, "d"), 
-          fullLabel: `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d")}`,
-          isCurrent
-        };
-      });
-      return { data: weekData, labels: weekData, periodWidth: 40 };
-    }
-    
-    // Month view
-    const months = eachMonthOfInterval({ start: dateRange.start, end: dateRange.end });
-    const monthData = months.map((monthStart) => {
-      const monthEnd = endOfMonth(monthStart);
-      // Get max occupancy during the month
-      const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-      const maxCount = Math.max(...days.map((day) => {
-        return stays.filter((stay) => {
-          const startDate = parseISO(stay.start_date);
-          const endDate = parseISO(stay.end_date);
-          return day >= startDate && day <= endDate;
-        }).length;
-      }), 0);
-      const isCurrent = isSameMonth(new Date(), monthStart);
-      return { 
-        date: monthStart, 
-        count: maxCount, 
-        label: format(monthStart, "MMM"), 
-        fullLabel: format(monthStart, "MMMM yyyy"),
-        isCurrent
-      };
+  // Calculate daily occupancy data
+  const data = useMemo(() => {
+    const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
+    return days.map((day) => {
+      const count = stays.filter((stay) => {
+        const startDate = parseISO(stay.start_date);
+        const endDate = parseISO(stay.end_date);
+        return day >= startDate && day <= endDate;
+      }).length;
+      return { date: day, count, label: format(day, "d"), fullLabel: format(day, "MMM d") };
     });
-    return { data: monthData, labels: monthData, periodWidth: 60 };
-  }, [stays, dateRange, zoomLevel, dayWidth]);
+  }, [stays, dateRange]);
 
   const maxOccupancy = useMemo(() => {
     return Math.max(...data.map((d) => d.count), 1);
@@ -90,29 +32,9 @@ export const OccupancyChart = ({ stays, dateRange, dayWidth, isMobile = false }:
 
   return (
     <div className="mb-4">
-      {/* Zoom Controls - Only show filter options on desktop */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-muted-foreground">Occupancy Overview</span>
-        {!isMobile && (
-          <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
-            {(["month", "week", "day"] as ZoomLevel[]).map((level) => (
-              <Button
-                key={level}
-                variant="ghost"
-                size="sm"
-                onClick={() => setZoomLevel(level)}
-                className={cn(
-                  "h-6 px-2.5 text-xs font-medium transition-all",
-                  zoomLevel === level 
-                    ? "bg-background shadow-sm text-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {level.charAt(0).toUpperCase() + level.slice(1)}
-              </Button>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Chart */}
@@ -129,7 +51,7 @@ export const OccupancyChart = ({ stays, dateRange, dayWidth, isMobile = false }:
           <div className="flex items-end gap-0.5 flex-1 ml-2">
             {data.map((item, index) => {
               const barHeight = (item.count / maxOccupancy) * (chartHeight - 20);
-              const isCurrent = 'isCurrent' in item ? item.isCurrent : isToday(item.date);
+              const isCurrent = isToday(item.date);
               
               return (
                 <div
