@@ -198,6 +198,11 @@ interface EventCardProps {
 
 const EventCard = ({ event, isPast }: EventCardProps) => {
   const startTimeInVN = toZonedTime(parseISO(event.start_time), VIETNAM_TZ);
+  const endTimeInVN = event.end_time ? toZonedTime(parseISO(event.end_time), VIETNAM_TZ) : null;
+  
+  const timeDisplay = endTimeInVN 
+    ? `${format(startTimeInVN, "h:mm a")} – ${format(endTimeInVN, "h:mm a")}`
+    : format(startTimeInVN, "h:mm a");
   
   return (
     <a
@@ -226,7 +231,7 @@ const EventCard = ({ event, isPast }: EventCardProps) => {
           </div>
           
           <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-            <span>{format(startTimeInVN, "h:mm a")} (VN)</span>
+            <span>{timeDisplay}</span>
             {event.location && (
               <>
                 <span>•</span>
