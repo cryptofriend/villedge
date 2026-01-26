@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { 
   ArrowLeft, Bot, Bell, Save, Loader2, Settings, 
   Users, MapPin, Globe, Activity, CheckCircle2, 
-  Clock, Wallet, MessageSquare, Send, Edit2, X, Plus
+  Clock, Wallet, MessageSquare, Send, Edit2, X, Plus, Calendar
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
@@ -47,7 +47,7 @@ interface NotificationRoute {
   is_enabled: boolean;
 }
 
-type NotificationType = 'donation' | 'bulletin' | 'spot' | 'resident';
+type NotificationType = 'donation' | 'bulletin' | 'spot' | 'resident' | 'daily_events';
 
 export default function Admin() {
   const { user, loading } = useAuth();
@@ -1179,6 +1179,141 @@ export default function Admin() {
                       )}
                       <Button size="sm" variant="ghost" onClick={() => startEditRoute('resident', 'global')}>
                         {getRoute('resident', 'global') ? <Edit2 className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Daily Events */}
+            <div className="p-4 rounded-lg border bg-card">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-cyan-500/10 rounded-lg">
+                  <Calendar className="h-5 w-5 text-cyan-500" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">Daily Events Digest</p>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={getRoute('daily_events', 'global')?.is_enabled ?? true}
+                        onCheckedChange={async () => {
+                          const route = getRoute('daily_events', 'global');
+                          if (route) {
+                            toggleRouteEnabled(route);
+                          } else {
+                            // Create a new enabled route when toggling on for the first time
+                            try {
+                              const { data, error } = await supabase
+                                .from("notification_routes")
+                                .insert({
+                                  village_id: 'global',
+                                  notification_type: 'daily_events',
+                                  chat_id: '-1003580489932',
+                                  thread_id: 71,
+                                  is_enabled: true
+                                })
+                                .select()
+                                .single();
+                              
+                              if (error) throw error;
+                              setNotificationRoutes(prev => [...prev, data as NotificationRoute]);
+                              toast({ title: "Enabled", description: "Daily events digest enabled." });
+                            } catch (err: any) {
+                              toast({ title: "Error", description: err.message, variant: "destructive" });
+                            }
+                          }
+                        }}
+                      />
+                      {getRoute('daily_events', 'global')?.is_enabled !== false ? (
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-muted-foreground">
+                          Off
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Morning summary of all events scheduled for today (8:00 AM Vietnam time)
+                  </p>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4 mt-3 pt-3 border-t">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Activity className="h-3 w-3" /> Source & Trigger
+                  </Label>
+                  <p className="text-sm">Events Table → Daily at 8:00 AM (Vietnam)</p>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded">notify-daily-events (cron)</code>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TelegramIcon className="h-3 w-3" /> Destination
+                  </Label>
+                  {editingRoute?.type === 'daily_events' && editingRoute?.villageId === 'global' ? (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Chat ID (e.g., -100xxx)"
+                        value={editChatId}
+                        onChange={(e) => setEditChatId(e.target.value)}
+                        className="h-8 text-sm font-mono"
+                      />
+                      <Input
+                        placeholder="Thread ID (optional)"
+                        value={editThreadId}
+                        onChange={(e) => setEditThreadId(e.target.value)}
+                        className="h-8 text-sm font-mono"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleSaveRoute} disabled={savingRoute}>
+                          {savingRoute ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          <span className="ml-1">Save</span>
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={cancelEditRoute}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm">Events Channel Thread</p>
+                        <code className="text-xs bg-muted px-2 py-0.5 rounded">
+                          {getRoute('daily_events', 'global')?.chat_id || "-1003580489932"}
+                          {` / thread:${getRoute('daily_events', 'global')?.thread_id || 71}`}
+                        </code>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={async () => {
+                          const routeKey = 'daily_events-global';
+                          setTestingRoute(routeKey);
+                          try {
+                            const { error } = await supabase.functions.invoke("notify-daily-events");
+                            if (error) throw error;
+                            toast({ title: "Test Sent", description: "Daily events notification triggered" });
+                          } catch (err: any) {
+                            toast({ title: "Error", description: err.message, variant: "destructive" });
+                          } finally {
+                            setTestingRoute(null);
+                          }
+                        }}
+                        disabled={testingRoute === 'daily_events-global'}
+                      >
+                        {testingRoute === 'daily_events-global' ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Send className="h-3 w-3" />
+                        )}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => startEditRoute('daily_events', 'global')}>
+                        <Edit2 className="h-3 w-3" />
                       </Button>
                     </div>
                   )}
