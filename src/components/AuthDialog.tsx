@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -10,16 +10,19 @@ import { Loader2, Shield, Fingerprint, Globe, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramSafe } from '@/components/TelegramProvider';
 
-// Telegram Login Widget bot username
+// Telegram bot username for URL authorization
 const TELEGRAM_BOT_USERNAME = 'villedge_bot';
 
+// URL authorization callback path
+const TELEGRAM_AUTH_CALLBACK_PATH = '/auth/telegram/callback';
+
 interface TelegramAuthData {
-  id: number;
+  id: string;
   first_name: string;
   last_name?: string;
   username?: string;
   photo_url?: string;
-  auth_date: number;
+  auth_date: string;
   hash: string;
 }
 
@@ -29,17 +32,9 @@ interface AuthDialogProps {
   onSuccess?: () => void;
 }
 
-// Declare global Telegram widget callback
-declare global {
-  interface Window {
-    onTelegramAuth?: (user: TelegramAuthData) => void;
-  }
-}
-
 export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { user } = useAuth();
   const telegram = useTelegramSafe();
-  const telegramWidgetRef = useRef<HTMLDivElement>(null);
   
   // Porto/Biometric wallet
   const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -56,25 +51,15 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   // Telegram state
   const isTelegram = telegram?.isTelegram && telegram?.user;
 
-  // Handle Telegram Web Login callback
-  const handleTelegramWebAuth = useCallback(async (authData: TelegramAuthData) => {
-    console.log('Telegram Web Auth callback received:', authData);
+  // Handle Telegram URL authorization callback (when returning from Telegram)
+  const handleTelegramUrlAuth = useCallback(async (authData: TelegramAuthData) => {
+    console.log('Telegram URL Auth callback received:', authData);
     setAuthType('telegram-web');
     setIsAuthenticating(true);
     
     try {
       const { data, error } = await supabase.functions.invoke('telegram-web-auth', {
-        body: { 
-          telegramAuthData: {
-            id: String(authData.id),
-            first_name: authData.first_name,
-            last_name: authData.last_name || '',
-            username: authData.username || '',
-            photo_url: authData.photo_url || '',
-            auth_date: String(authData.auth_date),
-            hash: authData.hash,
-          },
-        },
+        body: { telegramAuthData: authData },
       });
 
       if (error || data?.error) {
@@ -98,7 +83,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
         toast.success(`Welcome, ${authData.first_name}!`);
       }
     } catch (error) {
-      console.error('Telegram Web auth error:', error);
+      console.error('Telegram URL auth error:', error);
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
       setIsAuthenticating(false);
@@ -106,39 +91,40 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
     }
   }, []);
 
-  // Set up global callback for Telegram widget
+  // Check for Telegram auth callback in URL params on mount
   useEffect(() => {
-    window.onTelegramAuth = handleTelegramWebAuth;
-    return () => {
-      delete window.onTelegramAuth;
-    };
-  }, [handleTelegramWebAuth]);
+    const urlParams = new URLSearchParams(window.location.search);
+    const telegramId = urlParams.get('id');
+    const hash = urlParams.get('hash');
+    
+    if (telegramId && hash) {
+      // Extract all Telegram auth params
+      const authData: TelegramAuthData = {
+        id: urlParams.get('id') || '',
+        first_name: urlParams.get('first_name') || '',
+        last_name: urlParams.get('last_name') || undefined,
+        username: urlParams.get('username') || undefined,
+        photo_url: urlParams.get('photo_url') || undefined,
+        auth_date: urlParams.get('auth_date') || '',
+        hash: hash,
+      };
+      
+      // Clean up URL
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+      
+      handleTelegramUrlAuth(authData);
+    }
+  }, [handleTelegramUrlAuth]);
 
-  // Load Telegram Login Widget script when dialog opens (for non-Telegram web users)
-  useEffect(() => {
-    if (!open || isTelegram || !telegramWidgetRef.current) return;
-    
-    // Clear any existing widget
-    telegramWidgetRef.current.innerHTML = '';
-    
-    // Create and append the Telegram Login Widget script
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.setAttribute('data-telegram-login', TELEGRAM_BOT_USERNAME);
-    script.setAttribute('data-size', 'large');
-    script.setAttribute('data-radius', '12');
-    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-    script.setAttribute('data-request-access', 'write');
-    script.async = true;
-    
-    telegramWidgetRef.current.appendChild(script);
-    
-    return () => {
-      if (telegramWidgetRef.current) {
-        telegramWidgetRef.current.innerHTML = '';
-      }
-    };
-  }, [open, isTelegram]);
+  // Handle web users clicking Telegram button - redirect to bot
+  const handleTelegramWebLogin = () => {
+    // Create a deep link to the bot with a login request
+    // The bot will then send a Login URL button back to the user
+    const callbackUrl = `${window.location.origin}/auth`;
+    const botUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=login_${encodeURIComponent(callbackUrl)}`;
+    window.open(botUrl, '_blank');
+  };
 
   // Close dialog when user authenticates
   useEffect(() => {
@@ -364,20 +350,27 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
               )}
             </Button>
           ) : (
-            /* Telegram Login Widget for web users */
-            <div className="flex flex-col items-center gap-2">
+            /* Telegram button for web users - opens bot deep link */
+            <Button
+              onClick={handleTelegramWebLogin}
+              variant="outline"
+              className="w-full h-12 text-base font-medium border-[#0088cc]/30 hover:bg-[#0088cc]/10 rounded-xl transition-all duration-200"
+              disabled={isTelegramLoading || isBiometricLoading}
+            >
               {isTelegramLoading ? (
-                <div className="flex items-center gap-2 h-12 text-muted-foreground">
+                <div className="flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin text-[#0088cc]" />
                   <span>Signing in with Telegram...</span>
                 </div>
               ) : (
-                <div 
-                  ref={telegramWidgetRef} 
-                  className="flex justify-center min-h-[40px]"
-                />
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                  </svg>
+                  <span>Sign in with Telegram</span>
+                </div>
               )}
-            </div>
+            </Button>
           )}
 
           {/* Divider */}
