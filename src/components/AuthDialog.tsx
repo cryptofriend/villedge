@@ -206,58 +206,57 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
             )}
           </Button>
 
-          {/* Telegram Button - show if telegram user is available OR always as option */}
-          {isTelegram ? (
-            <>
-              {/* Telegram user preview */}
-              <div className="flex items-center gap-3 p-3 bg-[#0088cc]/5 rounded-xl border border-[#0088cc]/20">
-                <div className="w-10 h-10 rounded-full bg-[#0088cc]/10 flex items-center justify-center overflow-hidden">
-                  {telegram.user?.photo_url ? (
-                    <img 
-                      src={telegram.user.photo_url} 
-                      alt={telegram.user.first_name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate">
-                    {telegram.user?.first_name} {telegram.user?.last_name || ''}
-                  </p>
-                  {telegram.user?.username && (
-                    <p className="text-xs text-muted-foreground truncate">
-                      @{telegram.user.username}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <Button
-                onClick={handleTelegramLogin}
-                variant="outline"
-                className="w-full h-12 text-base font-medium border-[#0088cc]/30 hover:bg-[#0088cc]/10 rounded-xl transition-all duration-200"
-                disabled={isTelegramLoading || isBiometricLoading}
-              >
-                {isTelegramLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin text-[#0088cc]" />
-                    <span>Creating account...</span>
-                  </div>
+          {/* Telegram Button - always visible */}
+          {isTelegram && telegram.user && (
+            /* Telegram user preview - only when in Telegram */
+            <div className="flex items-center gap-3 p-3 bg-[#0088cc]/5 rounded-xl border border-[#0088cc]/20">
+              <div className="w-10 h-10 rounded-full bg-[#0088cc]/10 flex items-center justify-center overflow-hidden">
+                {telegram.user?.photo_url ? (
+                  <img 
+                    src={telegram.user.photo_url} 
+                    alt={telegram.user.first_name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                    </svg>
-                    <span>Continue with Telegram</span>
-                  </div>
+                  <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                  </svg>
                 )}
-              </Button>
-            </>
-          ) : null}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-foreground text-sm truncate">
+                  {telegram.user?.first_name} {telegram.user?.last_name || ''}
+                </p>
+                {telegram.user?.username && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    @{telegram.user.username}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Telegram Button - always shown */}
+          <Button
+            onClick={isTelegram ? handleTelegramLogin : () => window.open('https://t.me/villedge_bot', '_blank')}
+            variant="outline"
+            className="w-full h-12 text-base font-medium border-[#0088cc]/30 hover:bg-[#0088cc]/10 rounded-xl transition-all duration-200"
+            disabled={isTelegramLoading || isBiometricLoading}
+          >
+            {isTelegramLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin text-[#0088cc]" />
+                <span>Creating account...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+                <span>{isTelegram ? 'Continue with Telegram' : 'Sign in with Telegram'}</span>
+              </div>
+            )}
+          </Button>
 
           {/* Divider */}
           <div className="relative">
