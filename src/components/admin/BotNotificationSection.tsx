@@ -74,6 +74,7 @@ export function BotNotificationSection({
   const [savingRoute, setSavingRoute] = useState(false);
   const [testingRoute, setTestingRoute] = useState<string | null>(null);
   const [localSecretName, setLocalSecretName] = useState(config.botTokenSecretName || 'TELEGRAM_BOT_TOKEN');
+  const [secretNameDirty, setSecretNameDirty] = useState(false);
 
   const getRoute = (type: NotificationType): NotificationRoute | undefined => {
     return notificationRoutes.find(r => r.notification_type === type && r.village_id === config.villageId);
@@ -285,11 +286,26 @@ export function BotNotificationSection({
                       <div className="flex items-center gap-2 ml-4">
                         <Input
                           value={localSecretName}
-                          onChange={(e) => setLocalSecretName(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
-                          onBlur={() => onUpdateSecretName?.(config.villageId, localSecretName)}
+                          onChange={(e) => {
+                            setLocalSecretName(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''));
+                            setSecretNameDirty(true);
+                          }}
                           placeholder="SECRET_NAME"
                           className="h-7 text-xs font-mono w-48 bg-background"
                         />
+                        {secretNameDirty && (
+                          <Button
+                            size="sm"
+                            className="h-7 px-2 bg-green-600 hover:bg-green-700"
+                            onClick={() => {
+                              onUpdateSecretName?.(config.villageId, localSecretName);
+                              setSecretNameDirty(false);
+                              toast({ title: "Saved", description: `Secret name updated to ${localSecretName}` });
+                            }}
+                          >
+                            <Save className="h-3 w-3" />
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
