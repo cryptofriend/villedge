@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useDisconnect, useBalance } from 'wagmi';
+import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -11,20 +12,36 @@ import { toast } from 'sonner';
 export function AuthButton() {
   const navigate = useNavigate();
   const { user, profile, isAuthenticated, loading, signOut } = useAuth();
-  const { address } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { data: balanceData } = useBalance({ address });
+  const { address: evmAddress } = useAccount();
+  const { disconnect: disconnectEvm } = useDisconnect();
+  const { data: balanceData } = useBalance({ address: evmAddress });
+  
+  // TON wallet
+  const [tonConnectUI] = useTonConnectUI();
+  const tonWallet = useTonWallet();
+  
   const [profileOpen, setProfileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  // Determine which wallet is connected
+  const tonAddress = tonWallet?.account?.address;
+  const activeAddress = evmAddress || tonAddress;
 
   const handleSignOut = async () => {
     setSigningOut(true);
     try {
-      disconnect();
+      // Disconnect all wallet types
+      if (evmAddress) {
+        disconnectEvm();
+      }
+      if (tonWallet) {
+        await tonConnectUI.disconnect();
+      }
       await signOut();
       toast.success('Signed out successfully');
       navigate('/');
     } catch (error) {
+      console.error('Sign out error:', error);
       toast.error('Failed to sign out');
     } finally {
       setSigningOut(false);
@@ -37,7 +54,7 @@ export function AuthButton() {
     );
   }
 
-  if (!isAuthenticated || !address) {
+  if (!isAuthenticated) {
     return (
       <button
         onClick={() => navigate('/auth')}
@@ -49,18 +66,21 @@ export function AuthButton() {
     );
   }
 
-  // Truncate address: 0x1234...5678
-  const truncatedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+  // Truncate address for display
+  const truncatedAddress = activeAddress 
+    ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`
+    : profile?.display_name || 'User';
   
   // Check if user has set a custom display name (not just the wallet address format)
   const hasCustomName = profile?.display_name && 
     !profile.display_name.startsWith('0x') && 
+    !profile.display_name.startsWith('0:') &&
     profile.display_name !== truncatedAddress;
   
   const displayName = hasCustomName ? profile?.display_name : truncatedAddress;
   const initials = (displayName || 'U').slice(0, 2).toUpperCase();
 
-  // Format balance
+  // Format balance (only for EVM wallets)
   const formattedBalance = balanceData 
     ? `${(Number(balanceData.value) / 10 ** balanceData.decimals).toFixed(4)} ${balanceData.symbol}`
     : null;
