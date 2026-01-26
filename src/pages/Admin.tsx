@@ -1239,7 +1239,7 @@ export default function Admin() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Morning summary of all events scheduled for today (8:00 AM Vietnam time)
+                    Morning summary of all events scheduled for today (00:01 AM Vietnam time)
                   </p>
                 </div>
               </div>
@@ -1248,8 +1248,9 @@ export default function Admin() {
                   <Label className="text-xs text-muted-foreground flex items-center gap-1">
                     <Activity className="h-3 w-3" /> Source & Trigger
                   </Label>
-                  <p className="text-sm">Events Table → Daily at 8:00 AM (Vietnam)</p>
+                  <p className="text-sm">Events Table → Daily at 00:01 AM (Vietnam)</p>
                   <code className="text-xs bg-muted px-2 py-0.5 rounded">notify-daily-events (cron)</code>
+                  <p className="text-xs text-muted-foreground">Test: Shows upcoming week</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground flex items-center gap-1">
@@ -1295,9 +1296,11 @@ export default function Admin() {
                           const routeKey = 'daily_events-global';
                           setTestingRoute(routeKey);
                           try {
-                            const { error } = await supabase.functions.invoke("notify-daily-events");
+                            const { error } = await supabase.functions.invoke("notify-daily-events", {
+                              body: { mode: "week" }
+                            });
                             if (error) throw error;
-                            toast({ title: "Test Sent", description: "Daily events notification triggered" });
+                            toast({ title: "Test Sent", description: "Weekly events preview notification triggered" });
                           } catch (err: any) {
                             toast({ title: "Error", description: err.message, variant: "destructive" });
                           } finally {
