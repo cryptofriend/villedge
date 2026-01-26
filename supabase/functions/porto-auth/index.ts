@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { address } = await req.json();
+    const body = await req.json();
+    const { address, telegramUser } = body;
 
     if (!address || typeof address !== "string") {
       console.error("porto-auth: Missing or invalid address");
@@ -57,18 +58,31 @@ Deno.serve(async (req) => {
     }
 
     const normalizedAddress = address.toLowerCase();
-    const truncatedAddress = `${normalizedAddress.slice(0, 6)}...${normalizedAddress.slice(-4)}`;
-    console.log("porto-auth: Authenticating address:", truncatedAddress);
+    const isTelegramAuth = normalizedAddress.startsWith('telegram_');
+    
+    let displayName: string;
+    let avatarUrl: string;
+    let walletEmail: string;
+
+    if (isTelegramAuth && telegramUser) {
+      // Telegram authentication
+      const telegramId = telegramUser.id;
+      displayName = telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : '');
+      avatarUrl = telegramUser.photo_url || getAvatarUrl(`telegram_${telegramId}`);
+      walletEmail = `telegram_${telegramId}@telegram.user`;
+      console.log("porto-auth: Telegram auth for user:", telegramId, displayName);
+    } else {
+      // Wallet authentication (Porto, Ethereum, Solana)
+      const truncatedAddress = `${normalizedAddress.slice(0, 6)}...${normalizedAddress.slice(-4)}`;
+      displayName = truncatedAddress;
+      avatarUrl = getAvatarUrl(normalizedAddress);
+      walletEmail = `${normalizedAddress}@porto.wallet`;
+      console.log("porto-auth: Wallet auth for address:", truncatedAddress);
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Generate a deterministic email from the wallet address
-    const walletEmail = `${normalizedAddress}@porto.wallet`;
-    
-    // Generate avatar based on wallet address
-    const avatarUrl = getAvatarUrl(normalizedAddress);
 
     // Check if user exists
     const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
@@ -85,10 +99,10 @@ Deno.serve(async (req) => {
       userId = existingUser.id;
       console.log("porto-auth: Found existing user:", userId);
       
-      // Ensure profile exists and update avatar if not set
+      // Ensure profile exists and update if needed
       const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('avatar_url')
+        .select('avatar_url, display_name')
         .eq('user_id', userId)
         .single();
       
@@ -98,26 +112,46 @@ Deno.serve(async (req) => {
           .from('profiles')
           .insert({
             user_id: userId,
-            display_name: truncatedAddress,
+            display_name: displayName,
             avatar_url: avatarUrl,
           });
         console.log("porto-auth: Created missing profile for existing user");
-      } else if (!existingProfile.avatar_url) {
-        await supabase
-          .from('profiles')
-          .update({ avatar_url: avatarUrl })
-          .eq('user_id', userId);
-        console.log("porto-auth: Updated profile avatar for existing user");
+      } else {
+        // Update avatar and display name for Telegram users if they have photo
+        if (isTelegramAuth && telegramUser?.photo_url && existingProfile.avatar_url !== telegramUser.photo_url) {
+          await supabase
+            .from('profiles')
+            .update({ 
+              avatar_url: telegramUser.photo_url,
+              display_name: displayName,
+            })
+            .eq('user_id', userId);
+          console.log("porto-auth: Updated profile from Telegram data");
+        } else if (!existingProfile.avatar_url) {
+          await supabase
+            .from('profiles')
+            .update({ avatar_url: avatarUrl })
+            .eq('user_id', userId);
+          console.log("porto-auth: Updated profile avatar for existing user");
+        }
       }
     } else {
       // Create new user
+      const userMetadata: Record<string, unknown> = {
+        display_name: displayName,
+      };
+
+      if (isTelegramAuth && telegramUser) {
+        userMetadata.telegram_id = telegramUser.id;
+        userMetadata.telegram_username = telegramUser.username;
+      } else {
+        userMetadata.wallet_address = normalizedAddress;
+      }
+
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: walletEmail,
         email_confirm: true,
-        user_metadata: {
-          wallet_address: normalizedAddress,
-          display_name: truncatedAddress,
-        },
+        user_metadata: userMetadata,
       });
 
       if (createError) {
@@ -133,8 +167,9 @@ Deno.serve(async (req) => {
         .from('profiles')
         .insert({
           user_id: userId,
-          display_name: truncatedAddress,
+          display_name: displayName,
           avatar_url: avatarUrl,
+          username: telegramUser?.username || null,
         });
       
       if (profileError) {

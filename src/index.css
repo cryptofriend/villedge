@@ -120,6 +120,17 @@
     --sidebar-border: 140 15% 20%;
     --sidebar-ring: 140 30% 55%;
   }
+
+  /* Telegram Mini App theme variables */
+  :root {
+    --tg-bg-color: hsl(45 30% 96%);
+    --tg-text-color: hsl(140 25% 20%);
+    --tg-hint-color: hsl(140 15% 45%);
+    --tg-link-color: hsl(140 25% 35%);
+    --tg-button-color: hsl(140 25% 35%);
+    --tg-button-text-color: hsl(45 30% 96%);
+    --tg-secondary-bg-color: hsl(42 40% 94%);
+  }
 }
 
 @layer base {
