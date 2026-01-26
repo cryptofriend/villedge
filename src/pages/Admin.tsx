@@ -234,6 +234,8 @@ export default function Admin() {
     villageId: 'proof-of-retreat',
     villageName: 'Proof of Retreat',
     botUsername: '@proofofretreatbot',
+    botTokenSecretName: 'TELEGRAM_BOT_TOKEN',
+    isConnected: true,
     logoUrl: '/lovable-uploads/proof-of-retreat-logo.png',
     notificationTypes: [
       {
@@ -310,7 +312,9 @@ export default function Admin() {
     villageId: 'protoville',
     villageName: 'ProtoVille',
     botUsername: undefined,
-    logoUrl: undefined,
+    botTokenSecretName: 'PROTOVILLE_BOT_TOKEN',
+    isConnected: false,
+    logoUrl: villages.find(v => v.id === 'protoville')?.logo_url,
     notificationTypes: [
       {
         type: 'donation' as const,

@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   ChevronDown, ChevronRight, Loader2, Save, Send, Edit2, X, Plus, 
-  Calendar, Wallet, MessageSquare, MapPin, Users, Activity, CheckCircle2, Clock
+  Calendar, Wallet, MessageSquare, MapPin, Users, Activity, CheckCircle2, Clock,
+  Info, ExternalLink, Copy
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -33,7 +35,9 @@ interface BotConfig {
   villageId: string;
   villageName: string;
   botUsername?: string;
+  botTokenSecretName?: string; // e.g., "TELEGRAM_BOT_TOKEN" or "PROTOVILLE_BOT_TOKEN"
   logoUrl?: string;
+  isConnected?: boolean;
   notificationTypes: {
     type: NotificationType;
     label: string;
@@ -263,7 +267,35 @@ export function BotNotificationSection({
         </CollapsibleTrigger>
         
         <CollapsibleContent>
-          <div className="border-t p-4 space-y-3">
+          <div className="border-t p-4 space-y-4">
+            {/* Bot Setup Instructions */}
+            {!config.isConnected && (
+              <Alert className="bg-amber-500/10 border-amber-500/30">
+                <Info className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-sm">
+                  <p className="font-medium text-amber-700 mb-2">Bot not connected</p>
+                  <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground text-xs">
+                    <li>Create a bot via <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-[#0088cc] hover:underline inline-flex items-center gap-0.5">@BotFather <ExternalLink className="h-2.5 w-2.5" /></a></li>
+                    <li>Copy the bot token (looks like <code className="bg-muted px-1 rounded">123456:ABC-xyz...</code>)</li>
+                    <li>Add the token as a secret named <code className="bg-muted px-1 rounded font-mono">{config.botTokenSecretName || 'TELEGRAM_BOT_TOKEN'}</code> in Cloud settings</li>
+                    <li>Add the bot to your Telegram group/channel as admin</li>
+                    <li>Get the Chat ID using <a href="https://t.me/RawDataBot" target="_blank" rel="noopener noreferrer" className="text-[#0088cc] hover:underline inline-flex items-center gap-0.5">@RawDataBot <ExternalLink className="h-2.5 w-2.5" /></a></li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {config.isConnected && config.botUsername && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-green-700">Bot connected</span>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  Token: <code className="bg-muted px-1 rounded">{config.botTokenSecretName || 'TELEGRAM_BOT_TOKEN'}</code>
+                </span>
+              </div>
+            )}
+            
+            <div className="space-y-3">
             {config.notificationTypes.map((typeConfig) => {
               const route = getRoute(typeConfig.type);
               const isEditing = editingRoute?.type === typeConfig.type;
@@ -373,6 +405,7 @@ export function BotNotificationSection({
                 </div>
               );
             })}
+            </div>
           </div>
         </CollapsibleContent>
       </div>
