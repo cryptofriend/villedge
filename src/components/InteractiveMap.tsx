@@ -32,12 +32,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 // Default center (first village or fallback)
 const DEFAULT_CENTER: [number, number] = [108.1885, 10.9355];
 
+type CategoryType = "map" | "residents" | "scenius" | "bulletin" | "events" | "treasury";
+
 interface InteractiveMapProps {
   mapboxToken: string;
   initialVillageId?: string;
+  initialCategory?: CategoryType;
 }
 
-export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMapProps) => {
+export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory = "map" }: InteractiveMapProps) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -68,13 +71,24 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  // Parse initial tab from URL query parameter
-  const validTabs = ["map", "residents", "scenius", "bulletin", "events", "treasury"] as const;
-  type TabType = typeof validTabs[number];
-  const initialTab = searchParams.get("tab") as TabType | null;
-  const [activeView, setActiveView] = useState<TabType>(
-    initialTab && validTabs.includes(initialTab) ? initialTab : "map"
+  
+  // Active view - use URL path-based category, fallback to query param for backward compatibility
+  const validTabs: CategoryType[] = ["map", "residents", "scenius", "bulletin", "events", "treasury"];
+  const queryTab = searchParams.get("tab") as CategoryType | null;
+  const [activeView, setActiveView] = useState<CategoryType>(
+    initialCategory || (queryTab && validTabs.includes(queryTab) ? queryTab : "map")
   );
+  
+  // Handle view changes with URL navigation
+  const handleViewChange = useCallback((view: CategoryType) => {
+    setActiveView(view);
+    if (initialVillageId) {
+      // Navigate to the new category URL
+      const basePath = `/${initialVillageId}`;
+      const newPath = view === "map" ? basePath : `${basePath}/${view}`;
+      navigate(newPath, { replace: true });
+    }
+  }, [initialVillageId, navigate]);
   
   // Comments for floating bubbles
   const [allComments, setAllComments] = useState<Comment[]>([]);
@@ -829,7 +843,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
             {isZoomedIn && (
               <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm">
                 <button
-                  onClick={() => setActiveView("map")}
+                  onClick={() => handleViewChange("map")}
                 className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                   activeView === "map"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -840,7 +854,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <span className="hidden sm:inline">Map</span>
               </button>
               <button
-                onClick={() => setActiveView("residents")}
+                onClick={() => handleViewChange("residents")}
                 className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                   activeView === "residents"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -851,7 +865,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <span className="hidden sm:inline">Residents</span>
               </button>
               <button
-                onClick={() => setActiveView("scenius")}
+                onClick={() => handleViewChange("scenius")}
                 className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                   activeView === "scenius"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -862,7 +876,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <span className="hidden sm:inline">Scenius</span>
               </button>
               <button
-                onClick={() => setActiveView("bulletin")}
+                onClick={() => handleViewChange("bulletin")}
                 className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                   activeView === "bulletin"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -873,7 +887,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <span className="hidden sm:inline">Bulletin</span>
               </button>
               <button
-                onClick={() => setActiveView("treasury")}
+                onClick={() => handleViewChange("treasury")}
                 className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                   activeView === "treasury"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -884,7 +898,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
                 <span className="hidden sm:inline">Treasury</span>
               </button>
               <button
-                onClick={() => setActiveView("events")}
+                onClick={() => handleViewChange("events")}
                 className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                   activeView === "events"
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -1130,7 +1144,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId }: InteractiveMap
       {isZoomedIn && (
         <MobileBottomNav
           activeView={activeView}
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
         />
       )}
     </div>
