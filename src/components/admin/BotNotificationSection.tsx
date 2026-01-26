@@ -57,13 +57,15 @@ interface BotNotificationSectionProps {
   notificationRoutes: NotificationRoute[];
   setNotificationRoutes: React.Dispatch<React.SetStateAction<NotificationRoute[]>>;
   globalChatId: string;
+  onUpdateSecretName?: (villageId: string, secretName: string) => void;
 }
 
 export function BotNotificationSection({ 
   config, 
   notificationRoutes, 
   setNotificationRoutes,
-  globalChatId
+  globalChatId,
+  onUpdateSecretName
 }: BotNotificationSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [editingRoute, setEditingRoute] = useState<{type: NotificationType} | null>(null);
@@ -71,6 +73,7 @@ export function BotNotificationSection({
   const [editThreadId, setEditThreadId] = useState("");
   const [savingRoute, setSavingRoute] = useState(false);
   const [testingRoute, setTestingRoute] = useState<string | null>(null);
+  const [localSecretName, setLocalSecretName] = useState(config.botTokenSecretName || 'TELEGRAM_BOT_TOKEN');
 
   const getRoute = (type: NotificationType): NotificationRoute | undefined => {
     return notificationRoutes.find(r => r.notification_type === type && r.village_id === config.villageId);
@@ -274,10 +277,32 @@ export function BotNotificationSection({
                 <Info className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-sm">
                   <p className="font-medium text-amber-700 mb-2">Bot not connected</p>
-                  <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground text-xs">
+                  <ol className="list-decimal list-inside space-y-2 text-muted-foreground text-xs">
                     <li>Create a bot via <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-[#0088cc] hover:underline inline-flex items-center gap-0.5">@BotFather <ExternalLink className="h-2.5 w-2.5" /></a></li>
                     <li>Copy the bot token (looks like <code className="bg-muted px-1 rounded">123456:ABC-xyz...</code>)</li>
-                    <li>Add the token as a secret named <code className="bg-muted px-1 rounded font-mono">{config.botTokenSecretName || 'TELEGRAM_BOT_TOKEN'}</code> in Cloud settings</li>
+                    <li className="flex flex-col gap-1.5">
+                      <span>Add the token as a secret in Cloud settings:</span>
+                      <div className="flex items-center gap-2 ml-4">
+                        <Input
+                          value={localSecretName}
+                          onChange={(e) => setLocalSecretName(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
+                          onBlur={() => onUpdateSecretName?.(config.villageId, localSecretName)}
+                          placeholder="SECRET_NAME"
+                          className="h-7 text-xs font-mono w-48 bg-background"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2"
+                          onClick={() => {
+                            navigator.clipboard.writeText(localSecretName);
+                            toast({ title: "Copied", description: "Secret name copied to clipboard" });
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </li>
                     <li>Add the bot to your Telegram group/channel as admin</li>
                     <li>Get the Chat ID using <a href="https://t.me/RawDataBot" target="_blank" rel="noopener noreferrer" className="text-[#0088cc] hover:underline inline-flex items-center gap-0.5">@RawDataBot <ExternalLink className="h-2.5 w-2.5" /></a></li>
                   </ol>
