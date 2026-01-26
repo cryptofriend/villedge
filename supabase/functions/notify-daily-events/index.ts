@@ -37,38 +37,52 @@ Deno.serve(async (req) => {
       throw new Error("TELEGRAM_BOT_TOKEN not configured");
     }
 
+    // Parse request body for mode
+    let mode = "today";
+    try {
+      const body = await req.json();
+      mode = body.mode || "today";
+    } catch {
+      // Default to today if no body
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get today's date range in Vietnam timezone
+    // Get date range in Vietnam timezone
     const now = new Date();
     const vietnamOffset = 7 * 60 * 60 * 1000; // UTC+7
     const vietnamNow = new Date(now.getTime() + vietnamOffset);
     
     // Start of today in Vietnam
-    const todayStart = new Date(vietnamNow);
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const todayStartUtc = new Date(todayStart.getTime() - vietnamOffset);
+    const rangeStart = new Date(vietnamNow);
+    rangeStart.setUTCHours(0, 0, 0, 0);
+    const rangeStartUtc = new Date(rangeStart.getTime() - vietnamOffset);
     
-    // End of today in Vietnam
-    const todayEnd = new Date(vietnamNow);
-    todayEnd.setUTCHours(23, 59, 59, 999);
-    const todayEndUtc = new Date(todayEnd.getTime() - vietnamOffset);
+    // End date depends on mode
+    const rangeEnd = new Date(vietnamNow);
+    if (mode === "week") {
+      // Add 7 days for week mode
+      rangeEnd.setUTCDate(rangeEnd.getUTCDate() + 6);
+    }
+    rangeEnd.setUTCHours(23, 59, 59, 999);
+    const rangeEndUtc = new Date(rangeEnd.getTime() - vietnamOffset);
 
-    console.log(`Fetching events for today (Vietnam time): ${todayStart.toISOString().split('T')[0]}`);
+    const isWeekMode = mode === "week";
+    console.log(`Fetching events for ${isWeekMode ? 'upcoming week' : 'today'} (Vietnam time): ${rangeStart.toISOString().split('T')[0]}${isWeekMode ? ' to ' + rangeEnd.toISOString().split('T')[0] : ''}`);
 
-    // Fetch today's events
+    // Fetch events in date range
     const { data: events, error: eventsError } = await supabase
       .from("events")
       .select("*")
-      .gte("start_time", todayStartUtc.toISOString())
-      .lte("start_time", todayEndUtc.toISOString())
+      .gte("start_time", rangeStartUtc.toISOString())
+      .lte("start_time", rangeEndUtc.toISOString())
       .order("start_time", { ascending: true });
 
     if (eventsError) {
       throw new Error(`Failed to fetch events: ${eventsError.message}`);
     }
 
-    console.log(`Found ${events?.length || 0} events for today`);
+    console.log(`Found ${events?.length || 0} events for ${isWeekMode ? 'upcoming week' : 'today'}`);
 
     // Check for notification route
     const { data: route } = await supabase
@@ -84,39 +98,65 @@ Deno.serve(async (req) => {
 
     if (!events || events.length === 0) {
       // Send "no events" message
-      const noEventsMessage = `📅 <b>Today's Events</b>\n\n<i>No events scheduled for today.</i>\n\nHave a great day! ☀️`;
+      const noEventsMessage = isWeekMode 
+        ? `📅 <b>Upcoming Week's Events</b>\n\n<i>No events scheduled for the upcoming week.</i>\n\nHave a great week! ☀️`
+        : `📅 <b>Today's Events</b>\n\n<i>No events scheduled for today.</i>\n\nHave a great day! ☀️`;
       
       await sendTelegramMessage(telegramBotToken, chatId, threadId, noEventsMessage);
       
       return new Response(
-        JSON.stringify({ success: true, message: "No events today notification sent" }),
+        JSON.stringify({ success: true, message: `No events ${isWeekMode ? 'this week' : 'today'} notification sent` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Format the events message
-    const dateStr = vietnamNow.toLocaleDateString("en-US", {
-      timeZone: "Asia/Ho_Chi_Minh",
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
+    const dateStr = isWeekMode 
+      ? `${vietnamNow.toLocaleDateString("en-US", { timeZone: "Asia/Ho_Chi_Minh", month: "long", day: "numeric" })} - ${rangeEnd.toLocaleDateString("en-US", { timeZone: "Asia/Ho_Chi_Minh", month: "long", day: "numeric" })}`
+      : vietnamNow.toLocaleDateString("en-US", { timeZone: "Asia/Ho_Chi_Minh", weekday: "long", month: "long", day: "numeric" });
 
-    let message = `📅 <b>Today's Events - ${escapeHtml(dateStr)}</b>\n\n`;
+    let message = isWeekMode 
+      ? `📅 <b>Upcoming Week's Events - ${escapeHtml(dateStr)}</b>\n\n`
+      : `📅 <b>Today's Events - ${escapeHtml(dateStr)}</b>\n\n`;
 
-    events.forEach((event, index) => {
-      const startTime = formatTime(event.start_time);
-      const endTime = event.end_time ? ` - ${formatTime(event.end_time)}` : "";
-      const location = event.location ? `📍 ${escapeHtml(event.location)}` : "";
-      
-      message += `<b>${index + 1}. ${escapeHtml(event.title)}</b>\n`;
-      message += `🕐 ${startTime}${endTime}\n`;
-      if (location) message += `${location}\n`;
-      if (event.luma_url) message += `<a href="${event.luma_url}">View on Luma →</a>\n`;
-      message += "\n";
-    });
+    // Group events by day for week mode
+    if (isWeekMode) {
+      const eventsByDay: Record<string, typeof events> = {};
+      events.forEach((event) => {
+        const eventDate = new Date(event.start_time);
+        const dayKey = eventDate.toLocaleDateString("en-US", { 
+          timeZone: "Asia/Ho_Chi_Minh", 
+          weekday: "short", 
+          month: "short", 
+          day: "numeric" 
+        });
+        if (!eventsByDay[dayKey]) eventsByDay[dayKey] = [];
+        eventsByDay[dayKey].push(event);
+      });
 
-    message += `\n<i>${events.length} event${events.length > 1 ? "s" : ""} scheduled for today</i>`;
+      Object.entries(eventsByDay).forEach(([day, dayEvents]) => {
+        message += `<b>📆 ${escapeHtml(day)}</b>\n`;
+        dayEvents.forEach((event) => {
+          const startTime = formatTime(event.start_time);
+          message += `  • ${escapeHtml(event.title)} @ ${startTime}\n`;
+        });
+        message += "\n";
+      });
+    } else {
+      events.forEach((event, index) => {
+        const startTime = formatTime(event.start_time);
+        const endTime = event.end_time ? ` - ${formatTime(event.end_time)}` : "";
+        const location = event.location ? `📍 ${escapeHtml(event.location)}` : "";
+        
+        message += `<b>${index + 1}. ${escapeHtml(event.title)}</b>\n`;
+        message += `🕐 ${startTime}${endTime}\n`;
+        if (location) message += `${location}\n`;
+        if (event.luma_url) message += `<a href="${event.luma_url}">View on Luma →</a>\n`;
+        message += "\n";
+      });
+    }
+
+    message += `\n<i>${events.length} event${events.length > 1 ? "s" : ""} ${isWeekMode ? 'this week' : 'today'}</i>`;
 
     await sendTelegramMessage(telegramBotToken, chatId, threadId, message);
 
