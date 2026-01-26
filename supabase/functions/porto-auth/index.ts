@@ -68,10 +68,19 @@ Deno.serve(async (req) => {
 
     // Generate a deterministic email from the wallet address
     // Use wallet type in domain for clarity (all go through same auth flow)
+    // For TON addresses, we need to make them email-safe by replacing invalid chars
     const emailDomain = walletType === 'ton' ? 'ton.wallet' : 
                         walletType === 'solana' ? 'solana.wallet' : 
                         walletType === 'ethereum' ? 'eth.wallet' : 'porto.wallet';
-    const walletEmail = `${normalizedAddress}@${emailDomain}`;
+    
+    // Make the address email-safe: replace special chars with underscores
+    // Email local part allows: letters, digits, dots, hyphens, underscores
+    const emailSafeAddress = normalizedAddress
+      .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace invalid chars with underscore
+      .slice(0, 64); // Email local part max 64 chars
+    
+    const walletEmail = `${emailSafeAddress}@${emailDomain}`;
+    console.log("porto-auth: Generated email:", walletEmail);
     
     // Generate avatar based on wallet address
     const avatarUrl = getAvatarUrl(normalizedAddress);
