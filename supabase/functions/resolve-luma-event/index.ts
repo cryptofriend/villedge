@@ -74,7 +74,7 @@ serve(async (req) => {
     if (jsonLdMatch) {
       try {
         const jsonLd = JSON.parse(jsonLdMatch[1]);
-        console.log('Parsed JSON-LD:', JSON.stringify(jsonLd).slice(0, 500));
+        console.log('Parsed JSON-LD:', JSON.stringify(jsonLd).slice(0, 1000));
         
         eventData = {
           title: jsonLd.name || 'Untitled Event',
@@ -85,6 +85,9 @@ serve(async (req) => {
           image_url: jsonLd.image || null,
           luma_id: eventSlug,
         };
+        
+        console.log('Extracted start_time:', jsonLd.startDate);
+        console.log('Extracted end_time:', jsonLd.endDate);
       } catch (parseError) {
         console.error('Failed to parse JSON-LD:', parseError);
       }
