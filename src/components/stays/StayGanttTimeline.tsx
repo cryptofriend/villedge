@@ -222,29 +222,23 @@ export const StayGanttTimeline = ({ stays, loading, onToggleStatus }: StayGanttT
 
   return (
     <div className="flex flex-col h-full">
-      {/* Controls */}
-      <div className="flex items-center justify-end gap-2 mb-3">
-        <Button variant="outline" size="sm" onClick={jumpToToday} className="gap-2">
-          <CalendarCheck className="h-4 w-4" />
-          Jump to Today
-        </Button>
-      </div>
-
-      {/* Occupancy Chart */}
-      <div className="flex">
-        <div style={{ width: nameColumnWidth }} className="flex-shrink-0" />
+      {/* Occupancy Chart - At top for mobile */}
+      <div className={cn("mb-3", isMobile ? "" : "flex")}>
+        {!isMobile && <div style={{ width: nameColumnWidth }} className="flex-shrink-0" />}
         <div className="flex-1 overflow-hidden">
-          <div
-            ref={scrollContainerRef}
-            className="overflow-x-auto"
-            style={{ width: `calc(100%)` }}
-          >
-            <div style={{ width: days.length * dayWidth }}>
-              <OccupancyChart stays={stays} dateRange={dateRange} dayWidth={dayWidth} />
-            </div>
-          </div>
+          <OccupancyChart stays={stays} dateRange={dateRange} dayWidth={dayWidth} isMobile={isMobile} />
         </div>
       </div>
+
+      {/* Controls - Only on desktop */}
+      {!isMobile && (
+        <div className="flex items-center justify-end gap-2 mb-3">
+          <Button variant="outline" size="sm" onClick={jumpToToday} className="gap-2">
+            <CalendarCheck className="h-4 w-4" />
+            Jump to Today
+          </Button>
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="flex flex-1 min-h-0">
