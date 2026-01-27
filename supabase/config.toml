@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.get-solana-balance]
 verify_jwt = false
+
+[functions.telegram-debug-chat-ids]
+verify_jwt = false
