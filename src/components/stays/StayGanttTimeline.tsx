@@ -281,15 +281,6 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
         </div>
       </div>
 
-      {/* Controls - Only on desktop */}
-      {!isMobile && (
-        <div className="flex items-center justify-end gap-2 mb-3">
-          <Button variant="outline" size="sm" onClick={jumpToToday} className="gap-2">
-            <CalendarCheck className="h-4 w-4" />
-            Jump to Today
-          </Button>
-        </div>
-      )}
 
       {/* Timeline with synced scrolling */}
       <div className="flex flex-1 min-h-0 overflow-hidden">

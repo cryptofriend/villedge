@@ -77,6 +77,8 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
         resetForm();
         setOpen(false);
         toast.success("Stay added! You're joining the village.");
+        // Refresh page to reflect changes
+        window.location.reload();
       }
     } finally {
       setIsSubmitting(false);
