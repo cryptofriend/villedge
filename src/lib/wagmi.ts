@@ -49,9 +49,11 @@ const dialogMode = Mode.dialog({
 export const porto = portoConnector({ mode: dialogMode });
 
 // WalletConnect project ID from environment
-const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
+const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 
-// Create and export WalletConnect connector if project ID is available
+console.log('[Wagmi] WalletConnect Project ID available:', !!walletConnectProjectId);
+
+// Create and export WalletConnect connector - always create it if we have the project ID
 export const walletConnectConnector = walletConnectProjectId
   ? walletConnect({
       projectId: walletConnectProjectId,
@@ -65,9 +67,13 @@ export const walletConnectConnector = walletConnectProjectId
     })
   : null;
 
+// Build connectors array
+const allConnectors = walletConnectConnector ? [porto, walletConnectConnector] : [porto];
+console.log('[Wagmi] Configured connectors:', allConnectors.length);
+
 export const wagmiConfig = createConfig({
   chains: [base, mainnet],
-  connectors: walletConnectConnector ? [porto, walletConnectConnector] : [porto],
+  connectors: allConnectors,
   storage: createStorage({ storage: localStorage }),
   transports: {
     [base.id]: http(),

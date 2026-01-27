@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { walletConnectConnector } from '@/lib/wagmi';
 
 // Debug log collector
 const debugLogs: string[] = [];
@@ -181,16 +182,23 @@ export default function Auth() {
 
   const handleEthereumConnect = () => {
     setAuthType('ethereum');
-    // Use WalletConnect for Ethereum connection - find by name since ID can vary
-    const wcConnector = connectors.find(c => 
-      c.name.toLowerCase().includes('walletconnect') || c.id.includes('walletConnect')
-    );
-    console.log('[Auth] Available connectors for ETH:', connectors.map(c => ({ id: c.id, name: c.name })));
-    if (wcConnector) {
-      connect({ connector: wcConnector });
+    // Use imported WalletConnect connector directly
+    if (walletConnectConnector) {
+      console.log('[Auth] Using WalletConnect connector directly');
+      connect({ connector: walletConnectConnector });
     } else {
-      toast.error('WalletConnect not configured. Please check project settings.');
-      setAuthType(null);
+      // Fallback: try to find any EVM wallet
+      const evmConnector = connectors.find(c => 
+        c.name.toLowerCase().includes('metamask') || 
+        c.name.toLowerCase().includes('rabby')
+      );
+      if (evmConnector) {
+        console.log('[Auth] Using fallback EVM wallet:', evmConnector.name);
+        connect({ connector: evmConnector });
+      } else {
+        toast.error('No Ethereum wallet available. WalletConnect not configured.');
+        setAuthType(null);
+      }
     }
   };
 
