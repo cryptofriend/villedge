@@ -404,6 +404,33 @@ export type Database = {
           },
         ]
       }
+      reveal_requests: {
+        Row: {
+          created_at: string
+          id: string
+          requester_id: string
+          status: string
+          target_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: string
+          target_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: string
+          target_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scenius: {
         Row: {
           contributors: string[] | null
@@ -623,6 +650,27 @@ export type Database = {
           id?: string
           updated_at?: string
           village_id?: string
+        }
+        Relationships: []
+      }
+      user_connections: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
         }
         Relationships: []
       }
@@ -884,6 +932,14 @@ export type Database = {
     Functions: {
       cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }
       generate_username: { Args: { display_name: string }; Returns: string }
+      has_approved_reveal: {
+        Args: { _requester: string; _target: string }
+        Returns: boolean
+      }
+      has_mutual_connection: {
+        Args: { _user_a: string; _user_b: string }
+        Returns: boolean
+      }
       is_village_host: {
         Args: { _user_id: string; _village_id: string }
         Returns: boolean

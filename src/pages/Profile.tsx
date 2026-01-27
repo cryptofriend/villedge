@@ -10,9 +10,13 @@ import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNe
 import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
 import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSection";
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
+import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
+import { ProfileRevealRequests } from "@/components/profile/ProfileRevealRequests";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useConnections } from "@/hooks/useConnections";
+import { useRevealRequests } from "@/hooks/useRevealRequests";
 
 export interface ProfileData extends ProfileType {
   title?: string | null;
@@ -37,6 +41,10 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [activities, setActivities] = useState<UserActivity[]>([]);
+  
+  // Connection and reveal hooks
+  const { isMutualConnection } = useConnections(profileUserId || undefined);
+  const { hasApprovedAccess } = useRevealRequests(profileUserId || undefined);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -207,8 +215,9 @@ const Profile = () => {
     }
   };
 
-  // Determine if content should be blurred (anon mode ON and viewer is not the profile owner)
-  const shouldBlur = profileData.is_anon && !isOwnProfile;
+  // Determine if content should be blurred
+  // Blur if: profile is anon AND viewer is not owner AND no mutual connection AND no approved reveal
+  const shouldBlur = profileData.is_anon && !isOwnProfile && !isMutualConnection && !hasApprovedAccess;
 
   return (
     <div className="min-h-screen bg-background">
@@ -266,6 +275,24 @@ const Profile = () => {
           isOwnProfile={isOwnProfile}
           onProfileUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
         />
+
+        {/* Connection actions for non-own profiles */}
+        {!isOwnProfile && profileUserId && (
+          <div className="flex items-center justify-between pt-4">
+            <ProfileConnectionActions 
+              targetUserId={profileUserId} 
+              isAnon={profileData.is_anon || false}
+            />
+            {shouldBlur && (
+              <span className="text-sm text-muted-foreground">
+                This profile is private
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Incoming reveal requests (only for own profile) */}
+        {isOwnProfile && <ProfileRevealRequests />}
 
         {/* 2. Working On / Scenius Section */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>

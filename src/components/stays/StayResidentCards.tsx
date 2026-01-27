@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { format, parseISO, differenceInDays, isWithinInterval } from "date-fns";
 import { Stay } from "@/hooks/useStays";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -8,12 +8,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Twitter, Instagram, Github, Linkedin, ExternalLink, Briefcase, Search, Loader2, UserPlus } from "lucide-react";
 import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfileVisibility } from "@/hooks/useProfileVisibility";
 
 interface StayResidentCardsProps {
   stays: Stay[];
   loading: boolean;
   applyUrl?: string | null;
   isHost?: boolean;
+}
+
+interface VisibilityMap {
+  [userId: string]: boolean;
 }
 
 // Detect social network from URL
@@ -36,6 +42,10 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 };
 
 export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResidentCardsProps) => {
+  const { user } = useAuth();
+  const { checkBatchVisibility } = useProfileVisibility();
+  const [visibilityMap, setVisibilityMap] = useState<VisibilityMap>({});
+
   // Group stays by nickname and get the latest/most relevant stay
   const residents = useMemo(() => {
     const grouped = new Map<string, Stay[]>();
@@ -51,6 +61,7 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
         stays: personStays,
         primaryStay: personStays[0],
         isAnon: personStays[0]?.is_anon ?? false,
+        userId: personStays[0]?.user_id,
       }))
       .sort((a, b) => {
         const aDate = parseISO(a.primaryStay.start_date);
@@ -58,6 +69,34 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
         return aDate.getTime() - bDate.getTime();
       });
   }, [stays]);
+
+  // Check visibility for all users with anon mode
+  useEffect(() => {
+    const checkVisibility = async () => {
+      const usersToCheck = residents
+        .filter(r => r.userId)
+        .map(r => ({
+          userId: r.userId!,
+          isAnon: r.isAnon,
+        }));
+
+      if (usersToCheck.length > 0) {
+        const visibility = await checkBatchVisibility(usersToCheck);
+        setVisibilityMap(visibility);
+      }
+    };
+
+    checkVisibility();
+  }, [residents, checkBatchVisibility]);
+
+  // Helper to check if a resident should be blurred
+  const shouldBlurResident = (resident: { isAnon: boolean; userId?: string | null }): boolean => {
+    if (!resident.isAnon) return false;
+    if (isHost) return false;
+    if (user && resident.userId === user.id) return false;
+    if (resident.userId && visibilityMap[resident.userId]) return false;
+    return true;
+  };
 
   // Check if someone is "here now"
   const isHereNow = (stay: Stay) => {
@@ -104,9 +143,9 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
       )}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
-        {residents.map(({ nickname, primaryStay, isAnon }) => {
-          // If user is anon and viewer is not host, blur their card
-          const shouldBlur = isAnon && !isHost;
+        {residents.map(({ nickname, primaryStay, isAnon, userId }) => {
+          // Use connection-based visibility check
+          const shouldBlur = shouldBlurResident({ isAnon, userId });
           const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);
           const social = getSocialNetwork(primaryStay.social_profile || null);
           const startDate = parseISO(primaryStay.start_date);
