@@ -81,7 +81,8 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 
 export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const rowsContainerRef = useRef<HTMLDivElement>(null);
+  const nameColumnRef = useRef<HTMLDivElement>(null);
+  const intentionColumnRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const [nameColumnWidth, setNameColumnWidth] = useState(isMobile ? 100 : 120);
@@ -89,6 +90,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
   const [isResizing, setIsResizing] = useState(false);
   const [resizingColumn, setResizingColumn] = useState<'name' | 'intention' | null>(null);
   const [selectedNickname, setSelectedNickname] = useState<string | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
   const dayWidth = isMobile ? 20 : 28;
 
   // Calculate date range from stays
@@ -197,18 +199,35 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  // Sync scroll between rows container and timeline
-  const handleRowsScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = e.currentTarget.scrollTop;
+  // Sync scroll between all columns and timeline
+  const syncScroll = useCallback((scrollTop: number, source: 'name' | 'intention' | 'timeline') => {
+    if (isScrolling) return;
+    setIsScrolling(true);
+    
+    if (source !== 'name' && nameColumnRef.current) {
+      nameColumnRef.current.scrollTop = scrollTop;
     }
-  }, []);
+    if (source !== 'intention' && intentionColumnRef.current) {
+      intentionColumnRef.current.scrollTop = scrollTop;
+    }
+    if (source !== 'timeline' && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollTop;
+    }
+    
+    requestAnimationFrame(() => setIsScrolling(false));
+  }, [isScrolling]);
+
+  const handleNameScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    syncScroll(e.currentTarget.scrollTop, 'name');
+  }, [syncScroll]);
+
+  const handleIntentionScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    syncScroll(e.currentTarget.scrollTop, 'intention');
+  }, [syncScroll]);
 
   const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    if (rowsContainerRef.current) {
-      rowsContainerRef.current.scrollTop = e.currentTarget.scrollTop;
-    }
-  }, []);
+    syncScroll(e.currentTarget.scrollTop, 'timeline');
+  }, [syncScroll]);
 
   // Auto-scroll to today on mount
   useEffect(() => {
@@ -289,9 +308,9 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
             
             {/* Scrollable Names */}
             <div 
-              ref={rowsContainerRef}
+              ref={nameColumnRef}
               className="flex-1 overflow-y-auto overflow-x-hidden"
-              onScroll={handleRowsScroll}
+              onScroll={handleNameScroll}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
@@ -358,7 +377,10 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
               
               {/* Scrollable Intentions - synced with names */}
               <div 
-                className="flex-1 overflow-hidden"
+                ref={intentionColumnRef}
+                className="flex-1 overflow-y-auto overflow-x-hidden"
+                onScroll={handleIntentionScroll}
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
                   const firstStay = personStays[0];
