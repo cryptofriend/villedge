@@ -20,6 +20,7 @@ export interface Stay {
   project_url: string | null;
   status: "planning" | "confirmed" | null;
   user_id: string | null;
+  is_anon?: boolean; // From joined profile
 }
 
 export interface StayInput {
@@ -62,14 +63,23 @@ export const useStays = (villageId?: string) => {
     }
 
     try {
+      // Fetch stays with profile is_anon status
       const { data, error } = await supabase
         .from("stays")
-        .select("*")
+        .select("*, profiles:user_id(is_anon)")
         .eq("village_id", villageId)
         .order("start_date", { ascending: true });
 
       if (error) throw error;
-      setStays((data as Stay[]) || []);
+      
+      // Map the joined data to include is_anon
+      const staysWithAnon = (data || []).map((stay: any) => ({
+        ...stay,
+        is_anon: stay.profiles?.is_anon ?? false,
+        profiles: undefined, // Remove the nested object
+      }));
+      
+      setStays(staysWithAnon as Stay[]);
     } catch (err) {
       console.error("Error fetching stays:", err);
       toast.error("Failed to load stays");
