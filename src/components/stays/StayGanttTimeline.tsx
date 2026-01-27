@@ -12,7 +12,7 @@ import { Stay } from "@/hooks/useStays";
 import { OccupancyChart } from "./OccupancyChart";
 import { ResidentProfileCard } from "./ResidentProfileCard";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin } from "lucide-react";
+import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBestAvatar } from "@/lib/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -28,6 +28,8 @@ interface StayGanttTimelineProps {
   stays: Stay[];
   loading: boolean;
   onEditStay?: (stay: Stay) => void;
+  onDeleteStay?: (stay: Stay) => void;
+  isHost?: boolean;
 }
 
 // Generate consistent colors based on nickname
@@ -79,7 +81,7 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
   return { type: 'other', color: 'text-muted-foreground' };
 };
 
-export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimelineProps) => {
+export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, isHost }: StayGanttTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const nameColumnRef = useRef<HTMLDivElement>(null);
   const intentionColumnRef = useRef<HTMLDivElement>(null);
@@ -548,6 +550,20 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
                             <p className="text-xs text-primary font-medium pt-1 border-t border-border mt-2 flex items-center gap-1">
                               Click to edit stay
                             </p>
+                          )}
+                          {isHost && onDeleteStay && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="w-full mt-2 h-7 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteStay(stay);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Remove Submission
+                            </Button>
                           )}
                         </div>
                       </TooltipContent>

@@ -287,5 +287,42 @@ export const useStays = (villageId?: string) => {
     }
   };
 
-  return { stays, loading, addStay, updateStay, deleteStay, toggleStayStatus, updateStayByOwner, refetch: fetchStays };
+  // Delete stay as host (bypasses secret code requirement)
+  const deleteStayAsHost = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from("stays").delete().eq("id", id);
+
+      if (error) throw error;
+      toast.success("Stay removed successfully!");
+      return true;
+    } catch (err) {
+      console.error("Error deleting stay:", err);
+      toast.error("Failed to remove stay");
+      return false;
+    }
+  };
+
+  // Update stay as host (for status changes, bypasses ownership check)
+  const updateStayAsHost = async (
+    id: string,
+    updates: Partial<StayInput>
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("stays")
+        .update(updates)
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      toast.success("Stay updated successfully!");
+      return true;
+    } catch (err) {
+      console.error("Error updating stay:", err);
+      toast.error("Failed to update stay");
+      return false;
+    }
+  };
+
+  return { stays, loading, addStay, updateStay, deleteStay, toggleStayStatus, updateStayByOwner, deleteStayAsHost, updateStayAsHost, refetch: fetchStays };
 };
