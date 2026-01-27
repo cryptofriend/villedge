@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   ChevronDown, ChevronRight, Loader2, Save, Send, Edit2, X, Plus, 
   Calendar, Wallet, MessageSquare, MapPin, Users, Activity, CheckCircle2, Clock,
-  Info, ExternalLink, Copy
+  Info, ExternalLink, Copy, Search
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -75,6 +75,21 @@ export function BotNotificationSection({
   const [testingRoute, setTestingRoute] = useState<string | null>(null);
   const [localSecretName, setLocalSecretName] = useState(config.botTokenSecretName || 'TELEGRAM_BOT_TOKEN');
   const [secretNameDirty, setSecretNameDirty] = useState(false);
+  const [detectingChats, setDetectingChats] = useState(false);
+  const [detectedChats, setDetectedChats] = useState<
+    | null
+    | {
+        bot: { username?: string; id?: number };
+        chats: Array<{
+          id: string;
+          type?: string;
+          title?: string;
+          username?: string;
+          lastSeenAt?: string;
+        }>;
+        hint?: string;
+      }
+  >(null);
 
   const getRoute = (type: NotificationType): NotificationRoute | undefined => {
     return notificationRoutes.find(r => r.notification_type === type && r.village_id === config.villageId);
@@ -227,6 +242,34 @@ export function BotNotificationSection({
     return route?.is_enabled !== false && (route || t.isActive);
   }).length;
 
+  const handleDetectChatIds = async () => {
+    setDetectingChats(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("telegram-debug-chat-ids", {
+        body: {
+          botTokenSecretName: config.botTokenSecretName,
+          limit: 50,
+        },
+      });
+
+      if (error) throw error;
+      setDetectedChats(data as any);
+      toast({
+        title: "Chat IDs detected",
+        description: "Scroll down to see the list and copy the correct chat_id.",
+      });
+    } catch (err: any) {
+      console.error("Error detecting chat IDs:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to detect chat IDs",
+        variant: "destructive",
+      });
+    } finally {
+      setDetectingChats(false);
+    }
+  };
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="border rounded-lg bg-card overflow-hidden">
@@ -336,6 +379,77 @@ export function BotNotificationSection({
                   Token: <code className="bg-muted px-1 rounded">{config.botTokenSecretName || 'TELEGRAM_BOT_TOKEN'}</code>
                 </span>
               </div>
+            )}
+
+            {/* Debug: detect chat IDs via bot updates */}
+            <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-background">
+              <div className="text-sm">
+                <p className="font-medium">Detect Chat IDs</p>
+                <p className="text-xs text-muted-foreground">
+                  Reads recent bot updates and lists the chats (groups/channels/DMs) the bot can see.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8"
+                onClick={handleDetectChatIds}
+                disabled={detectingChats}
+              >
+                {detectingChats ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                <span className="ml-2">Detect</span>
+              </Button>
+            </div>
+
+            {detectedChats && (
+              <Alert>
+                <AlertDescription className="text-xs space-y-2">
+                  <div>
+                    <span className="font-medium">Bot:</span>{" "}
+                    <code className="bg-muted px-1 rounded">
+                      {detectedChats.bot?.username ? `@${detectedChats.bot.username}` : "(unknown)"}
+                    </code>
+                  </div>
+                  {detectedChats.hint && (
+                    <div className="text-muted-foreground">{detectedChats.hint}</div>
+                  )}
+                  <div className="space-y-1">
+                    {detectedChats.chats?.length ? (
+                      detectedChats.chats.map((c) => (
+                        <div key={c.id} className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="truncate">
+                              <span className="font-medium">{c.title || c.username || c.type || "Chat"}</span>
+                              {c.type ? <span className="text-muted-foreground"> ({c.type})</span> : null}
+                            </div>
+                            {c.lastSeenAt ? (
+                              <div className="text-muted-foreground">Last seen: {new Date(c.lastSeenAt).toLocaleString()}</div>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <code className="bg-muted px-2 py-0.5 rounded font-mono">{c.id}</code>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={() => {
+                                navigator.clipboard.writeText(c.id);
+                                toast({ title: "Copied", description: "Chat ID copied to clipboard" });
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-muted-foreground">
+                        No chats detected yet.
+                      </div>
+                    )}
+                  </div>
+                </AlertDescription>
+              </Alert>
             )}
             
             <div className="space-y-3">
