@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Edit3, Loader2, Settings, Users, MapPin } from "lucide-react";
+import { Edit3, Loader2, Settings, Users, MapPin, Image } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 import { Village } from "@/hooks/useVillages";
@@ -21,10 +21,12 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolvingLocation, setIsResolvingLocation] = useState(false);
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
   
   const [name, setName] = useState(village.name);
   const [description, setDescription] = useState(village.description);
   const [logoUrl, setLogoUrl] = useState(village.logo_url || "");
+  const [thumbnailUrl, setThumbnailUrl] = useState((village as any).thumbnail_url || "");
   const [walletAddress, setWalletAddress] = useState(village.wallet_address || "");
   const [solanaWalletAddress, setSolanaWalletAddress] = useState(village.solana_wallet_address || "");
   const [websiteUrl, setWebsiteUrl] = useState(village.website_url || "");
@@ -44,6 +46,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
       setName(village.name);
       setDescription(village.description);
       setLogoUrl(village.logo_url || "");
+      setThumbnailUrl((village as any).thumbnail_url || "");
       setWalletAddress(village.wallet_address || "");
       setSolanaWalletAddress(village.solana_wallet_address || "");
       setWebsiteUrl(village.website_url || "");
@@ -56,6 +59,32 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
       setCenter(village.center);
     }
   }, [open, village]);
+
+  const handleThumbnailUpload = async (file: File) => {
+    setIsUploadingThumbnail(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${village.id}-thumbnail-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('village-thumbnails')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('village-thumbnails')
+        .getPublicUrl(fileName);
+
+      setThumbnailUrl(publicUrl);
+      toast.success("Thumbnail uploaded!");
+    } catch (err) {
+      console.error("Error uploading thumbnail:", err);
+      toast.error("Failed to upload thumbnail");
+    } finally {
+      setIsUploadingThumbnail(false);
+    }
+  };
 
   const handleResolveLocation = async () => {
     if (!googleMapsUrl.trim()) {
@@ -110,6 +139,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           name: name.trim(),
           description: description.trim(),
           logo_url: logoUrl || null,
+          thumbnail_url: thumbnailUrl || null,
           wallet_address: walletAddress.trim() || null,
           solana_wallet_address: solanaWalletAddress.trim() || null,
           website_url: websiteUrl.trim() || null,
@@ -156,10 +186,14 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
         </DialogHeader>
         
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Details
+            </TabsTrigger>
+            <TabsTrigger value="branding" className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Branding
             </TabsTrigger>
             <TabsTrigger value="hosts" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -169,16 +203,6 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           
           <TabsContent value="details" className="mt-4">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="logo">Village Logo</Label>
-                <ImageUpload
-                  value={logoUrl}
-                  onChange={setLogoUrl}
-                  placeholder="Upload or enter logo URL"
-                  aspectRatio={1}
-                />
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="name">Village Name</Label>
                 <Input
@@ -360,6 +384,82 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
                 </Button>
               </div>
             </form>
+          </TabsContent>
+
+          <TabsContent value="branding" className="mt-4 space-y-6">
+            <div className="space-y-3">
+              <Label>Village Logo</Label>
+              <p className="text-xs text-muted-foreground">
+                Square image shown on the map and header. Works best at 256×256 or larger.
+              </p>
+              <ImageUpload
+                value={logoUrl}
+                onChange={setLogoUrl}
+                placeholder="Upload or enter logo URL"
+                aspectRatio={1}
+              />
+            </div>
+
+            <div className="space-y-3 border-t pt-4">
+              <Label>Link Preview Thumbnail</Label>
+              <p className="text-xs text-muted-foreground">
+                Image shown when sharing village links on Telegram, Twitter, etc. Recommended: 1200×630px.
+              </p>
+              {thumbnailUrl && (
+                <div className="relative rounded-lg overflow-hidden border bg-muted">
+                  <img 
+                    src={thumbnailUrl} 
+                    alt="Thumbnail preview" 
+                    className="w-full h-auto max-h-40 object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => setThumbnailUrl("")}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleThumbnailUpload(file);
+                  }}
+                  disabled={isUploadingThumbnail}
+                  className="flex-1"
+                />
+                {isUploadingThumbnail && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} disabled={isSubmitting || isUploadingThumbnail}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </div>
           </TabsContent>
           
           <TabsContent value="hosts" className="mt-4">
