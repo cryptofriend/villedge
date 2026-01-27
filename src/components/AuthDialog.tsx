@@ -138,8 +138,12 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const anyLoading = isBiometricLoading || isTonLoading;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-      <DialogContent className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-40">
+    <Dialog open={open} onOpenChange={() => {}} modal={true}>
+      <DialogContent 
+        className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50 [&>button]:hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         {/* Header with branding */}
         <div className="bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 p-6 pb-4">
           <DialogHeader className="space-y-3">
