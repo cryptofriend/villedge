@@ -127,6 +127,14 @@ export const useStays = (villageId?: string) => {
           
           if (route) {
             const stayDates = `${stay.start_date} → ${stay.end_date}`;
+            
+            // Determine which bot token to use based on village
+            const villageBotTokenMap: Record<string, string> = {
+              'protoville': 'PROTOVILLE_BOT_TOKEN',
+              'proof-of-retreat': 'TELEGRAM_BOT_TOKEN',
+            };
+            const botTokenSecretName = villageBotTokenMap[stay.village_id] || 'TELEGRAM_BOT_TOKEN';
+            
             const { error: notifyError } = await supabase.functions.invoke("notify-telegram", {
               body: {
                 type: "resident",
@@ -136,7 +144,8 @@ export const useStays = (villageId?: string) => {
                 socialProfile: stay.social_profile,
                 villageId: stay.village_id,
                 testChatId: route.chat_id,
-                testThreadId: route.thread_id
+                testThreadId: route.thread_id,
+                botTokenSecretName
               }
             });
             if (notifyError) {
