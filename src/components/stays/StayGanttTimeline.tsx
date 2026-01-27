@@ -310,14 +310,19 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                 const firstStay = personStays[0];
                 const avatarUrl = getBestAvatar(nickname, firstStay?.social_profile || null, 32);
                 const socialNetwork = getSocialNetwork(firstStay?.social_profile || null);
+                const isAnon = firstStay?.is_anon ?? false;
+                const shouldBlur = isAnon && !isHost;
                 
                 return (
                   <div
                     key={nickname}
-                    onClick={() => setSelectedNickname(nickname)}
+                    onClick={() => !shouldBlur && setSelectedNickname(nickname)}
                     className={cn(
-                      "flex items-center gap-1.5 px-1.5 border-b border-border font-medium cursor-pointer hover:bg-muted/50 transition-colors",
-                      isMobile ? "h-9 text-xs" : "h-10 text-sm gap-2 px-2"
+                      "flex items-center gap-1.5 px-1.5 border-b border-border font-medium transition-colors",
+                      isMobile ? "h-9 text-xs" : "h-10 text-sm gap-2 px-2",
+                      shouldBlur 
+                        ? "blur-sm select-none pointer-events-none opacity-50" 
+                        : "cursor-pointer hover:bg-muted/50"
                     )}
                   >
                     <Avatar className={cn("flex-shrink-0", isMobile ? "w-5 h-5" : "w-6 h-6")}>
@@ -326,10 +331,10 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                         {nickname.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className={cn("truncate hover:underline", isMobile && "text-xs")} title={nickname}>
+                    <span className={cn("truncate", isMobile && "text-xs", !shouldBlur && "hover:underline")} title={nickname}>
                       {nickname}
                     </span>
-                    {!isMobile && firstStay?.social_profile && socialNetwork.type && (
+                    {!isMobile && firstStay?.social_profile && socialNetwork.type && !shouldBlur && (
                       <a
                         href={firstStay.social_profile}
                         target="_blank"
@@ -375,13 +380,18 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                 onScroll={handleIntentionScroll}
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+              {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
                   const firstStay = personStays[0];
+                  const isAnon = firstStay?.is_anon ?? false;
+                  const shouldBlur = isAnon && !isHost;
                   
                   return (
                     <div
                       key={nickname}
-                      className="h-10 flex items-center px-2 border-b border-border text-sm text-muted-foreground"
+                      className={cn(
+                        "h-10 flex items-center px-2 border-b border-border text-sm text-muted-foreground",
+                        shouldBlur && "blur-sm select-none pointer-events-none opacity-50"
+                      )}
                     >
                       <span className="truncate" title={firstStay?.intention || ""}>
                         {firstStay?.intention || "—"}
@@ -442,8 +452,17 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
             </div>
 
             {/* Stay Rows */}
-            {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => (
-              <div key={nickname} className={cn("relative border-b border-border", isMobile ? "h-9" : "h-10")}>
+            {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+              const firstStay = personStays[0];
+              const isAnon = firstStay?.is_anon ?? false;
+              const shouldBlurRow = isAnon && !isHost;
+              
+              return (
+              <div key={nickname} className={cn(
+                "relative border-b border-border", 
+                isMobile ? "h-9" : "h-10",
+                shouldBlurRow && "blur-sm opacity-50"
+              )}>
                 {/* Grid lines */}
                 <div className="absolute inset-0 flex">
                   {days.map((day, idx) => (
@@ -467,7 +486,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                   const colorStyle = getColorForNickname(nickname, stay.status);
                   const isPlanning = stay.status === "planning";
                   const isOwner = user?.id && stay.user_id === user.id;
-                  const canEdit = (isOwner || isHost) && onEditStay;
+                  const canEdit = (isOwner || isHost) && onEditStay && !shouldBlurRow;
 
                   const handleClick = (e: React.MouseEvent) => {
                     if (canEdit && onEditStay) {
@@ -563,7 +582,8 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                   );
                 })}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

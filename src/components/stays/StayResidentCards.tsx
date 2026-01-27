@@ -13,6 +13,7 @@ interface StayResidentCardsProps {
   stays: Stay[];
   loading: boolean;
   applyUrl?: string | null;
+  isHost?: boolean;
 }
 
 // Detect social network from URL
@@ -34,7 +35,7 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
   return { type: 'other', icon: ExternalLink };
 };
 
-export const StayResidentCards = ({ stays, loading, applyUrl }: StayResidentCardsProps) => {
+export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResidentCardsProps) => {
   // Group stays by nickname and get the latest/most relevant stay
   const residents = useMemo(() => {
     const grouped = new Map<string, Stay[]>();
@@ -49,6 +50,7 @@ export const StayResidentCards = ({ stays, loading, applyUrl }: StayResidentCard
         nickname,
         stays: personStays,
         primaryStay: personStays[0],
+        isAnon: personStays[0]?.is_anon ?? false,
       }))
       .sort((a, b) => {
         const aDate = parseISO(a.primaryStay.start_date);
@@ -102,7 +104,9 @@ export const StayResidentCards = ({ stays, loading, applyUrl }: StayResidentCard
       )}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
-        {residents.map(({ nickname, primaryStay }) => {
+        {residents.map(({ nickname, primaryStay, isAnon }) => {
+          // If user is anon and viewer is not host, blur their card
+          const shouldBlur = isAnon && !isHost;
           const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);
           const social = getSocialNetwork(primaryStay.social_profile || null);
           const startDate = parseISO(primaryStay.start_date);
@@ -113,7 +117,10 @@ export const StayResidentCards = ({ stays, loading, applyUrl }: StayResidentCard
           return (
             <div
               key={nickname}
-              className="rounded-xl border border-border bg-card overflow-hidden flex flex-col"
+              className={cn(
+                "rounded-xl border border-border bg-card overflow-hidden flex flex-col",
+                shouldBlur && "blur-sm select-none pointer-events-none opacity-60"
+              )}
             >
               {/* Card Header - Avatar & Badge */}
               <div className="relative pt-4 pb-2 flex flex-col items-center">

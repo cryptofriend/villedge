@@ -117,7 +117,7 @@ export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden p-4">
         {viewMode === "cards" ? (
-          <StayResidentCards stays={stays} loading={loading} applyUrl={applyUrl} />
+          <StayResidentCards stays={stays} loading={loading} applyUrl={applyUrl} isHost={isVillageHost} />
         ) : (
           <StayGanttTimeline 
             stays={stays} 
