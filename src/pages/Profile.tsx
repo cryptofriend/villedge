@@ -8,7 +8,6 @@ import { ProfileIdentityHeader } from "@/components/profile/ProfileIdentityHeade
 import { ProfileActivityHistory } from "@/components/profile/ProfileActivityHistory";
 import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNetwork";
 import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
-import { ProfileLinkedWallets } from "@/components/profile/ProfileLinkedWallets";
 import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSection";
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 
@@ -218,12 +217,6 @@ const Profile = () => {
 
         {/* 3. Village Timeline / Participation */}
         <ProfileVillageTimeline userId={profileUserId || undefined} />
-
-        {/* 4. Linked Wallets */}
-        <ProfileLinkedWallets
-          userId={profileUserId || undefined}
-          isOwnProfile={isOwnProfile}
-        />
 
         {/* 5. Events Calendar */}
         {profileUserId && (
