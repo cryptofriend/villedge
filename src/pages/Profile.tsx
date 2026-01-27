@@ -9,9 +9,10 @@ import { ProfileActivityHistory } from "@/components/profile/ProfileActivityHist
 import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNetwork";
 import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
 import { ProfileLinkedWallets } from "@/components/profile/ProfileLinkedWallets";
+import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSection";
+import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 
 export interface ProfileData extends ProfileType {
-  // Extended fields for the full profile page
   title?: string | null;
 }
 
@@ -119,11 +120,6 @@ const Profile = () => {
           });
         }
 
-        // Fetch spots created by user (via bulletin author_name match with display_name)
-        // For now, we can't directly link spots to users, so skip this
-
-        // Fetch events created (if we had user_id on events, we'd fetch here)
-
         // Fetch bulletin posts by display_name
         if (profile.display_name) {
           const { data: bulletinPosts } = await supabase
@@ -204,26 +200,40 @@ const Profile = () => {
 
       {/* Main Content */}
       <div className="max-w-3xl mx-auto px-4 py-8 pt-16 space-y-0">
-        {/* 1. Identity Header with editable username and wallet balance */}
+        {/* 1. Identity Header with editable name, username, avatar, social link */}
         <ProfileIdentityHeader 
           profile={profileData} 
           isOwnProfile={isOwnProfile}
           onProfileUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
         />
 
-        {/* 2. Village Timeline */}
+        {/* 2. Working On / Scenius Section */}
+        <ProfileSceniusSection
+          projectDescription={profileData.project_description}
+          projectUrl={profileData.project_url}
+          isOwnProfile={isOwnProfile}
+          userId={profileData.user_id}
+          onUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
+        />
+
+        {/* 3. Events Calendar */}
+        {profileUserId && (
+          <ProfileEventsCalendar userId={profileUserId} />
+        )}
+
+        {/* 4. Village Timeline */}
         <ProfileVillageTimeline userId={profileUserId || undefined} />
 
-        {/* 3. Linked Wallets */}
+        {/* 5. Linked Wallets */}
         <ProfileLinkedWallets
           userId={profileUserId || undefined}
           isOwnProfile={isOwnProfile}
         />
 
-        {/* 4. Activity History */}
+        {/* 6. Activity History */}
         <ProfileActivityHistory activities={activities} />
 
-        {/* 5. Connected Network */}
+        {/* 7. Connected Network */}
         <ProfileConnectedNetwork userId={profileUserId || ""} />
       </div>
     </div>
