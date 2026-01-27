@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, EyeOff, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, Profile as ProfileType } from "@/hooks/useAuth";
@@ -10,9 +10,13 @@ import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNe
 import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
 import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSection";
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export interface ProfileData extends ProfileType {
   title?: string | null;
+  is_anon?: boolean;
 }
 
 export interface UserActivity {
@@ -182,6 +186,30 @@ const Profile = () => {
     );
   }
 
+  const handleToggleAnon = async () => {
+    if (!isOwnProfile || !user) return;
+    
+    const newValue = !profileData.is_anon;
+    
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_anon: newValue })
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      
+      setProfileData(prev => prev ? { ...prev, is_anon: newValue } : null);
+      toast.success(newValue ? "Anon mode enabled" : "Anon mode disabled");
+    } catch (error) {
+      console.error("Error toggling anon mode:", error);
+      toast.error("Failed to update anon mode");
+    }
+  };
+
+  // Determine if content should be blurred (anon mode ON and viewer is not the profile owner)
+  const shouldBlur = profileData.is_anon && !isOwnProfile;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Back Button */}
@@ -197,6 +225,39 @@ const Profile = () => {
         </Button>
       </div>
 
+      {/* Anon Mode Toggle - top right */}
+      {isOwnProfile && (
+        <div className="fixed top-4 right-4 z-50">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToggleAnon}
+                className={cn(
+                  "bg-background/80 backdrop-blur-sm gap-2",
+                  profileData.is_anon && "border-primary text-primary"
+                )}
+              >
+                {profileData.is_anon ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+                {profileData.is_anon ? "Anon" : "Public"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-[200px] text-xs">
+                {profileData.is_anon 
+                  ? "Anon mode is ON. Your village participation, projects, and activity are hidden from others."
+                  : "Click to enable Anon mode and hide your public info from other users."}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="max-w-3xl mx-auto px-4 py-8 pt-16 space-y-0">
         {/* 1. Identity Header with editable name, username, avatar, social link */}
@@ -207,24 +268,32 @@ const Profile = () => {
         />
 
         {/* 2. Working On / Scenius Section */}
-        <ProfileSceniusSection
-          projectDescription={profileData.project_description}
-          projectUrl={profileData.project_url}
-          isOwnProfile={isOwnProfile}
-          userId={profileData.user_id}
-          onUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
-        />
+        <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
+          <ProfileSceniusSection
+            projectDescription={profileData.project_description}
+            projectUrl={profileData.project_url}
+            isOwnProfile={isOwnProfile}
+            userId={profileData.user_id}
+            onUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
+          />
+        </div>
 
         {/* 3. Village Timeline / Participation */}
-        <ProfileVillageTimeline userId={profileUserId || undefined} />
+        <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
+          <ProfileVillageTimeline userId={profileUserId || undefined} />
+        </div>
 
         {/* 5. Events Calendar */}
         {profileUserId && (
-          <ProfileEventsCalendar userId={profileUserId} />
+          <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
+            <ProfileEventsCalendar userId={profileUserId} />
+          </div>
         )}
 
         {/* 6. Activity History */}
-        <ProfileActivityHistory activities={activities} />
+        <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
+          <ProfileActivityHistory activities={activities} />
+        </div>
 
         {/* 7. Connected Network */}
         <ProfileConnectedNetwork userId={profileUserId || ""} />
