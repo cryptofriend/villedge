@@ -42,7 +42,8 @@ interface NotificationRequest {
   stayDates?: string;
   intention?: string;
   socialProfile?: string;
-  botToken?: string; // Custom bot token for different villages
+  botToken?: string; // Custom bot token for different villages (deprecated, use botTokenSecretName)
+  botTokenSecretName?: string; // Secret name to look up (e.g., "PROTOVILLE_BOT_TOKEN")
   // Donation-specific fields
   amount?: number;
   amountUsd?: number;
@@ -93,17 +94,47 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+    const defaultBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
     const defaultChatId = await getChatId();
 
-    if (!botToken) {
+    const requestBody = await req.json();
+    const { 
+      type, name, description, location, startTime, category, 
+      amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, 
+      message: bulletinMessage, bulletinChatId, bulletinThreadId, 
+      testChatId, testThreadId, 
+      residentName, stayDates, intention, socialProfile, 
+      botToken: customBotToken,
+      botTokenSecretName
+    }: NotificationRequest = requestBody;
+    
+    // Determine which bot token to use:
+    // 1. If botTokenSecretName is provided, look it up from env
+    // 2. Else if customBotToken is provided directly, use it
+    // 3. Else fallback to default TELEGRAM_BOT_TOKEN
+    let effectiveBotToken = defaultBotToken;
+    
+    if (botTokenSecretName) {
+      // Whitelist allowed secret names to prevent arbitrary env access
+      const allowedSecrets = ['TELEGRAM_BOT_TOKEN', 'PROTOVILLE_BOT_TOKEN'];
+      if (allowedSecrets.includes(botTokenSecretName)) {
+        const tokenFromSecret = Deno.env.get(botTokenSecretName);
+        if (tokenFromSecret) {
+          effectiveBotToken = tokenFromSecret;
+          console.log(`Using bot token from secret: ${botTokenSecretName}`);
+        } else {
+          console.log(`Secret ${botTokenSecretName} not found, falling back to default`);
+        }
+      } else {
+        console.log(`Secret name ${botTokenSecretName} not in whitelist, using default`);
+      }
+    } else if (customBotToken) {
+      effectiveBotToken = customBotToken;
+    }
+    
+    if (!effectiveBotToken) {
       throw new Error("Telegram bot token not configured");
     }
-
-    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId, bulletinThreadId, testChatId, testThreadId, residentName, stayDates, intention, socialProfile, botToken: customBotToken }: NotificationRequest = await req.json();
-    
-    // Use custom bot token if provided, otherwise use default
-    const effectiveBotToken = customBotToken || botToken;
     
     // Use test/bulletin-specific chat ID if provided, otherwise use default
     let chatId = testChatId || bulletinChatId || defaultChatId;
@@ -254,7 +285,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log(`Sending Telegram message to chat: ${chatId}${parsedThreadId ? ` (thread: ${parsedThreadId})` : ''}`);
     
-    const requestBody: Record<string, unknown> = {
+    const telegramPayload: Record<string, unknown> = {
       chat_id: chatId,
       text: telegramMessage,
       parse_mode: "HTML",
@@ -263,13 +294,13 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Add thread ID for messages sent to specific topics
     if (parsedThreadId) {
-      requestBody.message_thread_id = parsedThreadId;
+      telegramPayload.message_thread_id = parsedThreadId;
     }
     
     const response = await fetch(telegramUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(telegramPayload),
     });
 
     const result = await response.json();
@@ -285,7 +316,7 @@ const handler = async (req: Request): Promise<Response> => {
           `Thread ${parsedThreadId} not found for chat ${chatId}; retrying without message_thread_id...`
         );
 
-        const retryBody = { ...requestBody };
+        const retryBody = { ...telegramPayload };
         delete (retryBody as any).message_thread_id;
 
         const retryRes = await fetch(telegramUrl, {

@@ -184,11 +184,13 @@ export function BotNotificationSection({
           body: {
             type: "test",
             testChatId: route.chat_id,
-            testThreadId: route.thread_id
+            testThreadId: route.thread_id,
+            // Pass the bot token secret name so the edge function uses the correct bot
+            botTokenSecretName: config.botTokenSecretName
           }
         });
         if (error) throw error;
-        toast({ title: "Test Sent", description: `Test message sent to ${type} route` });
+        toast({ title: "Test Sent", description: `Test message sent to ${type} route via ${config.botUsername || 'default bot'}` });
       }
     } catch (err: any) {
       console.error("Error testing route:", err);
