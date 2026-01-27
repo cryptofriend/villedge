@@ -331,11 +331,11 @@ export default function Auth() {
                 )}
               </Button>
 
-              {/* TON Button */}
+              {/* Telegram Button */}
               <Button
                 onClick={handleTonConnect}
                 variant="outline"
-                className="w-full h-12 text-base font-medium rounded-xl border-2 hover:bg-[#0098EA]/10 hover:border-[#0098EA] transition-all duration-200"
+                className="w-full h-12 text-base font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
                 disabled={anyLoading}
               >
                 {isTonLoading ? (
@@ -345,11 +345,10 @@ export default function Auth() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <svg className="h-5 w-5" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56Z" fill="#0098EA"/>
-                      <path d="M37.5603 15.6277H18.4386C14.9228 15.6277 12.6944 19.4202 14.4632 22.4861L26.2644 42.9409C27.0345 44.2765 28.9644 44.2765 29.7345 42.9409L41.5765 22.4861C43.3045 19.4202 41.0761 15.6277 37.5603 15.6277ZM26.2031 36.8879L24.6468 33.6171L17.6224 20.7283C17.0117 19.6143 17.8517 18.2458 19.1399 18.2458H26.2031V36.8879ZM38.3764 20.7283L31.3519 33.6171L29.7956 36.8879V18.2458H36.8589C38.1471 18.2458 38.9871 19.6143 38.3764 20.7283Z" fill="white"/>
+                    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.64 8.8C16.49 10.38 15.84 14.22 15.51 15.99C15.37 16.74 15.09 16.99 14.83 17.02C14.25 17.07 13.81 16.64 13.25 16.27C12.37 15.69 11.87 15.33 11.02 14.77C10.03 14.12 10.67 13.76 11.24 13.18C11.39 13.03 13.95 10.7 14 10.49C14.0069 10.4582 14.006 10.4252 13.9973 10.3938C13.9886 10.3624 13.972 10.3337 13.96 10.31C13.89 10.26 13.78 10.28 13.69 10.3C13.57 10.32 12.22 11.16 9.59 12.82C9.19 13.09 8.83 13.22 8.51 13.21C8.15 13.2 7.47 13.01 6.96 12.85C6.33 12.65 5.84 12.54 5.88 12.19C5.9 12.01 6.15 11.82 6.62 11.63C9.44 10.39 11.34 9.58 12.32 9.19C15 8.07 15.55 7.89 15.92 7.88C15.99 7.88 16.16 7.9 16.27 7.99C16.36 8.06 16.39 8.16 16.4 8.24C16.39 8.3 16.41 8.47 16.4 8.59L16.64 8.8Z" fill="currentColor"/>
                     </svg>
-                    <span>Sign in with TON</span>
+                    <span>Sign with Telegram</span>
                   </div>
                 )}
               </Button>
