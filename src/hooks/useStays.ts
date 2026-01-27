@@ -63,20 +63,36 @@ export const useStays = (villageId?: string) => {
     }
 
     try {
-      // Fetch stays with profile is_anon status
-      const { data, error } = await supabase
+      // Fetch stays first
+      const { data: staysData, error: staysError } = await supabase
         .from("stays")
-        .select("*, profiles:user_id(is_anon)")
+        .select("*")
         .eq("village_id", villageId)
         .order("start_date", { ascending: true });
 
-      if (error) throw error;
+      if (staysError) throw staysError;
       
-      // Map the joined data to include is_anon
-      const staysWithAnon = (data || []).map((stay: any) => ({
+      // Get unique user_ids that are not null
+      const userIds = [...new Set((staysData || []).map(s => s.user_id).filter(Boolean))] as string[];
+      
+      // Fetch profiles for those users to get is_anon status
+      let profilesMap: Record<string, boolean> = {};
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("user_id, is_anon")
+          .in("user_id", userIds);
+        
+        profilesMap = (profilesData || []).reduce((acc, p) => {
+          acc[p.user_id] = p.is_anon ?? true; // Default to anon if not set
+          return acc;
+        }, {} as Record<string, boolean>);
+      }
+      
+      // Map stays with is_anon status (default true for stays without user_id)
+      const staysWithAnon = (staysData || []).map((stay) => ({
         ...stay,
-        is_anon: stay.profiles?.is_anon ?? false,
-        profiles: undefined, // Remove the nested object
+        is_anon: stay.user_id ? (profilesMap[stay.user_id] ?? true) : true,
       }));
       
       setStays(staysWithAnon as Stay[]);
