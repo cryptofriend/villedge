@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit2, Save, X, Wallet } from "lucide-react";
+import { Edit2, Save, X, Wallet, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProfileData } from "@/pages/Profile";
 import { ProfileAvatarUpload } from "./ProfileAvatarUpload";
 import { ProfileSocialLinks } from "./ProfileSocialLinks";
+import { LinkWalletDialog } from "./LinkWalletDialog";
 import { useAccount } from "wagmi";
 import { useTonWallet } from "@tonconnect/ui-react";
 import { usePersonalBalance } from "@/hooks/usePersonalBalance";
@@ -32,6 +33,7 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
   const { balance, isLoading: isLoadingBalance } = usePersonalBalance(activeAddress);
   
   const [topUpOpen, setTopUpOpen] = useState(false);
+  const [linkWalletOpen, setLinkWalletOpen] = useState(false);
   
   // Editing states
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -246,10 +248,40 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
                           {isLoadingBalance ? "..." : `$${balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </span>
                       )}
+                      
+                      {/* Link Wallet button for own profile */}
+                      {isOwnProfile && (
+                        <button
+                          onClick={() => setLinkWalletOpen(true)}
+                          className="inline-flex items-center justify-center h-7 px-2 rounded border border-dashed border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground text-xs gap-1"
+                          title="Link another wallet"
+                        >
+                          <Plus className="h-3 w-3" />
+                          Link
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
+                
+                {/* Link Wallet button when no wallet connected */}
+                {!activeAddress && isOwnProfile && (
+                  <>
+                    <div className="h-6 w-px bg-border" />
+                    <button
+                      onClick={() => setLinkWalletOpen(true)}
+                      className="inline-flex items-center justify-center h-7 px-2 rounded border border-dashed border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground text-xs gap-1"
+                      title="Link wallet"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Link Wallet
+                    </button>
+                  </>
+                )}
               </div>
+              
+              {/* Link Wallet Dialog */}
+              <LinkWalletDialog open={linkWalletOpen} onOpenChange={setLinkWalletOpen} />
             </div>
           </div>
         </div>
