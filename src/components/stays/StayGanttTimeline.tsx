@@ -154,7 +154,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
           seenUserIds.add(stay.user_id);
           usersToCheck.push({
             userId: stay.user_id,
-            isAnon: stay.is_anon ?? false,
+            isAnon: stay.is_anon ?? true, // Default to anon if not set
           });
         }
       });
@@ -170,8 +170,11 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
 
   // Helper to check if a stay should be blurred
   const shouldBlurStay = (stay: Stay): boolean => {
+    // Default to anon if is_anon is undefined
+    const isAnon = stay.is_anon ?? true;
+    
     // If not anon, never blur
-    if (!stay.is_anon) return false;
+    if (!isAnon) return false;
     
     // Hosts can see everything
     if (isHost) return false;
