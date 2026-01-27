@@ -181,11 +181,12 @@ export default function Auth() {
 
   const handleEthereumConnect = () => {
     setAuthType('ethereum');
-    const injectedConnector = connectors.find(c => c.id === 'injected' || c.name.toLowerCase().includes('metamask'));
-    if (injectedConnector) {
-      connect({ connector: injectedConnector });
+    // Use WalletConnect for Ethereum connection
+    const walletConnectConnector = connectors.find(c => c.id === 'walletConnect');
+    if (walletConnectConnector) {
+      connect({ connector: walletConnectConnector });
     } else {
-      toast.error('No Ethereum wallet detected. Please install MetaMask.');
+      toast.error('WalletConnect not available. Please try again.');
       setAuthType(null);
     }
   };
