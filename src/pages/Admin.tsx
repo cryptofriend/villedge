@@ -305,7 +305,7 @@ export default function Admin() {
         icon: <Users className="h-4 w-4 text-purple-500" />,
         iconBg: 'bg-purple-500/10',
         source: 'Residents Tab',
-        trigger: 'Planned',
+        trigger: 'useStays.addStay()',
         isActive: false,
       },
     ]
@@ -314,9 +314,9 @@ export default function Admin() {
   const protovilleBot = {
     villageId: 'protoville',
     villageName: 'ProtoVille',
-    botUsername: undefined,
+    botUsername: '@protovillebot',
     botTokenSecretName: 'PROTOVILLE_BOT_TOKEN',
-    isConnected: false,
+    isConnected: true,
     logoUrl: villages.find(v => v.id === 'protoville')?.logo_url,
     notificationTypes: [
       {
@@ -376,7 +376,7 @@ export default function Admin() {
         icon: <Users className="h-4 w-4 text-purple-500" />,
         iconBg: 'bg-purple-500/10',
         source: 'Residents Tab',
-        trigger: 'Planned',
+        trigger: 'useStays.addStay()',
         isActive: false,
       },
     ]

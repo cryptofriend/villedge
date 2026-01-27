@@ -112,6 +112,38 @@ export const useStays = (villageId?: string) => {
         .single();
 
       if (error) throw error;
+      
+      // Trigger resident notification
+      try {
+        // Check if there's a notification route enabled for residents in this village
+        const { data: route } = await supabase
+          .from("notification_routes")
+          .select("chat_id, thread_id, is_enabled")
+          .eq("village_id", stay.village_id)
+          .eq("notification_type", "resident")
+          .eq("is_enabled", true)
+          .maybeSingle();
+        
+        if (route) {
+          const stayDates = `${stay.start_date} → ${stay.end_date}`;
+          await supabase.functions.invoke("notify-telegram", {
+            body: {
+              type: "resident",
+              residentName: stay.nickname,
+              stayDates,
+              intention: stay.intention,
+              socialProfile: stay.social_profile,
+              villageId: stay.village_id,
+              testChatId: route.chat_id,
+              testThreadId: route.thread_id
+            }
+          });
+        }
+      } catch (notifyErr) {
+        console.error("Error sending resident notification:", notifyErr);
+        // Don't fail the stay creation if notification fails
+      }
+      
       toast.success("Stay added successfully!");
       return data as Stay;
     } catch (err) {

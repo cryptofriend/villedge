@@ -31,12 +31,18 @@ async function tryResolveChatIdViaBotApi(botToken: string, chatId: string): Prom
 }
 
 interface NotificationRequest {
-  type: "spot" | "event" | "donation" | "bulletin" | "test";
+  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident";
   name?: string;
   description?: string;
   location?: string;
   startTime?: string;
   category?: string;
+  // Resident-specific fields
+  residentName?: string;
+  stayDates?: string;
+  intention?: string;
+  socialProfile?: string;
+  botToken?: string; // Custom bot token for different villages
   // Donation-specific fields
   amount?: number;
   amountUsd?: number;
@@ -94,7 +100,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram bot token not configured");
     }
 
-    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId, bulletinThreadId, testChatId, testThreadId }: NotificationRequest = await req.json();
+    const { type, name, description, location, startTime, category, amount, amountUsd, symbol, from, fromName, txHash, chain, treasuryBalance, villageId, message: bulletinMessage, bulletinChatId, bulletinThreadId, testChatId, testThreadId, residentName, stayDates, intention, socialProfile, botToken: customBotToken }: NotificationRequest = await req.json();
+    
+    // Use custom bot token if provided, otherwise use default
+    const effectiveBotToken = customBotToken || botToken;
     
     // Use test/bulletin-specific chat ID if provided, otherwise use default
     let chatId = testChatId || bulletinChatId || defaultChatId;
@@ -221,9 +230,27 @@ const handler = async (req: Request): Promise<Response> => {
       telegramMessage = `📢 <b>New Bulletin Post</b>\n\n"${escapeHtml(bulletinMessage || name || "")}"`;
       // Mini-app deep link for bulletin
       telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/bulletin">View Bulletin</a>`;
+    } else if (type === "resident") {
+      // Resident/stay notification
+      telegramMessage = `👋 <b>New Resident Joining!</b>\n\n`;
+      telegramMessage += `<b>${escapeHtml(residentName || name || "Someone")}</b>`;
+      if (stayDates) {
+        telegramMessage += `\n📅 ${escapeHtml(stayDates)}`;
+      }
+      if (intention) {
+        telegramMessage += `\n\n💭 "${escapeHtml(intention.slice(0, 150))}${intention.length > 150 ? "..." : ""}"`;
+      }
+      if (socialProfile) {
+        telegramMessage += `\n\n🔗 <a href="${escapeHtml(socialProfile)}">Profile</a>`;
+      }
+      // Link to residents view
+      const residentsUrl = villageId 
+        ? `https://villedge.lovable.app/${villageId}?tab=residents`
+        : `https://villedge.lovable.app`;
+      telegramMessage += `\n\n👥 <a href="${residentsUrl}">View Residents</a>`;
     }
 
-    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
     
     console.log(`Sending Telegram message to chat: ${chatId}${parsedThreadId ? ` (thread: ${parsedThreadId})` : ''}`);
     
