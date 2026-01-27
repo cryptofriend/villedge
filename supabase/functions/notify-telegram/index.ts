@@ -274,11 +274,13 @@ const handler = async (req: Request): Promise<Response> => {
       if (socialProfile) {
         telegramMessage += `\n\n🔗 <a href="${escapeHtml(socialProfile)}">Profile</a>`;
       }
-      // Link to residents view
-      const residentsUrl = villageId 
-        ? `https://villedge.lovable.app/${villageId}?tab=residents`
-        : `https://villedge.lovable.app`;
-      telegramMessage += `\n\n👥 <a href="${residentsUrl}">View Residents</a>`;
+      // Use village-specific mini-app link
+      const villageMiniAppMap: Record<string, string> = {
+        'protoville': 'https://t.me/protovillebot/protoville',
+        'proof-of-retreat': 'https://t.me/proofofretreatbot/app',
+      };
+      const miniAppLink = villageMiniAppMap[villageId || ''] || `https://villedge.lovable.app/${villageId}?tab=residents`;
+      telegramMessage += `\n\n👥 <a href="${miniAppLink}">View Residents</a>`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
