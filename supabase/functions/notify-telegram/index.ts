@@ -160,7 +160,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // If destination is a public username, try resolving to a numeric chat id via Telegram API.
     // This can help when Telegram expects an internal id, but will still fail if the bot lacks access.
-    chatId = await tryResolveChatIdViaBotApi(botToken, chatId);
+    chatId = await tryResolveChatIdViaBotApi(effectiveBotToken, chatId);
 
     let telegramMessage = "";
 
@@ -278,6 +278,35 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Telegram API error:", result);
 
       const desc = String(result.description || "Failed to send Telegram message");
+
+      // If thread/topic is invalid, automatically retry without thread_id so notifications still deliver.
+      if (parsedThreadId && desc.toLowerCase().includes("message thread not found")) {
+        console.log(
+          `Thread ${parsedThreadId} not found for chat ${chatId}; retrying without message_thread_id...`
+        );
+
+        const retryBody = { ...requestBody };
+        delete (retryBody as any).message_thread_id;
+
+        const retryRes = await fetch(telegramUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(retryBody),
+        });
+
+        const retryJson = await retryRes.json();
+        if (retryJson?.ok) {
+          console.log("Telegram notification sent successfully (fallback without thread)");
+          return new Response(JSON.stringify({ success: true, fallback: "no_thread" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        console.error("Telegram API error (retry without thread failed):", retryJson);
+        throw new Error(String(retryJson?.description || desc));
+      }
+
       if (desc.toLowerCase().includes("chat not found")) {
         throw new Error(
           "Bad Request: chat not found. This usually means the @username is wrong OR the bot is not a member/admin of that chat/channel. Add the bot to the target chat (and make it an admin for channels), then retry."
