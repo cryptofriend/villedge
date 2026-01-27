@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { CalendarDays, ExternalLink, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, differenceInMinutes, startOfDay, addDays, isSameDay } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { cn } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -13,7 +13,9 @@ interface ProfileEvent {
   end_time: string | null;
   location: string | null;
   luma_url: string;
+  village_id: string;
   village_name?: string;
+  village_logo?: string | null;
 }
 
 interface ProfileEventsCalendarProps {
@@ -36,7 +38,6 @@ function assignEventRows(events: ProfileEvent[]): Map<string, { event: ProfileEv
   const result = new Map<string, { event: ProfileEvent; row: number }[]>();
 
   byDate.forEach((dayEvents, dateKey) => {
-    // Sort by start time
     dayEvents.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
     
     const rows: { end: Date }[] = [];
@@ -46,9 +47,8 @@ function assignEventRows(events: ProfileEvent[]): Map<string, { event: ProfileEv
       const start = toZonedTime(parseISO(event.start_time), VIETNAM_TZ);
       const end = event.end_time 
         ? toZonedTime(parseISO(event.end_time), VIETNAM_TZ)
-        : new Date(start.getTime() + 60 * 60 * 1000); // Default 1 hour
+        : new Date(start.getTime() + 60 * 60 * 1000);
 
-      // Find first row where this event fits (no overlap)
       let assignedRow = -1;
       for (let i = 0; i < rows.length; i++) {
         if (start >= rows[i].end) {
@@ -101,14 +101,15 @@ export const ProfileEventsCalendar = ({ userId }: ProfileEventsCalendarProps) =>
 
         const { data: villages } = await supabase
           .from("villages")
-          .select("id, name")
+          .select("id, name, logo_url")
           .in("id", villageIds);
 
-        const villageMap = new Map(villages?.map(v => [v.id, v.name]) || []);
+        const villageMap = new Map(villages?.map(v => [v.id, { name: v.name, logo: v.logo_url }]) || []);
 
         const enrichedEvents = (eventsData || []).map(e => ({
           ...e,
-          village_name: villageMap.get(e.village_id),
+          village_name: villageMap.get(e.village_id)?.name,
+          village_logo: villageMap.get(e.village_id)?.logo,
         }));
 
         setEvents(enrichedEvents);
@@ -178,7 +179,7 @@ export const ProfileEventsCalendar = ({ userId }: ProfileEventsCalendarProps) =>
                 </div>
                 
                 {/* Events grid - one row per conflict level */}
-                <div className="flex flex-col gap-1" style={{ minWidth: "180px" }}>
+                <div className="flex flex-col gap-1" style={{ minWidth: "200px" }}>
                   {Array.from({ length: maxRow + 1 }, (_, rowIndex) => {
                     const rowEvents = dayEvents.filter(e => e.row === rowIndex);
                     
@@ -199,21 +200,36 @@ export const ProfileEventsCalendar = ({ userId }: ProfileEventsCalendarProps) =>
                                 "border border-primary/20"
                               )}
                             >
+                              {/* Village logo */}
+                              {event.village_logo ? (
+                                <img 
+                                  src={event.village_logo} 
+                                  alt={event.village_name}
+                                  className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                                />
+                              ) : event.village_name ? (
+                                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-[8px] font-medium text-primary">
+                                    {event.village_name.slice(0, 2).toUpperCase()}
+                                  </span>
+                                </div>
+                              ) : null}
+                              
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[10px] text-muted-foreground font-medium">
                                     {format(startTime, "h:mm a")}
                                   </span>
+                                  {event.village_name && (
+                                    <span className="text-[10px] text-primary font-medium">
+                                      · {event.village_name}
+                                    </span>
+                                  )}
                                   <ExternalLink className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
-                                <p className="text-xs font-medium text-foreground truncate max-w-[140px]">
+                                <p className="text-xs font-medium text-foreground truncate max-w-[160px]">
                                   {event.title}
                                 </p>
-                                {event.village_name && (
-                                  <p className="text-[10px] text-primary truncate">
-                                    {event.village_name}
-                                  </p>
-                                )}
                               </div>
                             </a>
                           );
