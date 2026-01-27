@@ -1,7 +1,7 @@
 import { http, createConfig, createStorage } from 'wagmi';
 import { base, mainnet } from 'wagmi/chains';
 import { porto as portoConnector } from 'porto/wagmi';
-import { injected } from 'wagmi/connectors';
+import { walletConnect } from 'wagmi/connectors';
 import { Mode } from 'porto';
 
 // Villedge-themed Porto dialog
@@ -48,12 +48,26 @@ const dialogMode = Mode.dialog({
 // Export the porto connector for use in wallet linking
 export const porto = portoConnector({ mode: dialogMode });
 
+// WalletConnect project ID from environment
+const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
+
+// Create WalletConnect connector if project ID is available
+const walletConnectConnector = walletConnectProjectId
+  ? walletConnect({
+      projectId: walletConnectProjectId,
+      metadata: {
+        name: 'Villedge',
+        description: 'Popup Villages Community App',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://villedge.lovable.app',
+        icons: [typeof window !== 'undefined' ? `${window.location.origin}/favicon.ico` : 'https://villedge.lovable.app/favicon.ico'],
+      },
+      showQrModal: true,
+    })
+  : null;
+
 export const wagmiConfig = createConfig({
   chains: [base, mainnet],
-  connectors: [
-    porto,
-    injected({ target: 'metaMask' }),
-  ],
+  connectors: walletConnectConnector ? [porto, walletConnectConnector] : [porto],
   storage: createStorage({ storage: localStorage }),
   transports: {
     [base.id]: http(),
