@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfileVisibility } from "@/hooks/useProfileVisibility";
 
 interface StayGanttTimelineProps {
   stays: Stay[];
@@ -30,6 +31,11 @@ interface StayGanttTimelineProps {
   onEditStay?: (stay: Stay) => void;
   onDeleteStay?: (stay: Stay) => void;
   isHost?: boolean;
+}
+
+// Visibility state for each user
+interface VisibilityMap {
+  [userId: string]: boolean;
 }
 
 // Generate consistent colors based on nickname
@@ -87,12 +93,14 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   const intentionColumnRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const { checkBatchVisibility } = useProfileVisibility();
   const [nameColumnWidth, setNameColumnWidth] = useState(isMobile ? 100 : 120);
   const [intentionColumnWidth, setIntentionColumnWidth] = useState(140);
   const [isResizing, setIsResizing] = useState(false);
   const [resizingColumn, setResizingColumn] = useState<'name' | 'intention' | null>(null);
   const [selectedNickname, setSelectedNickname] = useState<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [visibilityMap, setVisibilityMap] = useState<VisibilityMap>({});
   const dayWidth = isMobile ? 20 : 28;
 
   // Calculate date range from stays
@@ -133,6 +141,50 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
     });
     return grouped;
   }, [stays]);
+
+  // Check visibility for all users with anon mode
+  useEffect(() => {
+    const checkVisibility = async () => {
+      // Collect users that need visibility check
+      const usersToCheck: { userId: string; isAnon: boolean }[] = [];
+      const seenUserIds = new Set<string>();
+      
+      stays.forEach(stay => {
+        if (stay.user_id && !seenUserIds.has(stay.user_id)) {
+          seenUserIds.add(stay.user_id);
+          usersToCheck.push({
+            userId: stay.user_id,
+            isAnon: stay.is_anon ?? false,
+          });
+        }
+      });
+
+      if (usersToCheck.length > 0) {
+        const visibility = await checkBatchVisibility(usersToCheck);
+        setVisibilityMap(visibility);
+      }
+    };
+
+    checkVisibility();
+  }, [stays, checkBatchVisibility]);
+
+  // Helper to check if a stay should be blurred
+  const shouldBlurStay = (stay: Stay): boolean => {
+    // If not anon, never blur
+    if (!stay.is_anon) return false;
+    
+    // Hosts can see everything
+    if (isHost) return false;
+    
+    // Check if it's the current user's own stay
+    if (user && stay.user_id === user.id) return false;
+    
+    // Check visibility map for connection/reveal status
+    if (stay.user_id && visibilityMap[stay.user_id]) return false;
+    
+    // Default: blur anonymous users
+    return true;
+  };
 
   // Month headers
   const monthHeaders = useMemo(() => {
@@ -310,8 +362,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                 const firstStay = personStays[0];
                 const avatarUrl = getBestAvatar(nickname, firstStay?.social_profile || null, 32);
                 const socialNetwork = getSocialNetwork(firstStay?.social_profile || null);
-                const isAnon = firstStay?.is_anon ?? false;
-                const shouldBlur = isAnon && !isHost;
+                const shouldBlur = shouldBlurStay(firstStay);
                 
                 return (
                   <div
@@ -382,8 +433,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
               >
               {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
                   const firstStay = personStays[0];
-                  const isAnon = firstStay?.is_anon ?? false;
-                  const shouldBlur = isAnon && !isHost;
+                  const shouldBlur = shouldBlurStay(firstStay);
                   
                   return (
                     <div
@@ -454,8 +504,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
             {/* Stay Rows */}
             {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
               const firstStay = personStays[0];
-              const isAnon = firstStay?.is_anon ?? false;
-              const shouldBlurRow = isAnon && !isHost;
+              const shouldBlurRow = shouldBlurStay(firstStay);
               
               return (
               <div key={nickname} className={cn(
