@@ -363,6 +363,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                 const avatarUrl = getBestAvatar(nickname, firstStay?.social_profile || null, 32);
                 const socialNetwork = getSocialNetwork(firstStay?.social_profile || null);
                 const shouldBlur = shouldBlurStay(firstStay);
+                const isCurrentUser = user && firstStay?.user_id === user.id;
                 
                 return (
                   <div
@@ -384,6 +385,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                     </Avatar>
                     <span className={cn("truncate", isMobile && "text-xs", !shouldBlur && "hover:underline")} title={nickname}>
                       {nickname}
+                      {isCurrentUser && <span className="text-muted-foreground font-normal"> (you)</span>}
                     </span>
                     {!isMobile && firstStay?.social_profile && socialNetwork.type && !shouldBlur && (
                       <a

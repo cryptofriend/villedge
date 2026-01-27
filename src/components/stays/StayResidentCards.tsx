@@ -183,6 +183,7 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
                 {/* Name */}
                 <h3 className="font-semibold text-foreground mt-2 text-center px-2 truncate max-w-full">
                   {nickname}
+                  {user && userId === user.id && <span className="text-muted-foreground font-normal"> (you)</span>}
                 </h3>
                 
                 {/* Villa */}
