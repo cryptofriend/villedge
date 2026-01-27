@@ -61,6 +61,16 @@ function assignStayRows(stays: VillageStay[]): { stay: VillageStay; row: number 
   return assigned;
 }
 
+function generateMonths(start: Date, end: Date) {
+  const months: Date[] = [];
+  let current = startOfMonth(start);
+  while (isBefore(current, end) || current.getTime() === end.getTime()) {
+    months.push(current);
+    current = addMonths(current, 1);
+  }
+  return months;
+}
+
 export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -153,8 +163,50 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
     }
   };
 
+  // Calculate timeline range
+  const timelineData = useMemo(() => {
+    if (villages.length === 0) {
+      const start = startOfMonth(addMonths(today, -1));
+      const end = endOfMonth(addMonths(today, 4));
+      return { start, end, months: generateMonths(start, end) };
+    }
+
+    const allDates = villages.flatMap(v => [new Date(v.start_date), new Date(v.end_date)]);
+    allDates.push(today);
+    
+    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    
+    const start = startOfMonth(addMonths(minDate, -1));
+    const end = endOfMonth(addMonths(maxDate, 1));
+    
+    return { start, end, months: generateMonths(start, end) };
+  }, [villages, today]);
+
   const staysWithRows = useMemo(() => assignStayRows(villages), [villages]);
   const maxRow = useMemo(() => Math.max(...staysWithRows.map(s => s.row), 0), [staysWithRows]);
+
+  // Calculate bar position and width
+  const getBarStyle = (stay: VillageStay) => {
+    const totalDays = differenceInDays(timelineData.end, timelineData.start);
+    const startDate = new Date(stay.start_date);
+    const endDate = new Date(stay.end_date);
+    
+    const startOffset = Math.max(0, differenceInDays(startDate, timelineData.start));
+    const endOffset = Math.min(totalDays, differenceInDays(endDate, timelineData.start));
+    
+    const left = (startOffset / totalDays) * 100;
+    const width = ((endOffset - startOffset) / totalDays) * 100;
+    
+    return { left: `${left}%`, width: `${Math.max(width, 3)}%` };
+  };
+
+  // Calculate today marker position
+  const getTodayPosition = () => {
+    const totalDays = differenceInDays(timelineData.end, timelineData.start);
+    const todayOffset = differenceInDays(today, timelineData.start);
+    return `${(todayOffset / totalDays) * 100}%`;
+  };
 
   if (loading) {
     return (
@@ -193,88 +245,113 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
       </h2>
 
       <ScrollArea className="w-full">
-        <div className="flex flex-col gap-1 pb-2">
-          {Array.from({ length: maxRow + 1 }, (_, rowIndex) => {
-            const rowStays = staysWithRows.filter(s => s.row === rowIndex);
-            
-            return (
-              <div key={rowIndex} className="flex gap-2">
-                {rowStays.map(({ stay }) => {
-                  const isPlanning = stay.status === "planning";
-                  const startDate = new Date(stay.start_date);
-                  const endDate = new Date(stay.end_date);
-                  const duration = differenceInDays(endDate, startDate) + 1;
-
-                  return (
-                    <Tooltip key={stay.id}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={(e) => isOwnProfile ? handleToggleStatus(stay.id, e) : navigate(`/${stay.village_id}`)}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all hover:ring-2 hover:ring-primary/50 shrink-0",
-                            isPlanning 
-                              ? "bg-muted/80 border border-dashed border-muted-foreground/30" 
-                              : "bg-primary/10 border border-primary/20"
-                          )}
-                        >
-                          {stay.logo_url ? (
-                            <img 
-                              src={stay.logo_url} 
-                              alt={stay.village_name}
-                              className="w-5 h-5 rounded-full object-cover flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                              <span className="text-[8px] font-medium text-primary">
-                                {stay.village_name.slice(0, 2).toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex flex-col items-start min-w-0">
-                            <span className={cn(
-                              "text-xs font-medium truncate max-w-[120px]",
-                              isPlanning ? "text-muted-foreground" : "text-foreground"
-                            )}>
-                              {stay.village_name}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {format(startDate, "MMM d")} – {format(endDate, "MMM d")}
-                            </span>
-                          </div>
-                          {isPlanning && (
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                          )}
-                          {!isPlanning && (
-                            <Check className="h-3 w-3 text-primary" />
-                          )}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="space-y-1">
-                          <p className="font-semibold">{stay.village_name}</p>
-                          <p className="text-muted-foreground text-sm">
-                            {format(startDate, "MMM d")} - {format(endDate, "MMM d, yyyy")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{duration} days</p>
-                          <p className={cn(
-                            "text-xs font-medium",
-                            isPlanning ? "text-amber-600" : "text-emerald-600"
-                          )}>
-                            {isPlanning ? "Planning" : "Confirmed"}
-                          </p>
-                          {isOwnProfile && (
-                            <p className="text-xs text-primary font-medium pt-1 border-t border-border mt-1">
-                              {isPlanning ? "Click to confirm" : "Click to set as planning"}
-                            </p>
-                          )}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+        <div className="min-w-[500px] pb-2">
+          {/* Month headers */}
+          <div className="flex border-b border-border pb-2 mb-2">
+            {timelineData.months.map((month, idx) => (
+              <div 
+                key={idx} 
+                className="flex-1 text-[10px] text-muted-foreground font-medium text-center"
+              >
+                {format(month, "MMM")}
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          {/* Gantt rows container */}
+          <div className="relative">
+            {/* Today marker */}
+            <div 
+              className="absolute top-0 bottom-0 w-px bg-primary/60 z-20"
+              style={{ left: getTodayPosition() }}
+            >
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap font-medium">
+                Today
+              </div>
+            </div>
+
+            {/* Rows */}
+            <div className="space-y-1">
+              {Array.from({ length: maxRow + 1 }, (_, rowIndex) => {
+                const rowStays = staysWithRows.filter(s => s.row === rowIndex);
+                
+                return (
+                  <div key={rowIndex} className="relative h-8">
+                    {rowStays.map(({ stay }) => {
+                      const barStyle = getBarStyle(stay);
+                      const isPlanning = stay.status === "planning";
+                      const startDate = new Date(stay.start_date);
+                      const endDate = new Date(stay.end_date);
+                      const duration = differenceInDays(endDate, startDate) + 1;
+
+                      return (
+                        <Tooltip key={stay.id}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={(e) => isOwnProfile ? handleToggleStatus(stay.id, e) : navigate(`/${stay.village_id}`)}
+                              className={cn(
+                                "absolute h-full flex items-center gap-1.5 px-2 rounded-full transition-all hover:ring-2 hover:ring-primary/50 overflow-hidden",
+                                isPlanning 
+                                  ? "bg-muted/80 border border-dashed border-muted-foreground/30" 
+                                  : "bg-primary/15 border border-primary/30"
+                              )}
+                              style={barStyle}
+                            >
+                              {stay.logo_url ? (
+                                <img 
+                                  src={stay.logo_url} 
+                                  alt={stay.village_name}
+                                  className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-[8px] font-medium text-primary">
+                                    {stay.village_name.slice(0, 2).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                              <span className={cn(
+                                "text-xs font-medium truncate",
+                                isPlanning ? "text-muted-foreground" : "text-foreground"
+                              )}>
+                                {stay.village_name}
+                              </span>
+                              {isPlanning && (
+                                <HelpCircle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              )}
+                              {!isPlanning && (
+                                <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="space-y-1">
+                              <p className="font-semibold">{stay.village_name}</p>
+                              <p className="text-muted-foreground text-sm">
+                                {format(startDate, "MMM d")} - {format(endDate, "MMM d, yyyy")}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{duration} days</p>
+                              <p className={cn(
+                                "text-xs font-medium",
+                                isPlanning ? "text-amber-600" : "text-emerald-600"
+                              )}>
+                                {isPlanning ? "Planning" : "Confirmed"}
+                              </p>
+                              {isOwnProfile && (
+                                <p className="text-xs text-primary font-medium pt-1 border-t border-border mt-1">
+                                  {isPlanning ? "Click to confirm" : "Click to set as planning"}
+                                </p>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
