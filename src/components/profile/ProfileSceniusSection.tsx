@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Plus, Edit2, Save, X, Loader2, Briefcase } from "lucide-react";
+import { ExternalLink, Plus, Edit2, Save, X, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,10 +48,10 @@ export const ProfileSceniusSection = ({
         project_url: updates.project_url || undefined,
       });
       setIsEditing(false);
-      toast.success("Project updated!");
+      toast.success("Scenius updated!");
     } catch (error) {
       console.error("Error updating project:", error);
-      toast.error("Failed to update project");
+      toast.error("Failed to update");
     } finally {
       setIsSaving(false);
     }
@@ -67,8 +67,8 @@ export const ProfileSceniusSection = ({
     <section className="py-6 border-b border-border">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-          <Briefcase className="h-4 w-4" />
-          Working On
+          <Sparkles className="h-4 w-4" />
+          Scenius
         </h2>
         {isOwnProfile && !isEditing && (
           <Button
@@ -78,7 +78,7 @@ export const ProfileSceniusSection = ({
             className="h-7 text-xs"
           >
             {hasProject ? <Edit2 className="h-3 w-3 mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
-            {hasProject ? "Edit" : "Add Project"}
+            {hasProject ? "Edit" : "Add"}
           </Button>
         )}
       </div>
@@ -159,10 +159,10 @@ export const ProfileSceniusSection = ({
           className="w-full p-4 border-2 border-dashed border-border rounded-lg text-sm text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
         >
           <Plus className="h-4 w-4 mx-auto mb-1" />
-          Add what you're working on
+          Share what you're building
         </button>
       ) : (
-        <p className="text-sm text-muted-foreground">No projects shared yet</p>
+        <p className="text-sm text-muted-foreground">No scenius shared yet</p>
       )}
     </section>
   );
