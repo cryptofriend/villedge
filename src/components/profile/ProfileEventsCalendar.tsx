@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { CalendarDays, ExternalLink, MapPin, Loader2 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
+import { useState, useEffect, useMemo } from "react";
+import { CalendarDays, ExternalLink, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, isSameDay } from "date-fns";
+import { format, parseISO, differenceInMinutes, startOfDay, addDays, isSameDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { cn } from "@/lib/utils";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface ProfileEvent {
   id: string;
@@ -22,15 +22,63 @@ interface ProfileEventsCalendarProps {
 
 const VIETNAM_TZ = "Asia/Ho_Chi_Minh";
 
+// Group events by date and assign rows based on conflicts
+function assignEventRows(events: ProfileEvent[]): Map<string, { event: ProfileEvent; row: number }[]> {
+  const byDate = new Map<string, ProfileEvent[]>();
+  
+  events.forEach(event => {
+    const eventTime = toZonedTime(parseISO(event.start_time), VIETNAM_TZ);
+    const dateKey = format(eventTime, "yyyy-MM-dd");
+    if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+    byDate.get(dateKey)!.push(event);
+  });
+
+  const result = new Map<string, { event: ProfileEvent; row: number }[]>();
+
+  byDate.forEach((dayEvents, dateKey) => {
+    // Sort by start time
+    dayEvents.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+    
+    const rows: { end: Date }[] = [];
+    const assigned: { event: ProfileEvent; row: number }[] = [];
+
+    dayEvents.forEach(event => {
+      const start = toZonedTime(parseISO(event.start_time), VIETNAM_TZ);
+      const end = event.end_time 
+        ? toZonedTime(parseISO(event.end_time), VIETNAM_TZ)
+        : new Date(start.getTime() + 60 * 60 * 1000); // Default 1 hour
+
+      // Find first row where this event fits (no overlap)
+      let assignedRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (start >= rows[i].end) {
+          assignedRow = i;
+          rows[i].end = end;
+          break;
+        }
+      }
+
+      if (assignedRow === -1) {
+        assignedRow = rows.length;
+        rows.push({ end });
+      }
+
+      assigned.push({ event, row: assignedRow });
+    });
+
+    result.set(dateKey, assigned);
+  });
+
+  return result;
+}
+
 export const ProfileEventsCalendar = ({ userId }: ProfileEventsCalendarProps) => {
   const [events, setEvents] = useState<ProfileEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // Get villages the user is staying at
         const { data: stays } = await supabase
           .from("stays")
           .select("village_id")
@@ -43,7 +91,6 @@ export const ProfileEventsCalendar = ({ userId }: ProfileEventsCalendarProps) =>
 
         const villageIds = [...new Set(stays.map(s => s.village_id))];
 
-        // Get events from those villages
         const { data: eventsData } = await supabase
           .from("events")
           .select("id, title, start_time, end_time, location, luma_url, village_id")
@@ -52,7 +99,6 @@ export const ProfileEventsCalendar = ({ userId }: ProfileEventsCalendarProps) =>
           .order("start_time", { ascending: true })
           .limit(50);
 
-        // Get village names
         const { data: villages } = await supabase
           .from("villages")
           .select("id, name")
@@ -76,19 +122,39 @@ export const ProfileEventsCalendar = ({ userId }: ProfileEventsCalendarProps) =>
     fetchEvents();
   }, [userId]);
 
-  // Get dates that have events
-  const eventDates = events.map(e => {
-    const eventTime = toZonedTime(parseISO(e.start_time), VIETNAM_TZ);
-    return eventTime;
-  });
+  const eventsByDate = useMemo(() => assignEventRows(events), [events]);
+  const sortedDates = useMemo(() => 
+    Array.from(eventsByDate.keys()).sort(), 
+    [eventsByDate]
+  );
 
-  // Events on selected date
-  const selectedDateEvents = selectedDate
-    ? events.filter(e => {
-        const eventTime = toZonedTime(parseISO(e.start_time), VIETNAM_TZ);
-        return isSameDay(eventTime, selectedDate);
-      })
-    : [];
+  if (loading) {
+    return (
+      <section className="py-6 border-b border-border">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
+          <CalendarDays className="h-4 w-4" />
+          Events
+        </h2>
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      </section>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <section className="py-6 border-b border-border">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
+          <CalendarDays className="h-4 w-4" />
+          Events
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          No upcoming events from your villages
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="py-6 border-b border-border">
@@ -97,93 +163,71 @@ export const ProfileEventsCalendar = ({ userId }: ProfileEventsCalendarProps) =>
         Events
       </h2>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : events.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No upcoming events from your villages
-        </p>
-      ) : (
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Calendar */}
-          <div className="shrink-0">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border pointer-events-auto"
-              modifiers={{
-                hasEvent: eventDates,
-              }}
-              modifiersClassNames={{
-                hasEvent: "bg-primary/20 text-primary font-semibold",
-              }}
-            />
-          </div>
+      <ScrollArea className="w-full">
+        <div className="flex gap-4 pb-2">
+          {sortedDates.map(dateKey => {
+            const dayEvents = eventsByDate.get(dateKey) || [];
+            const maxRow = Math.max(...dayEvents.map(e => e.row), 0);
+            const date = parseISO(dateKey);
 
-          {/* Events list for selected date */}
-          <div className="flex-1 min-w-0">
-            {selectedDate && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-foreground">
-                  {format(selectedDate, "EEEE, MMMM d")}
-                </h3>
-                {selectedDateEvents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-4">
-                    No events on this date
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {selectedDateEvents.map((event) => {
-                      const startTime = toZonedTime(parseISO(event.start_time), VIETNAM_TZ);
-                      const endTime = event.end_time
-                        ? toZonedTime(parseISO(event.end_time), VIETNAM_TZ)
-                        : null;
-
-                      const timeDisplay = endTime
-                        ? `${format(startTime, "h:mm a")} – ${format(endTime, "h:mm a")}`
-                        : format(startTime, "h:mm a");
-
-                      return (
-                        <a
-                          key={event.id}
-                          href={event.luma_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block bg-muted/50 rounded-lg p-3 hover:bg-muted transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <h4 className="font-medium text-sm text-foreground line-clamp-2">
-                                {event.title}
-                              </h4>
-                              <div className="flex flex-col gap-0.5 mt-1 text-xs text-muted-foreground">
-                                <span>{timeDisplay}</span>
-                                {event.location && (
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    <span className="truncate">{event.location}</span>
+            return (
+              <div key={dateKey} className="shrink-0">
+                {/* Date header */}
+                <div className="text-xs font-medium text-muted-foreground mb-2">
+                  {format(date, "EEE, MMM d")}
+                </div>
+                
+                {/* Events grid - one row per conflict level */}
+                <div className="flex flex-col gap-1" style={{ minWidth: "180px" }}>
+                  {Array.from({ length: maxRow + 1 }, (_, rowIndex) => {
+                    const rowEvents = dayEvents.filter(e => e.row === rowIndex);
+                    
+                    return (
+                      <div key={rowIndex} className="flex gap-1">
+                        {rowEvents.map(({ event }) => {
+                          const startTime = toZonedTime(parseISO(event.start_time), VIETNAM_TZ);
+                          
+                          return (
+                            <a
+                              key={event.id}
+                              href={event.luma_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                "group flex items-center gap-2 px-2.5 py-1.5 rounded-md",
+                                "bg-primary/10 hover:bg-primary/20 transition-colors",
+                                "border border-primary/20"
+                              )}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] text-muted-foreground font-medium">
+                                    {format(startTime, "h:mm a")}
                                   </span>
-                                )}
+                                  <ExternalLink className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                                <p className="text-xs font-medium text-foreground truncate max-w-[140px]">
+                                  {event.title}
+                                </p>
                                 {event.village_name && (
-                                  <span className="text-primary">{event.village_name}</span>
+                                  <p className="text-[10px] text-primary truncate">
+                                    {event.village_name}
+                                  </p>
                                 )}
                               </div>
-                            </div>
-                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          </div>
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
-      )}
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </section>
   );
 };
