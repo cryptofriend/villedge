@@ -216,19 +216,19 @@ const Profile = () => {
           onUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
         />
 
-        {/* 3. Events Calendar */}
-        {profileUserId && (
-          <ProfileEventsCalendar userId={profileUserId} />
-        )}
-
-        {/* 4. Village Timeline */}
+        {/* 3. Village Timeline / Participation */}
         <ProfileVillageTimeline userId={profileUserId || undefined} />
 
-        {/* 5. Linked Wallets */}
+        {/* 4. Linked Wallets */}
         <ProfileLinkedWallets
           userId={profileUserId || undefined}
           isOwnProfile={isOwnProfile}
         />
+
+        {/* 5. Events Calendar */}
+        {profileUserId && (
+          <ProfileEventsCalendar userId={profileUserId} />
+        )}
 
         {/* 6. Activity History */}
         <ProfileActivityHistory activities={activities} />

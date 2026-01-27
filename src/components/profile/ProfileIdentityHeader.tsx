@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Copy, Check, ExternalLink, Edit2, Save, X, Wallet } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Edit2, Save, X, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProfileData } from "@/pages/Profile";
 import { ProfileAvatarUpload } from "./ProfileAvatarUpload";
 import { ProfileSocialLinks } from "./ProfileSocialLinks";
-import { format } from "date-fns";
 import { useAccount } from "wagmi";
 import { useTonWallet } from "@tonconnect/ui-react";
 import { usePersonalBalance } from "@/hooks/usePersonalBalance";
@@ -33,8 +31,7 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
   
   const { balance, isLoading: isLoadingBalance } = usePersonalBalance(activeAddress);
   
-  const [copied, setCopied] = useState(false);
-  const [walletExpanded, setWalletExpanded] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
   
   // Editing states
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -43,18 +40,6 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
 
   const joinDate = new Date(profile.created_at);
   const isGenesisMember = joinDate < new Date("2025-02-01");
-
-  const copyAddress = () => {
-    if (activeAddress) {
-      navigator.clipboard.writeText(activeAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const truncatedAddress = activeAddress
-    ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`
-    : "";
 
   const handleSaveUsername = async () => {
     if (!user || !editUsername.trim()) return;
@@ -121,21 +106,21 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
     return "#";
   };
 
-  const getChainBadge = () => {
+  const getChainIcon = () => {
     if (evmAddress) {
       return (
-        <Badge variant="secondary" className="bg-blue-600/10 text-blue-600 border-blue-600/20 text-xs">
-          <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1" />
-          Base
-        </Badge>
+        <svg className="w-4 h-4" viewBox="0 0 111 111" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M54.9214 111C85.2297 111 109.843 86.3862 109.843 56.0778C109.843 25.7695 85.2297 1.15576 54.9214 1.15576C24.613 1.15576 0 25.7695 0 56.0778C0 86.3862 24.613 111 54.9214 111Z" fill="#0052FF"/>
+          <path d="M55.4201 73.3121C45.8193 73.3121 37.9859 65.4788 37.9859 55.878C37.9859 46.2772 45.8193 38.4438 55.4201 38.4438C64.1485 38.4438 71.4158 44.9388 72.6581 53.378H90.1911C88.8496 35.2452 73.7192 21.0096 55.4201 21.0096C36.2151 21.0096 20.5518 36.673 20.5518 55.878C20.5518 75.083 36.2151 90.7464 55.4201 90.7464C73.7192 90.7464 88.8496 76.5108 90.1911 58.378H72.6581C71.4158 66.8172 64.1485 73.3121 55.4201 73.3121Z" fill="white"/>
+        </svg>
       );
     }
     if (tonAddress) {
       return (
-        <Badge variant="secondary" className="bg-sky-500/10 text-sky-500 border-sky-500/20 text-xs">
-          <div className="w-1.5 h-1.5 rounded-full bg-sky-500 mr-1" />
-          TON
-        </Badge>
+        <svg className="w-4 h-4" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56Z" fill="#0098EA"/>
+          <path d="M37.5603 15.6277H18.4386C14.9228 15.6277 12.6944 19.4202 14.4632 22.4861L26.2644 42.9409C27.0345 44.2765 28.9644 44.2765 29.7345 42.9409L41.5765 22.4861C43.3045 19.4202 41.0761 15.6277 37.5765 15.6277H37.5603ZM26.2491 36.8068L23.6027 31.883L17.4801 21.0252C17.0629 20.312 17.5765 19.3927 18.4386 19.3927H26.2491V36.8068ZM38.5765 21.0089L32.454 31.8667L29.8076 36.7905V19.3764H37.6181C38.4803 19.3764 38.9938 20.2957 38.5765 21.0089Z" fill="white"/>
+        </svg>
       );
     }
     return null;
@@ -227,60 +212,47 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
                 </div>
               )}
 
-              {/* Join Date */}
-              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                <span>Member since {format(joinDate, "MMM yyyy")}</span>
-              </div>
-
               {/* Social Links + Wallet on same level */}
-              <div className="flex flex-wrap items-center gap-3 mt-4">
+              <div className="flex flex-wrap items-center gap-3 mt-3">
                 {/* Social Links */}
                 <ProfileSocialLinks userId={profile.user_id} isOwnProfile={isOwnProfile} />
                 
-                {/* Divider if both social and wallet exist */}
+                {/* Wallet Section - Chain icon links to explorer, clicking wallet opens top-up */}
                 {activeAddress && (
-                  <div className="h-6 w-px bg-border" />
-                )}
-                
-                {/* Wallet Section */}
-                {activeAddress && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setWalletExpanded(!walletExpanded)}
-                      className="flex items-center gap-1.5 text-sm font-mono text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Wallet className="h-4 w-4" />
-                      {walletExpanded ? activeAddress : truncatedAddress}
-                    </button>
-                    <button
-                      onClick={copyAddress}
-                      className="p-1 hover:bg-muted rounded transition-colors"
-                      title="Copy address"
-                    >
-                      {copied ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
+                  <>
+                    <div className="h-6 w-px bg-border" />
+                    
+                    <div className="flex items-center gap-2">
+                      {/* Chain icon links to block explorer */}
+                      <a
+                        href={getExplorerUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 hover:bg-muted rounded-full transition-colors"
+                        title="View on explorer"
+                      >
+                        {getChainIcon()}
+                      </a>
+                      
+                      {/* Balance - clicking opens top-up for own profile */}
+                      {isOwnProfile && evmAddress ? (
+                        <PersonalTopUpDialog 
+                          walletAddress={evmAddress}
+                          trigger={
+                            <button className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors">
+                              <Wallet className="h-4 w-4" />
+                              {isLoadingBalance ? "..." : `$${balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            </button>
+                          }
+                        />
                       ) : (
-                        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                          <Wallet className="h-4 w-4" />
+                          {isLoadingBalance ? "..." : `$${balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        </span>
                       )}
-                    </button>
-                    <a
-                      href={getExplorerUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1 hover:bg-muted rounded transition-colors"
-                      title="View on explorer"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                    </a>
-                    {getChainBadge()}
-                    
-                    {/* Balance */}
-                    <span className="text-sm font-medium text-foreground ml-1">
-                      {isLoadingBalance ? "..." : `$${balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    </span>
-                    
-                    {isOwnProfile && evmAddress && <PersonalTopUpDialog walletAddress={evmAddress} />}
-                  </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
