@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Twitter, Github, Linkedin, Instagram, Globe, Plus, X, Save, Loader2, Send } from "lucide-react";
+import { Twitter, Github, Linkedin, Instagram, Globe, Plus, X, Save, Loader2, Send, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProfileSocialLinks, getSocialPlatform } from "@/hooks/useProfileSocialLinks";
@@ -22,6 +22,8 @@ const getPlatformIcon = (platform: string | null) => {
       return { Icon: Instagram, color: "text-pink-500" };
     case "telegram":
       return { Icon: Send, color: "text-sky-400" };
+    case "spotify":
+      return { Icon: Music, color: "text-green-500" };
     default:
       return { Icon: Globe, color: "text-muted-foreground" };
   }
