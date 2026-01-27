@@ -77,7 +77,7 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
         .filter(r => r.userId)
         .map(r => ({
           userId: r.userId!,
-          isAnon: r.isAnon,
+          isAnon: r.isAnon ?? true, // Default to anon if not set
         }));
 
       if (usersToCheck.length > 0) {
@@ -90,8 +90,10 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
   }, [residents, checkBatchVisibility]);
 
   // Helper to check if a resident should be blurred
-  const shouldBlurResident = (resident: { isAnon: boolean; userId?: string | null }): boolean => {
-    if (!resident.isAnon) return false;
+  const shouldBlurResident = (resident: { isAnon?: boolean; userId?: string | null }): boolean => {
+    // Default to anon if is_anon is undefined
+    const isAnon = resident.isAnon ?? true;
+    if (!isAnon) return false;
     if (isHost) return false;
     if (user && resident.userId === user.id) return false;
     if (resident.userId && visibilityMap[resident.userId]) return false;
