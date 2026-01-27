@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from "react";
+import { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import {
   format,
   parseISO,
@@ -10,8 +10,9 @@ import {
 } from "date-fns";
 import { Stay } from "@/hooks/useStays";
 import { OccupancyChart } from "./OccupancyChart";
+import { ResidentProfileCard } from "./ResidentProfileCard";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin, Check, HelpCircle } from "lucide-react";
+import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBestAvatar } from "@/lib/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -80,12 +81,14 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 
 export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const rowsContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const [nameColumnWidth, setNameColumnWidth] = useState(isMobile ? 100 : 120);
   const [intentionColumnWidth, setIntentionColumnWidth] = useState(140);
   const [isResizing, setIsResizing] = useState(false);
   const [resizingColumn, setResizingColumn] = useState<'name' | 'intention' | null>(null);
+  const [selectedNickname, setSelectedNickname] = useState<string | null>(null);
   const dayWidth = isMobile ? 20 : 28;
 
   // Calculate date range from stays
@@ -194,6 +197,19 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
     document.addEventListener("mouseup", handleMouseUp);
   };
 
+  // Sync scroll between rows container and timeline
+  const handleRowsScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  }, []);
+
+  const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (rowsContainerRef.current) {
+      rowsContainerRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  }, []);
+
   // Auto-scroll to today on mount
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -201,6 +217,12 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
     }, 100);
     return () => clearTimeout(timer);
   }, [days]);
+
+  // Get stays for selected nickname
+  const selectedStays = useMemo(() => {
+    if (!selectedNickname) return [];
+    return staysByNickname.get(selectedNickname) || [];
+  }, [selectedNickname, staysByNickname]);
 
   if (loading) {
     return (
@@ -222,6 +244,14 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
 
   return (
     <div className="flex flex-col h-full">
+      {/* Profile Card Dialog */}
+      <ResidentProfileCard
+        stays={selectedStays}
+        nickname={selectedNickname || ""}
+        open={!!selectedNickname}
+        onOpenChange={(open) => !open && setSelectedNickname(null)}
+      />
+
       {/* Occupancy Chart - At top for mobile */}
       <div className={cn("mb-3", isMobile ? "" : "flex")}>
         {!isMobile && <div style={{ width: nameColumnWidth }} className="flex-shrink-0" />}
@@ -240,96 +270,69 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
         </div>
       )}
 
-      {/* Timeline */}
-      <div className="flex flex-1 min-h-0">
-        {/* Name Column */}
-        <div
-          className="flex-shrink-0 border-r border-border relative"
-          style={{ width: nameColumnWidth }}
-        >
-          {/* Month/Day header space */}
-          <div className={cn(
-            "border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center font-semibold text-muted-foreground",
-            isMobile ? "h-12 text-[10px]" : "h-14 text-xs"
-          )}>
-            Name
-          </div>
-          
-          {/* Names */}
-          <div className="overflow-y-auto">
-            {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
-              const firstStay = personStays[0];
-              const avatarUrl = getBestAvatar(nickname, firstStay?.social_profile || null, 32);
-              const socialNetwork = getSocialNetwork(firstStay?.social_profile || null);
-              
-              return (
-                <div
-                  key={nickname}
-                  className={cn(
-                    "flex items-center gap-1.5 px-1.5 border-b border-border font-medium",
-                    isMobile ? "h-9 text-xs" : "h-10 text-sm gap-2 px-2"
-                  )}
-                >
-                  <Avatar className={cn("flex-shrink-0", isMobile ? "w-5 h-5" : "w-6 h-6")}>
-                    <AvatarImage src={avatarUrl} alt={nickname} />
-                    <AvatarFallback className={cn(isMobile ? "text-[8px]" : "text-[10px]")}>
-                      {nickname.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className={cn("truncate", isMobile && "text-xs")} title={nickname}>
-                    {nickname}
-                  </span>
-                  {!isMobile && firstStay?.social_profile && socialNetwork.type && (
-                    <a
-                      href={firstStay.social_profile}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn("flex-shrink-0 hover:opacity-70 transition-opacity", socialNetwork.color)}
-                      title={`View ${nickname}'s profile`}
-                    >
-                      {socialNetwork.type === 'twitter' && <Twitter className="h-3.5 w-3.5" />}
-                      {socialNetwork.type === 'instagram' && <Instagram className="h-3.5 w-3.5" />}
-                      {socialNetwork.type === 'github' && <Github className="h-3.5 w-3.5" />}
-                      {socialNetwork.type === 'linkedin' && <Linkedin className="h-3.5 w-3.5" />}
-                      {socialNetwork.type === 'other' && <ExternalLink className="h-3.5 w-3.5" />}
-                    </a>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Resize Handle */}
+      {/* Timeline with synced scrolling */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Fixed Columns (Name + Intention) */}
+        <div className="flex flex-shrink-0">
+          {/* Name Column */}
           <div
-            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors"
-            onMouseDown={handleResizeStart('name')}
-          />
-        </div>
-
-        {/* Intention Column - Hidden on mobile */}
-        {!isMobile && (
-          <div
-            className="flex-shrink-0 border-r border-border relative"
-            style={{ width: intentionColumnWidth }}
+            className="flex-shrink-0 border-r border-border relative flex flex-col"
+            style={{ width: nameColumnWidth }}
           >
             {/* Header */}
-            <div className="h-14 border-b border-border bg-muted/30 sticky top-0 z-10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
-              Intention
+            <div className={cn(
+              "border-b border-border bg-muted/30 flex items-center justify-center font-semibold text-muted-foreground flex-shrink-0",
+              isMobile ? "h-12 text-[10px]" : "h-14 text-xs"
+            )}>
+              Name
             </div>
             
-            {/* Intentions */}
-            <div className="overflow-y-auto">
+            {/* Scrollable Names */}
+            <div 
+              ref={rowsContainerRef}
+              className="flex-1 overflow-y-auto overflow-x-hidden"
+              onScroll={handleRowsScroll}
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
               {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
                 const firstStay = personStays[0];
+                const avatarUrl = getBestAvatar(nickname, firstStay?.social_profile || null, 32);
+                const socialNetwork = getSocialNetwork(firstStay?.social_profile || null);
                 
                 return (
                   <div
                     key={nickname}
-                    className="h-10 flex items-center px-2 border-b border-border text-sm text-muted-foreground"
+                    onClick={() => setSelectedNickname(nickname)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-1.5 border-b border-border font-medium cursor-pointer hover:bg-muted/50 transition-colors",
+                      isMobile ? "h-9 text-xs" : "h-10 text-sm gap-2 px-2"
+                    )}
                   >
-                    <span className="truncate" title={firstStay?.intention || ""}>
-                      {firstStay?.intention || "—"}
+                    <Avatar className={cn("flex-shrink-0", isMobile ? "w-5 h-5" : "w-6 h-6")}>
+                      <AvatarImage src={avatarUrl} alt={nickname} />
+                      <AvatarFallback className={cn(isMobile ? "text-[8px]" : "text-[10px]")}>
+                        {nickname.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className={cn("truncate hover:underline", isMobile && "text-xs")} title={nickname}>
+                      {nickname}
                     </span>
+                    {!isMobile && firstStay?.social_profile && socialNetwork.type && (
+                      <a
+                        href={firstStay.social_profile}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn("flex-shrink-0 hover:opacity-70 transition-opacity", socialNetwork.color)}
+                        title={`View ${nickname}'s profile`}
+                      >
+                        {socialNetwork.type === 'twitter' && <Twitter className="h-3.5 w-3.5" />}
+                        {socialNetwork.type === 'instagram' && <Instagram className="h-3.5 w-3.5" />}
+                        {socialNetwork.type === 'github' && <Github className="h-3.5 w-3.5" />}
+                        {socialNetwork.type === 'linkedin' && <Linkedin className="h-3.5 w-3.5" />}
+                        {socialNetwork.type === 'other' && <ExternalLink className="h-3.5 w-3.5" />}
+                      </a>
+                    )}
                   </div>
                 );
               })}
@@ -338,13 +341,56 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay }: StayGanttTimel
             {/* Resize Handle */}
             <div
               className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors"
-              onMouseDown={handleResizeStart('intention')}
+              onMouseDown={handleResizeStart('name')}
             />
           </div>
-        )}
+
+          {/* Intention Column - Hidden on mobile */}
+          {!isMobile && (
+            <div
+              className="flex-shrink-0 border-r border-border relative flex flex-col"
+              style={{ width: intentionColumnWidth }}
+            >
+              {/* Header */}
+              <div className="h-14 border-b border-border bg-muted/30 flex items-center justify-center text-xs font-semibold text-muted-foreground flex-shrink-0">
+                Intention
+              </div>
+              
+              {/* Scrollable Intentions - synced with names */}
+              <div 
+                className="flex-1 overflow-hidden"
+              >
+                {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+                  const firstStay = personStays[0];
+                  
+                  return (
+                    <div
+                      key={nickname}
+                      className="h-10 flex items-center px-2 border-b border-border text-sm text-muted-foreground"
+                    >
+                      <span className="truncate" title={firstStay?.intention || ""}>
+                        {firstStay?.intention || "—"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Resize Handle */}
+              <div
+                className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors"
+                onMouseDown={handleResizeStart('intention')}
+              />
+            </div>
+          )}
+        </div>
 
         {/* Timeline Grid */}
-        <div className="flex-1 overflow-x-auto" ref={scrollContainerRef}>
+        <div 
+          className="flex-1 overflow-auto" 
+          ref={scrollContainerRef}
+          onScroll={handleTimelineScroll}
+        >
           <div style={{ width: days.length * dayWidth, minWidth: "100%" }}>
             {/* Month Headers */}
             <div className={cn("flex border-b border-border bg-muted/30 sticky top-0 z-10", isMobile ? "h-6" : "h-7")}>
