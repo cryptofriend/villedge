@@ -466,10 +466,11 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                   const duration = differenceInDays(endDate, startDate) + 1;
                   const colorStyle = getColorForNickname(nickname, stay.status);
                   const isPlanning = stay.status === "planning";
-                  const canEdit = user?.id && stay.user_id === user.id && onEditStay;
+                  const isOwner = user?.id && stay.user_id === user.id;
+                  const canEdit = (isOwner || isHost) && onEditStay;
 
                   const handleClick = (e: React.MouseEvent) => {
-                    if (canEdit) {
+                    if (canEdit && onEditStay) {
                       e.preventDefault();
                       e.stopPropagation();
                       onEditStay(stay);
