@@ -47,7 +47,6 @@
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.90.19",
     "@tonconnect/ui-react": "^2.3.1",
-    "@walletconnect/ethereum-provider": "^2.23.4",
     "@walletconnect/solana-adapter": "^0.0.8",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",

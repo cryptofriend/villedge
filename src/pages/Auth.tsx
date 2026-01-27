@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { walletConnectConnector } from '@/lib/wagmi';
 
 // Debug log collector
 const debugLogs: string[] = [];
@@ -182,23 +181,12 @@ export default function Auth() {
 
   const handleEthereumConnect = () => {
     setAuthType('ethereum');
-    // Use imported WalletConnect connector directly
-    if (walletConnectConnector) {
-      console.log('[Auth] Using WalletConnect connector directly');
-      connect({ connector: walletConnectConnector });
+    const injectedConnector = connectors.find(c => c.id === 'injected' || c.name.toLowerCase().includes('metamask'));
+    if (injectedConnector) {
+      connect({ connector: injectedConnector });
     } else {
-      // Fallback: try to find any EVM wallet
-      const evmConnector = connectors.find(c => 
-        c.name.toLowerCase().includes('metamask') || 
-        c.name.toLowerCase().includes('rabby')
-      );
-      if (evmConnector) {
-        console.log('[Auth] Using fallback EVM wallet:', evmConnector.name);
-        connect({ connector: evmConnector });
-      } else {
-        toast.error('No Ethereum wallet available. WalletConnect not configured.');
-        setAuthType(null);
-      }
+      toast.error('No Ethereum wallet detected. Please install MetaMask.');
+      setAuthType(null);
     }
   };
 
@@ -343,76 +331,28 @@ export default function Auth() {
                 )}
               </Button>
 
-              {/* Chain Buttons Row */}
-              <div className="flex gap-2">
-                {/* ETH Button */}
-                <Button
-                  onClick={handleEthereumConnect}
-                  variant="outline"
-                  className="flex-1 h-12 text-sm font-medium rounded-xl border-2 hover:bg-[#627EEA]/10 hover:border-[#627EEA] transition-all duration-200"
-                  disabled={anyLoading}
-                >
-                  {isEthereumLoading ? (
+              {/* TON Button */}
+              <Button
+                onClick={handleTonConnect}
+                variant="outline"
+                className="w-full h-12 text-base font-medium rounded-xl border-2 hover:bg-[#0098EA]/10 hover:border-[#0098EA] transition-all duration-200"
+                disabled={anyLoading}
+              >
+                {isTonLoading ? (
+                  <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <svg className="h-5 w-5" viewBox="0 0 256 417" xmlns="http://www.w3.org/2000/svg">
-                        <path fill="#343434" d="m127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z"/>
-                        <path fill="#8C8C8C" d="M127.962 0L0 212.32l127.962 75.639V154.158z"/>
-                        <path fill="#3C3C3B" d="m127.961 312.187l-1.575 1.92v98.199l1.575 4.601L256 236.587z"/>
-                        <path fill="#8C8C8C" d="M127.962 416.905v-104.72L0 236.585z"/>
-                        <path fill="#141414" d="m127.961 287.958l127.96-75.637l-127.96-58.162z"/>
-                        <path fill="#393939" d="m.001 212.321l127.96 75.637V154.159z"/>
-                      </svg>
-                      <span>ETH</span>
-                    </div>
-                  )}
-                </Button>
-
-                {/* SOL Button */}
-                <Button
-                  onClick={handleSolanaConnect}
-                  variant="outline"
-                  className="flex-1 h-12 text-sm font-medium rounded-xl border-2 hover:bg-[#9945FF]/10 hover:border-[#9945FF] transition-all duration-200"
-                  disabled={anyLoading}
-                >
-                  {isSolanaLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <svg className="h-5 w-5" viewBox="0 0 397 311" xmlns="http://www.w3.org/2000/svg">
-                        <linearGradient id="solana-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#00FFA3"/>
-                          <stop offset="100%" stopColor="#DC1FFF"/>
-                        </linearGradient>
-                        <path fill="url(#solana-gradient)" d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z"/>
-                        <path fill="url(#solana-gradient)" d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z"/>
-                        <path fill="url(#solana-gradient)" d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z"/>
-                      </svg>
-                      <span>SOL</span>
-                    </div>
-                  )}
-                </Button>
-
-                {/* Telegram Button */}
-                <Button
-                  onClick={handleTonConnect}
-                  variant="outline"
-                  className="flex-1 h-12 text-sm font-medium rounded-xl border-2 hover:bg-[#0098EA]/10 hover:border-[#0098EA] transition-all duration-200"
-                  disabled={anyLoading}
-                >
-                  {isTonLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#0098EA" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                      </svg>
-                      <span>TG</span>
-                    </div>
-                  )}
-                </Button>
-              </div>
+                    <span>Signing in...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56Z" fill="#0098EA"/>
+                      <path d="M37.5603 15.6277H18.4386C14.9228 15.6277 12.6944 19.4202 14.4632 22.4861L26.2644 42.9409C27.0345 44.2765 28.9644 44.2765 29.7345 42.9409L41.5765 22.4861C43.3045 19.4202 41.0761 15.6277 37.5603 15.6277ZM26.2031 36.8879L24.6468 33.6171L17.6224 20.7283C17.0117 19.6143 17.8517 18.2458 19.1399 18.2458H26.2031V36.8879ZM38.3764 20.7283L31.3519 33.6171L29.7956 36.8879V18.2458H36.8589C38.1471 18.2458 38.9871 19.6143 38.3764 20.7283Z" fill="white"/>
+                    </svg>
+                    <span>Sign in with TON</span>
+                  </div>
+                )}
+              </Button>
 
               {/* Divider */}
               <div className="relative my-4">
