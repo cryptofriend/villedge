@@ -17,6 +17,7 @@ interface CoHostManagerProps {
 
 interface ProfileSearchResult {
   user_id: string;
+  username: string | null;
   display_name: string | null;
   avatar_url: string | null;
 }
@@ -43,8 +44,8 @@ export const CoHostManager = ({ villageId, villageOwnerId }: CoHostManagerProps)
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .ilike('display_name', `%${searchQuery}%`)
+          .select('user_id, username, display_name, avatar_url')
+          .or(`display_name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%`)
           .limit(5);
 
         if (error) throw error;
@@ -199,10 +200,15 @@ export const CoHostManager = ({ villageId, villageOwnerId }: CoHostManagerProps)
                   <Avatar className="h-7 w-7">
                     <AvatarImage src={profile.avatar_url || undefined} />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                      {(profile.display_name || "?").slice(0, 2).toUpperCase()}
+                      {(profile.display_name || profile.username || "?").slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm">{profile.display_name || "Unknown"}</span>
+                  <span className="text-sm">
+                    {profile.display_name || profile.username || "Unknown"}
+                    {profile.username && profile.display_name && (
+                      <span className="text-muted-foreground ml-1">@{profile.username}</span>
+                    )}
+                  </span>
                   {isAdding ? (
                     <Loader2 className="h-4 w-4 animate-spin ml-auto" />
                   ) : (
