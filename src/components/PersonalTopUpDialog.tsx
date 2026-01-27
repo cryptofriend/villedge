@@ -13,13 +13,14 @@ import { QRCodeSVG } from "qrcode.react";
 
 interface PersonalTopUpDialogProps {
   walletAddress: string;
+  trigger?: React.ReactNode;
 }
 
 const SUPPORTED_CHAINS = [
   { name: "Base", chainId: 8453, color: "bg-blue-600" },
 ];
 
-export const PersonalTopUpDialog = ({ walletAddress }: PersonalTopUpDialogProps) => {
+export const PersonalTopUpDialog = ({ walletAddress, trigger }: PersonalTopUpDialogProps) => {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -40,10 +41,12 @@ export const PersonalTopUpDialog = ({ walletAddress }: PersonalTopUpDialogProps)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
-          <ArrowDownCircle className="h-3 w-3" />
-          Top Up
-        </Button>
+        {trigger || (
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+            <ArrowDownCircle className="h-3 w-3" />
+            Top Up
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
