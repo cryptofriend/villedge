@@ -11,7 +11,10 @@ import { useUserCount } from "@/hooks/useUserCount";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
-const BOOGA_USER_ID = "9807c494-ba07-4438-9a89-07ac13334e78";
+const ADMIN_USER_IDS = [
+  "9807c494-ba07-4438-9a89-07ac13334e78", // dev
+  "b015441b-3bb4-4150-94e6-d8be048035bb", // booga
+];
 const DEFAULT_CENTER: [number, number] = [50, 20];
 const DEFAULT_ZOOM = 2;
 
@@ -30,7 +33,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const { user } = useAuth();
   const [mapReady, setMapReady] = useState(false);
 
-  const isBooga = user?.id === BOOGA_USER_ID;
+  const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
 
   // Initialize map
   useEffect(() => {
@@ -218,7 +221,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               </h1>
               <AddVillageForm onVillageAdded={() => window.location.reload()} />
               <AuthButton />
-              {isBooga && (
+              {isAdmin && (
                 <Button
                   variant="ghost"
                   size="icon"

@@ -17,7 +17,10 @@ import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
 import { BotNotificationSection } from "@/components/admin/BotNotificationSection";
 
-const BOOGA_USER_ID = "9807c494-ba07-4438-9a89-07ac13334e78";
+const ADMIN_USER_IDS = [
+  "9807c494-ba07-4438-9a89-07ac13334e78", // dev
+  "b015441b-3bb4-4150-94e6-d8be048035bb", // booga
+];
 
 const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -69,7 +72,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (!loading) {
-      if (!user || user.id !== BOOGA_USER_ID) {
+      if (!user || !ADMIN_USER_IDS.includes(user.id)) {
         navigate("/");
       } else {
         setIsAuthorized(true);
