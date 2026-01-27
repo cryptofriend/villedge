@@ -51,8 +51,8 @@ export const porto = portoConnector({ mode: dialogMode });
 // WalletConnect project ID from environment
 const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
 
-// Create WalletConnect connector if project ID is available
-const walletConnectConnector = walletConnectProjectId
+// Create and export WalletConnect connector if project ID is available
+export const walletConnectConnector = walletConnectProjectId
   ? walletConnect({
       projectId: walletConnectProjectId,
       metadata: {

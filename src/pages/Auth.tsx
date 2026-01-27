@@ -181,12 +181,15 @@ export default function Auth() {
 
   const handleEthereumConnect = () => {
     setAuthType('ethereum');
-    // Use WalletConnect for Ethereum connection
-    const walletConnectConnector = connectors.find(c => c.id === 'walletConnect');
-    if (walletConnectConnector) {
-      connect({ connector: walletConnectConnector });
+    // Use WalletConnect for Ethereum connection - find by name since ID can vary
+    const wcConnector = connectors.find(c => 
+      c.name.toLowerCase().includes('walletconnect') || c.id.includes('walletConnect')
+    );
+    console.log('[Auth] Available connectors for ETH:', connectors.map(c => ({ id: c.id, name: c.name })));
+    if (wcConnector) {
+      connect({ connector: wcConnector });
     } else {
-      toast.error('WalletConnect not available. Please try again.');
+      toast.error('WalletConnect not configured. Please check project settings.');
       setAuthType(null);
     }
   };
