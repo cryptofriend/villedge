@@ -1,14 +1,25 @@
 import { useState } from "react";
-import { Users, CalendarDays, Calendar } from "lucide-react";
+import { Users, CalendarDays } from "lucide-react";
 import { useStays, Stay } from "@/hooks/useStays";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { AddStayForm } from "./AddStayForm";
 import { StayGanttTimeline } from "./StayGanttTimeline";
 import { StayResidentCards } from "./StayResidentCards";
 import { EditStayDialog } from "./EditStayDialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface StayCalendarProps {
   villageId: string;
@@ -16,21 +27,39 @@ interface StayCalendarProps {
 }
 
 export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
-  const { stays, loading, addStay, updateStayByOwner } = useStays(villageId);
+  const { stays, loading, addStay, updateStayByOwner, deleteStayAsHost, updateStayAsHost } = useStays(villageId);
   const { user } = useAuth();
+  const { isHost } = usePermissions();
   const isMobile = useIsMobile();
+  
+  const isVillageHost = isHost(villageId);
   
   // Default to cards view on mobile, timeline on desktop
   const [viewMode, setViewMode] = useState<"cards" | "timeline">(isMobile ? "cards" : "timeline");
   const [editingStay, setEditingStay] = useState<Stay | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deletingStay, setDeletingStay] = useState<Stay | null>(null);
 
   const handleEditStay = (stay: Stay) => {
     setEditingStay(stay);
     setEditDialogOpen(true);
   };
 
+  const handleDeleteStay = (stay: Stay) => {
+    setDeletingStay(stay);
+  };
+
+  const confirmDeleteStay = async () => {
+    if (!deletingStay) return;
+    await deleteStayAsHost(deletingStay.id);
+    setDeletingStay(null);
+  };
+
   const handleSaveStay = async (stayId: string, updates: { start_date: string; end_date: string; status: "planning" | "confirmed" }) => {
+    // If user is host, use host update function
+    if (isVillageHost) {
+      return await updateStayAsHost(stayId, updates);
+    }
     return await updateStayByOwner(stayId, updates, user?.id || null);
   };
 
@@ -90,7 +119,13 @@ export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
         {viewMode === "cards" ? (
           <StayResidentCards stays={stays} loading={loading} applyUrl={applyUrl} />
         ) : (
-          <StayGanttTimeline stays={stays} loading={loading} onEditStay={handleEditStay} />
+          <StayGanttTimeline 
+            stays={stays} 
+            loading={loading} 
+            onEditStay={handleEditStay}
+            onDeleteStay={handleDeleteStay}
+            isHost={isVillageHost}
+          />
         )}
       </div>
 
@@ -101,6 +136,24 @@ export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
         onOpenChange={setEditDialogOpen}
         onSave={handleSaveStay}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingStay} onOpenChange={(open) => !open && setDeletingStay(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Submission</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {deletingStay?.nickname}'s stay submission? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteStay} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
