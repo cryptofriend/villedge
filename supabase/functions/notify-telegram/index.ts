@@ -283,6 +283,12 @@ const handler = async (req: Request): Promise<Response> => {
           "Bad Request: chat not found. This usually means the @username is wrong OR the bot is not a member/admin of that chat/channel. Add the bot to the target chat (and make it an admin for channels), then retry."
         );
       }
+      
+      if (desc.toLowerCase().includes("message thread not found")) {
+        throw new Error(
+          "Bad Request: message thread not found. The Thread ID doesn't exist in this chat. To find a valid Thread ID: open the topic/thread in Telegram, copy the message link, and extract the last number from the URL (e.g., https://t.me/c/123456789/42 → Thread ID is 42). Leave Thread ID empty to post to the main chat."
+        );
+      }
 
       throw new Error(desc);
     }
