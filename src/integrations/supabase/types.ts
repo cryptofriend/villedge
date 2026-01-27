@@ -682,6 +682,7 @@ export type Database = {
           participants: string | null
           solana_wallet_address: string | null
           telegram_url: string | null
+          thumbnail_url: string | null
           twitter_url: string | null
           updated_at: string
           wallet_address: string | null
@@ -704,6 +705,7 @@ export type Database = {
           participants?: string | null
           solana_wallet_address?: string | null
           telegram_url?: string | null
+          thumbnail_url?: string | null
           twitter_url?: string | null
           updated_at?: string
           wallet_address?: string | null
@@ -726,6 +728,7 @@ export type Database = {
           participants?: string | null
           solana_wallet_address?: string | null
           telegram_url?: string | null
+          thumbnail_url?: string | null
           twitter_url?: string | null
           updated_at?: string
           wallet_address?: string | null
