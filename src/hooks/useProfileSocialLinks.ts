@@ -28,6 +28,9 @@ export const getSocialPlatform = (url: string) => {
   if (lowerUrl.includes("telegram.me") || lowerUrl.includes("t.me")) {
     return "telegram";
   }
+  if (lowerUrl.includes("spotify.com") || lowerUrl.includes("open.spotify.com")) {
+    return "spotify";
+  }
   if (url.startsWith("http")) {
     return "website";
   }
