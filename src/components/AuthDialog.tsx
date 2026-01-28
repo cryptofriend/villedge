@@ -7,7 +7,8 @@ import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Shield, Fingerprint, Globe, Sparkles, Mail } from 'lucide-react';
+import { Loader2, Shield, Fingerprint, Globe, Sparkles, Mail, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { usePrivyConfig } from '@/components/PrivyProvider';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
@@ -21,6 +22,7 @@ interface AuthDialogProps {
 
 export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyConfig();
   
@@ -201,9 +203,13 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
         <div className="bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 p-6 pb-4">
           <DialogHeader className="space-y-3">
             <div className="flex items-center justify-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
+              <button
+                onClick={() => navigate('/')}
+                className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                title="Back to Home"
+              >
+                <Home className="h-5 w-5 text-primary" />
+              </button>
               <span className="font-display text-xl font-semibold text-foreground">Villedge</span>
             </div>
             <DialogTitle className="text-center text-2xl font-display font-bold">
