@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { privyUserId, email, walletAddress } = await req.json();
+    const { privyUserId, email, walletAddress, invitationCode } = await req.json();
 
     if (!privyUserId || typeof privyUserId !== "string") {
       console.error("privy-auth: Missing or invalid privyUserId");
@@ -95,6 +95,23 @@ Deno.serve(async (req) => {
       // Create new user
       const displayName = email?.split('@')[0] || `privy-${privyUserId.slice(-8)}`;
       
+      // Validate invitation code if provided
+      let codeValidation = null;
+      let isVerified = false;
+      
+      if (invitationCode && invitationCode.trim()) {
+        const { data: validationResult, error: validationError } = await supabase
+          .rpc('validate_invitation_code', { _code: invitationCode.trim().toUpperCase() });
+        
+        if (validationError) {
+          console.error("privy-auth: Error validating invitation code:", validationError);
+        } else {
+          codeValidation = validationResult;
+          isVerified = codeValidation?.valid === true;
+          console.log("privy-auth: Invitation code validation:", codeValidation);
+        }
+      }
+      
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: userEmail,
         email_confirm: true,
@@ -115,7 +132,7 @@ Deno.serve(async (req) => {
       isNewUser = true;
       console.log("privy-auth: Created new user:", userId);
 
-      // Create profile
+      // Create profile with verification status
       const username = displayName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 30) || `privy-${Date.now().toString(36)}`;
       
       await supabase
@@ -126,6 +143,7 @@ Deno.serve(async (req) => {
           avatar_url: avatarUrl,
           username: username,
           wallet_address: walletAddress,
+          is_verified: isVerified,
         });
 
       // If wallet address provided, add to user_wallets
@@ -138,6 +156,16 @@ Deno.serve(async (req) => {
             wallet_type: 'ethereum',
             is_primary: true,
           });
+      }
+      
+      // If invitation code was valid, use it to create referral
+      if (codeValidation?.valid && codeValidation?.code_id && codeValidation?.owner_id) {
+        await supabase.rpc('use_invitation_code', {
+          _code_id: codeValidation.code_id,
+          _referrer_id: codeValidation.owner_id,
+          _referred_id: userId,
+        });
+        console.log("privy-auth: Used invitation code, created referral");
       }
     }
 
