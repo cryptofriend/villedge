@@ -293,8 +293,8 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       </div>
 
       {/* Info sidebar - positioned above map markers and timeline */}
-      <div className="absolute top-24 right-4 z-[100] hidden w-64 max-h-[calc(100%-180px)] rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-72 lg:p-4">
-        <div className="mb-3 flex items-center justify-between border-b border-border pb-2">
+      <div className="absolute top-24 right-4 z-[100] hidden w-56 max-h-[320px] rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-64">
+        <div className="mb-2 flex items-center justify-between border-b border-border pb-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">
               Villedge
@@ -304,25 +304,25 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         </div>
         
         {/* Type Switcher */}
-        <div className="mb-3">
+        <div className="mb-2">
           <ToggleGroup 
             type="single" 
             value={villageTypeFilter} 
             onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
             className="w-full"
           >
-            <ToggleGroupItem value="popup" className="flex-1 gap-1.5 text-xs">
-              <Calendar className="h-3.5 w-3.5" />
+            <ToggleGroupItem value="popup" className="flex-1 gap-1 text-xs py-1.5">
+              <Calendar className="h-3 w-3" />
               Popups
             </ToggleGroupItem>
-            <ToggleGroupItem value="permanent" className="flex-1 gap-1.5 text-xs">
-              <Building2 className="h-3.5 w-3.5" />
+            <ToggleGroupItem value="permanent" className="flex-1 gap-1 text-xs py-1.5">
+              <Building2 className="h-3 w-3" />
               Permanent
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
 
-        <div className="space-y-2 overflow-y-auto max-h-[calc(100%-120px)]">
+        <div className="overflow-y-auto max-h-[180px] space-y-1">
           {filteredVillages.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
               No {villageTypeFilter} villages yet
@@ -332,17 +332,17 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               <button
                 key={village.id}
                 onClick={() => navigate(getVillageRoute(village))}
-                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+                className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-left"
               >
                 <img 
                   src={village.logo_url || '/placeholder.svg'} 
                   alt={village.name} 
-                  className="h-8 w-8 rounded object-cover"
+                  className="h-7 w-7 rounded object-cover flex-shrink-0"
                   onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">{village.name}</p>
-                  <p className="text-xs text-muted-foreground truncate" title={village.location}>{village.location}</p>
+                  <p className="text-xs font-medium text-foreground truncate">{village.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate" title={village.location}>{village.location}</p>
                 </div>
               </button>
             ))
