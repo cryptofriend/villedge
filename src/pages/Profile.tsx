@@ -226,7 +226,14 @@ const Profile = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            // If there's browser history, go back; otherwise go home
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate('/');
+            }
+          }}
           className="bg-background/80 backdrop-blur-sm"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
