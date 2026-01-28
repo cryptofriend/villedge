@@ -1,12 +1,17 @@
 import { ReactNode } from 'react';
 import { PrivyProvider as PrivyProviderBase } from '@privy-io/react-auth';
+import { usePrivyAppId } from '@/hooks/usePrivyAppId';
 
 interface PrivyProviderProps {
   children: ReactNode;
 }
 
 export const PrivyProvider = ({ children }: PrivyProviderProps) => {
-  const appId = import.meta.env.VITE_PRIVY_APP_ID;
+  const { appId, loading } = usePrivyAppId();
+
+  if (loading) {
+    return <>{children}</>;
+  }
 
   if (!appId) {
     console.warn('VITE_PRIVY_APP_ID not configured');
