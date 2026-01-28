@@ -9,23 +9,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-// Check if Privy is available
-const PRIVY_ENABLED = !!import.meta.env.VITE_PRIVY_APP_ID;
-
-// Conditionally import Privy hooks
-let usePrivy: any = () => ({ authenticated: false, user: null, logout: () => {} });
-let usePrivyLogin: any = () => ({ login: () => {} });
-
-if (PRIVY_ENABLED) {
-  try {
-    const privyModule = await import('@privy-io/react-auth');
-    usePrivy = privyModule.usePrivy;
-    usePrivyLogin = privyModule.useLogin;
-  } catch (e) {
-    console.warn('Privy not available');
-  }
-}
+import { usePrivyAppId } from '@/hooks/usePrivyAppId';
+import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 
 // Debug log collector
 const debugLogs: string[] = [];
@@ -66,10 +51,8 @@ export default function Auth() {
   // TON wallet
   const [tonConnectUI] = useTonConnectUI();
   const tonWallet = useTonWallet();
-  
-  // Privy - only use if enabled
-  const privyState = PRIVY_ENABLED ? usePrivy() : { authenticated: false, user: null, logout: () => {} };
-  const { authenticated: privyAuthenticated, user: privyUser, logout: privyLogout } = privyState;
+
+  const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyAppId();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'ton' | 'privy' | null>(null);
@@ -137,15 +120,6 @@ export default function Auth() {
     }
   }, [tonWallet, user, isAuthenticating, authType]);
 
-  // When Privy authenticates, sync with backend
-  useEffect(() => {
-    if (privyAuthenticated && privyUser && !user && !isAuthenticating && authType === 'privy') {
-      const email = privyUser.email?.address;
-      const walletAddress = privyUser.wallet?.address;
-      authenticateWithPrivy(privyUser.id, email, walletAddress);
-    }
-  }, [privyAuthenticated, privyUser, user, isAuthenticating, authType]);
-
   const authenticateWithPrivy = async (privyUserId: string, email?: string, walletAddress?: string) => {
     setIsAuthenticating(true);
     
@@ -175,10 +149,11 @@ export default function Auth() {
         toast.success('Welcome to Villedge!');
         navigate(from, { replace: true });
       }
+      return true;
     } catch (error) {
       console.error('Privy auth error:', error);
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
-      privyLogout();
+      return false;
     } finally {
       setIsAuthenticating(false);
       setAuthType(null);
@@ -270,26 +245,7 @@ export default function Auth() {
     }
   };
 
-  // Privy login hook - only use if enabled
-  const privyLoginHook = PRIVY_ENABLED ? usePrivyLogin({
-    onComplete: () => {
-      // Will be handled by the useEffect when privyAuthenticated changes
-    },
-    onError: (error: any) => {
-      console.error('Privy login error:', error);
-      toast.error('Login failed');
-      setAuthType(null);
-    },
-  }) : { login: () => {} };
-
-  const handlePrivyConnect = () => {
-    if (!PRIVY_ENABLED) {
-      toast.error('Email login not configured');
-      return;
-    }
-    setAuthType('privy');
-    privyLoginHook.login();
-  };
+  // Privy login is handled by <PrivyLoginButton /> when configured.
 
   if (loading) {
     return (
@@ -304,7 +260,7 @@ export default function Auth() {
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
   const isTonLoading = isAuthenticating && authType === 'ton';
   const isPrivyLoading = isAuthenticating && authType === 'privy';
-  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTonLoading || isPrivyLoading;
+  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTonLoading || isPrivyLoading || privyAppIdLoading;
 
   const features = [
     {
@@ -404,23 +360,36 @@ export default function Auth() {
             {/* Login Buttons */}
             <div className="space-y-3">
               {/* Privy Button - Email & Social (Primary) */}
-              <Button
-                onClick={handlePrivyConnect}
-                className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-                disabled={anyLoading}
-              >
-                {isPrivyLoading ? (
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Signing in...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5" />
-                    <span>Sign in with Email</span>
-                  </div>
-                )}
-              </Button>
+              {privyAppId ? (
+                <PrivyLoginButton
+                  active={authType === 'privy'}
+                  disabled={anyLoading}
+                  isLoading={isPrivyLoading}
+                  className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+                  onStart={() => setAuthType('privy')}
+                  onAuthenticated={async ({ privyUserId, email, walletAddress }) =>
+                    authenticateWithPrivy(privyUserId, email, walletAddress)
+                  }
+                />
+              ) : (
+                <Button
+                  onClick={() => toast.error('Email login not configured')}
+                  className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+                  disabled={anyLoading}
+                >
+                  {privyAppIdLoading ? (
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Loading...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5" />
+                      <span>Sign in with Email</span>
+                    </div>
+                  )}
+                </Button>
+              )}
 
               {/* Biometric & Telegram Row */}
               <div className="grid grid-cols-2 gap-3">
