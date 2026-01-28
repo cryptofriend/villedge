@@ -16,8 +16,11 @@ const ADMIN_USER_IDS = [
   "9807c494-ba07-4438-9a89-07ac13334e78", // dev
   "b015441b-3bb4-4150-94e6-d8be048035bb", // booga
 ];
-const DEFAULT_CENTER: [number, number] = [50, 20];
+const DEFAULT_CENTER: [number, number] = [30, 25];
 const DEFAULT_ZOOM = 2;
+
+// Padding to account for UI overlays (right sidebar, bottom timeline)
+const MAP_PADDING = { top: 80, bottom: 220, left: 0, right: 300 };
 
 interface GlobalMapProps {
   mapboxToken: string;
@@ -54,6 +57,9 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
     });
+
+    // Apply padding to visually center the map within the visible area
+    m.setPadding(MAP_PADDING);
 
     map.current = m;
 
