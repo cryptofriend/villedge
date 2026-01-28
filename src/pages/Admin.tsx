@@ -16,6 +16,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
 import { BotNotificationSection } from "@/components/admin/BotNotificationSection";
+import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 
 const ADMIN_USER_IDS = [
   "9807c494-ba07-4438-9a89-07ac13334e78", // dev
@@ -683,6 +684,11 @@ export default function Admin() {
             />
           </CardContent>
         </Card>
+
+        {/* Analytics Section */}
+        <div className="mt-6">
+          <AdminAnalytics />
+        </div>
 
         {/* AI Chat Assistant */}
         <div className="mt-6">
