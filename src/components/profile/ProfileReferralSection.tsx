@@ -77,91 +77,75 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
         </Card>
       )}
 
-      {/* Invitation Codes */}
+      {/* Invitation Codes - Compact */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Ticket className="h-5 w-5" />
-              Invitation Codes
-            </CardTitle>
-            {isVerified && (
-              <Button
-                size="sm"
-                onClick={() => createCode.mutate()}
-                disabled={createCode.isPending}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New Code
-              </Button>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Ticket className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm font-medium">Invite Codes</span>
+            </div>
+            
+            {!isVerified ? (
+              <span className="text-xs text-muted-foreground">Verification required</span>
+            ) : codesLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="flex items-center gap-2">
+                {codes && codes.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    {codes.slice(0, 2).map((code) => (
+                      <Button
+                        key={code.id}
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 font-mono text-xs"
+                        onClick={() => handleCopyCode(code.code)}
+                        disabled={code.used_count >= code.max_uses}
+                      >
+                        {copiedCode === code.code ? (
+                          <Check className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <>
+                            {code.code}
+                            <span className="text-muted-foreground ml-1">
+                              ({code.used_count}/{code.max_uses})
+                            </span>
+                          </>
+                        )}
+                      </Button>
+                    ))}
+                    {codes.length > 2 && (
+                      <span className="text-xs text-muted-foreground">+{codes.length - 2}</span>
+                    )}
+                  </div>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7"
+                  onClick={() => createCode.mutate()}
+                  disabled={createCode.isPending}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
-          {!isVerified ? (
-            <p className="text-sm text-muted-foreground">
-              You need to be verified to create invitation codes.
-            </p>
-          ) : codesLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : codes && codes.length > 0 ? (
-            <div className="space-y-2">
-              {codes.map((code) => (
-                <div
-                  key={code.id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <code className="text-lg font-mono font-bold">{code.code}</code>
-                    <Badge variant={code.used_count >= code.max_uses ? "secondary" : "outline"}>
-                      {code.used_count}/{code.max_uses} used
-                    </Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleCopyCode(code.code)}
-                    disabled={code.used_count >= code.max_uses}
-                  >
-                    {copiedCode === code.code ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No invitation codes yet. Create one to invite others!
-            </p>
-          )}
         </CardContent>
       </Card>
 
-      {/* Referral Network */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Your Network
-            {referrals && referrals.length > 0 && (
+      {/* Referral Network - Only show if has referrals */}
+      {referrals && referrals.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Your Network
               <Badge variant="secondary">{referrals.length}</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {referralsLoading ? (
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <Skeleton className="h-10 w-10 rounded-full" />
-            </div>
-          ) : referrals && referrals.length > 0 ? (
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex flex-wrap gap-2">
               {referrals.map((referral) => (
                 <button
@@ -185,15 +169,9 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
                 </button>
               ))}
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              {isVerified 
-                ? "No one has joined using your codes yet."
-                : "Get verified to invite others to the network."}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
