@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { Loader2, Shield, Fingerprint, Globe, Sparkles, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePrivyAppId } from '@/hooks/usePrivyAppId';
+import { usePrivyConfig } from '@/components/PrivyProvider';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 
 interface AuthDialogProps {
@@ -21,7 +21,7 @@ interface AuthDialogProps {
 export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { user } = useAuth();
 
-  const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyAppId();
+  const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyConfig();
   
   // Porto/Biometric wallet
   const { connect, connectors, isPending: isConnecting } = useConnect();

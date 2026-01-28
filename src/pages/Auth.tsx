@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePrivyAppId } from '@/hooks/usePrivyAppId';
+import { usePrivyConfig } from '@/components/PrivyProvider';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 
 // Debug log collector
@@ -52,7 +52,7 @@ export default function Auth() {
   const [tonConnectUI] = useTonConnectUI();
   const tonWallet = useTonWallet();
 
-  const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyAppId();
+  const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyConfig();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'ton' | 'privy' | null>(null);
