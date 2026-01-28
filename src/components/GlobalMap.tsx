@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings, Calendar, Building2, Mic, Home } from "lucide-react";
+import { Loader2, Users, Settings, Calendar, Building2 } from "lucide-react";
 import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
@@ -38,19 +38,15 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const { user } = useAuth();
   const { currentVillage } = useUserCurrentVillage(user?.id, villages);
   const [mapReady, setMapReady] = useState(false);
-  const [topLevelMode, setTopLevelMode] = useState<'villedge' | 'conferences'>('villedge');
-  const [villageSubFilter, setVillageSubFilter] = useState<'popup' | 'permanent'>('popup');
+  const [villageTypeFilter, setVillageTypeFilter] = useState<VillageType>("popup");
   const [initialCenterSet, setInitialCenterSet] = useState(false);
 
   const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
 
-  // Filter villages by type based on top-level mode
+  // Filter villages by type
   const filteredVillages = useMemo(() => {
-    if (topLevelMode === 'conferences') {
-      return villages.filter(v => v.village_type === 'conference');
-    }
-    return villages.filter(v => v.village_type === villageSubFilter);
-  }, [villages, topLevelMode, villageSubFilter]);
+    return villages.filter(v => v.village_type === villageTypeFilter);
+  }, [villages, villageTypeFilter]);
 
   // Initialize map
   useEffect(() => {
@@ -109,11 +105,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     return `/${village.id}`;
   };
 
-  // Transform villages for PopupTimeline format based on top-level mode
+  // Transform villages for PopupTimeline format (only popup villages)
   const timelineVillages = useMemo(() => {
-    const typeToShow = topLevelMode === 'conferences' ? 'conference' : 'popup';
     return villages
-      .filter(v => v.village_type === typeToShow)
+      .filter(v => v.village_type === 'popup')
       .map((v) => ({
         id: v.id,
         name: v.name,
@@ -125,7 +120,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         participants: v.participants || undefined,
         focus: v.focus || undefined,
       }));
-  }, [villages, topLevelMode]);
+  }, [villages]);
 
   const activeVillage = timelineVillages[0] || {
     id: "",
@@ -298,53 +293,39 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       </div>
 
       {/* Info sidebar - positioned above map markers and timeline */}
-      <div className="absolute top-24 right-4 z-[100] hidden w-56 max-h-[350px] rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-64">
+      <div className="absolute top-24 right-4 z-[100] hidden w-56 max-h-[320px] rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-64">
         <div className="mb-2 flex items-center justify-between border-b border-border pb-2">
-          <div className="flex items-center gap-2">
-            <h3 className="font-display text-sm font-semibold text-foreground">Villedge</h3>
-            <ToggleGroup 
-              type="single" 
-              value={topLevelMode} 
-              onValueChange={(value) => value && setTopLevelMode(value as 'villedge' | 'conferences')}
-              className="h-6"
-            >
-              <ToggleGroupItem value="villedge" className="h-6 px-2 text-[10px] gap-1">
-                <Home className="h-3 w-3" />
-                Villages
-              </ToggleGroupItem>
-              <ToggleGroupItem value="conferences" className="h-6 px-2 text-[10px] gap-1">
-                <Mic className="h-3 w-3" />
-                Conf
-              </ToggleGroupItem>
-            </ToggleGroup>
+          <div>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              Villedge
+            </h3>
+            <p className="text-xs text-muted-foreground">Click on a village to explore</p>
           </div>
         </div>
+        
+        {/* Type Switcher */}
+        <div className="mb-2">
+          <ToggleGroup 
+            type="single" 
+            value={villageTypeFilter} 
+            onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
+            className="w-full"
+          >
+            <ToggleGroupItem value="popup" className="flex-1 gap-1 text-xs py-1.5">
+              <Calendar className="h-3 w-3" />
+              Popups
+            </ToggleGroupItem>
+            <ToggleGroupItem value="permanent" className="flex-1 gap-1 text-xs py-1.5">
+              <Building2 className="h-3 w-3" />
+              Permanent
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
 
-        {/* Sub-filter for Villedge mode: Popups vs Permanent */}
-        {topLevelMode === 'villedge' && (
-          <div className="mb-2">
-            <ToggleGroup 
-              type="single" 
-              value={villageSubFilter} 
-              onValueChange={(value) => value && setVillageSubFilter(value as 'popup' | 'permanent')}
-              className="w-full grid grid-cols-2"
-            >
-              <ToggleGroupItem value="popup" className="gap-1 text-xs py-1.5">
-                <Calendar className="h-3 w-3" />
-                Popups
-              </ToggleGroupItem>
-              <ToggleGroupItem value="permanent" className="gap-1 text-xs py-1.5">
-                <Building2 className="h-3 w-3" />
-                Permanent
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        )}
-
-        <div className="overflow-y-auto max-h-[160px] space-y-1">
+        <div className="overflow-y-auto max-h-[180px] space-y-1">
           {filteredVillages.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
-              {topLevelMode === 'conferences' ? 'No conferences yet' : `No ${villageSubFilter} villages yet`}
+              No {villageTypeFilter} villages yet
             </p>
           ) : (
             filteredVillages.map((village) => (
