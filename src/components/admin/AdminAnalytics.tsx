@@ -342,6 +342,28 @@ export function AdminAnalytics() {
     }
   };
 
+  // Toggle user verification status
+  const handleToggleVerification = async (userId: string, newStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_verified: newStatus })
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      toast.success(newStatus ? "User verified" : "Verification revoked");
+      
+      // Update local state
+      setUsers(prev => prev.map(u => 
+        u.user_id === userId ? { ...u, is_verified: newStatus } : u
+      ));
+    } catch (error) {
+      console.error("Error updating verification:", error);
+      toast.error("Failed to update verification status");
+    }
+  };
+
   // Refresh editing village data when villagesWithHosts updates
   useEffect(() => {
     if (editingVillage) {
@@ -571,14 +593,24 @@ export function AdminAnalytics() {
                       <span className={`text-xs font-medium ${regConfig.color}`}>{regConfig.label}</span>
                     </div>
 
-                    {/* Verification Status */}
+                    {/* Verification Status - Clickable */}
                     {user.is_verified ? (
-                      <Badge variant="outline" className="gap-1 border-green-500/50 text-green-600">
+                      <Badge 
+                        variant="outline" 
+                        className="gap-1 border-green-500/50 text-green-600 cursor-pointer hover:bg-green-500/10 transition-colors"
+                        onClick={() => handleToggleVerification(user.user_id, false)}
+                        title="Click to revoke verification"
+                      >
                         <CheckCircle2 className="h-3 w-3" />
                         Verified
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="gap-1 text-muted-foreground">
+                      <Badge 
+                        variant="outline" 
+                        className="gap-1 text-muted-foreground cursor-pointer hover:bg-muted transition-colors"
+                        onClick={() => handleToggleVerification(user.user_id, true)}
+                        title="Click to verify user"
+                      >
                         <Clock className="h-3 w-3" />
                         New
                       </Badge>
