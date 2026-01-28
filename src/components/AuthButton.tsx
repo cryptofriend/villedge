@@ -69,16 +69,16 @@ export function AuthButton() {
   // Truncate address for display
   const truncatedAddress = activeAddress 
     ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`
-    : profile?.display_name || 'User';
+    : profile?.username || 'User';
   
-  // Check if user has set a custom display name (not just the wallet address format)
-  const hasCustomName = profile?.display_name && 
-    !profile.display_name.startsWith('0x') && 
-    !profile.display_name.startsWith('0:') &&
-    profile.display_name !== truncatedAddress;
-  
-  const displayName = hasCustomName ? profile?.display_name : truncatedAddress;
+  // Use username by default, fallback to truncated address
+  const displayName = profile?.username || truncatedAddress;
   const initials = (displayName || 'U').slice(0, 2).toUpperCase();
+  
+  // Check if user has a proper username set (not just wallet-generated)
+  const hasUsername = profile?.username && 
+    !profile.username.startsWith('0x') && 
+    !profile.username.startsWith('0:');
 
   // Format balance (only for EVM wallets)
   const formattedBalance = balanceData 
@@ -99,7 +99,7 @@ export function AuthButton() {
           className="gap-2 px-2 bg-card/90 backdrop-blur-sm border-border/50 hover:bg-card"
           onClick={() => navigate(profileUrl)}
         >
-          {hasCustomName ? (
+          {hasUsername ? (
             <Avatar className="h-6 w-6">
               <AvatarImage src={profile?.avatar_url || undefined} alt={displayName || ''} />
               <AvatarFallback className="text-xs bg-primary/10 text-primary">
