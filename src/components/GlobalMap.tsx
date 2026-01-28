@@ -300,33 +300,24 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       {/* Info sidebar - positioned above map markers and timeline */}
       <div className="absolute top-24 right-4 z-[100] hidden w-56 max-h-[350px] rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-64">
         <div className="mb-2 flex items-center justify-between border-b border-border pb-2">
-          <div>
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              {topLevelMode === 'villedge' ? 'Villedge' : 'Conferences'}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {topLevelMode === 'villedge' ? 'Click on a village to explore' : 'Ethereum community events'}
-            </p>
+          <div className="flex items-center gap-2">
+            <h3 className="font-display text-sm font-semibold text-foreground">Villedge</h3>
+            <ToggleGroup 
+              type="single" 
+              value={topLevelMode} 
+              onValueChange={(value) => value && setTopLevelMode(value as 'villedge' | 'conferences')}
+              className="h-6"
+            >
+              <ToggleGroupItem value="villedge" className="h-6 px-2 text-[10px] gap-1">
+                <Home className="h-3 w-3" />
+                Villages
+              </ToggleGroupItem>
+              <ToggleGroupItem value="conferences" className="h-6 px-2 text-[10px] gap-1">
+                <Mic className="h-3 w-3" />
+                Conf
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
-        </div>
-        
-        {/* Top-level Mode Switcher: Villedge vs Conferences */}
-        <div className="mb-2">
-          <ToggleGroup 
-            type="single" 
-            value={topLevelMode} 
-            onValueChange={(value) => value && setTopLevelMode(value as 'villedge' | 'conferences')}
-            className="w-full grid grid-cols-2"
-          >
-            <ToggleGroupItem value="villedge" className="gap-1 text-xs py-1.5">
-              <Home className="h-3 w-3" />
-              Villedge
-            </ToggleGroupItem>
-            <ToggleGroupItem value="conferences" className="gap-1 text-xs py-1.5">
-              <Mic className="h-3 w-3" />
-              Conferences
-            </ToggleGroupItem>
-          </ToggleGroup>
         </div>
 
         {/* Sub-filter for Villedge mode: Popups vs Permanent */}
