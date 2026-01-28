@@ -9,6 +9,7 @@ import { AuthButton } from "@/components/AuthButton";
 import { PopupTimeline } from "@/components/PopupTimeline";
 import { useUserCount } from "@/hooks/useUserCount";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserCurrentVillage } from "@/hooks/useUserCurrentVillage";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -35,8 +36,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const { villages, loading: villagesLoading } = useVillages();
   const { count: userCount } = useUserCount();
   const { user } = useAuth();
+  const { currentVillage } = useUserCurrentVillage(user?.id, villages);
   const [mapReady, setMapReady] = useState(false);
   const [villageTypeFilter, setVillageTypeFilter] = useState<VillageType>("popup");
+  const [initialCenterSet, setInitialCenterSet] = useState(false);
 
   const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
 
@@ -75,12 +78,27 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
     return () => {
       setMapReady(false);
+      setInitialCenterSet(false);
       clusterMarkersRef.current.forEach((marker) => marker.remove());
       clusterMarkersRef.current.clear();
       m.remove();
       map.current = null;
     };
   }, [mapboxToken]);
+
+  // Center map on user's current village or active popup
+  useEffect(() => {
+    if (!map.current || !mapReady || initialCenterSet) return;
+    
+    if (currentVillage) {
+      map.current.flyTo({
+        center: currentVillage.center,
+        zoom: 4,
+        duration: 1500,
+      });
+      setInitialCenterSet(true);
+    }
+  }, [mapReady, currentVillage, initialCenterSet]);
 
   // Get village route slug - all villages use /:id format now
   const getVillageRoute = (village: Village | { id: string }) => {
