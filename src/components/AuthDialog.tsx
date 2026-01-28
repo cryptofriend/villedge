@@ -4,10 +4,11 @@ import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
+import { useLogin as usePrivyLogin, usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Shield, Fingerprint, Globe, Sparkles } from 'lucide-react';
+import { Loader2, Shield, Fingerprint, Globe, Sparkles, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthDialogProps {
@@ -32,8 +33,11 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const [tonConnectUI] = useTonConnectUI();
   const tonWallet = useTonWallet();
   
+  // Privy
+  const { authenticated: privyAuthenticated, user: privyUser, logout: privyLogout } = usePrivy();
+  
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'ton' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'ton' | 'privy' | null>(null);
 
   // Close dialog when user authenticates
   useEffect(() => {
@@ -64,6 +68,53 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
       authenticateWithBackend(tonAddress, 'ton');
     }
   }, [tonWallet, user, isAuthenticating, authType]);
+
+  // When Privy authenticates, sync with backend
+  useEffect(() => {
+    if (privyAuthenticated && privyUser && !user && !isAuthenticating && authType === 'privy') {
+      const email = privyUser.email?.address;
+      const walletAddress = privyUser.wallet?.address;
+      authenticateWithPrivy(privyUser.id, email, walletAddress);
+    }
+  }, [privyAuthenticated, privyUser, user, isAuthenticating, authType]);
+
+  const authenticateWithPrivy = async (privyUserId: string, email?: string, walletAddress?: string) => {
+    setIsAuthenticating(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('privy-auth', {
+        body: { privyUserId, email, walletAddress },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || 'Authentication failed');
+      }
+
+      if (data?.verified && data?.actionLink) {
+        const url = new URL(data.actionLink);
+        const token = url.searchParams.get('token');
+        const tokenType = url.searchParams.get('type');
+
+        if (token && tokenType) {
+          const { error: sessionError } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: tokenType as 'magiclink',
+          });
+
+          if (sessionError) throw sessionError;
+        }
+
+        toast.success('Welcome to Villedge!');
+      }
+    } catch (error) {
+      console.error('Privy auth error:', error);
+      toast.error(error instanceof Error ? error.message : 'Authentication failed');
+      privyLogout();
+    } finally {
+      setIsAuthenticating(false);
+      setAuthType(null);
+    }
+  };
 
   const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum' | 'ton') => {
     setIsAuthenticating(true);
@@ -133,9 +184,27 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
     }
   };
 
+  // Privy login hook
+  const { login: privyLogin } = usePrivyLogin({
+    onComplete: () => {
+      // Will be handled by the useEffect when privyAuthenticated changes
+    },
+    onError: (error) => {
+      console.error('Privy login error:', error);
+      toast.error('Login failed');
+      setAuthType(null);
+    },
+  });
+
+  const handlePrivyConnect = () => {
+    setAuthType('privy');
+    privyLogin();
+  };
+
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isTonLoading = isAuthenticating && authType === 'ton';
-  const anyLoading = isBiometricLoading || isTonLoading;
+  const isPrivyLoading = isAuthenticating && authType === 'privy';
+  const anyLoading = isBiometricLoading || isTonLoading || isPrivyLoading;
 
   return (
     <Dialog open={open} onOpenChange={() => {}} modal={true}>
@@ -179,6 +248,26 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
               <div className="flex items-center gap-2">
                 <Fingerprint className="h-5 w-5" />
                 <span>Sign in with Biometric</span>
+              </div>
+            )}
+          </Button>
+
+          {/* Privy Button - Email & Social */}
+          <Button
+            onClick={handlePrivyConnect}
+            variant="outline"
+            className="w-full h-11 text-base font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+            disabled={anyLoading}
+          >
+            {isPrivyLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Signing in...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                <span>Sign in with Email</span>
               </div>
             )}
           </Button>

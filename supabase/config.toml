@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.telegram-debug-chat-ids]
 verify_jwt = false
+
+[functions.privy-auth]
+verify_jwt = false
+
+[functions.scrape-project-metadata]
+verify_jwt = false
