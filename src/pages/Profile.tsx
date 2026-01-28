@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, EyeOff, Eye } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, Profile as ProfileType } from "@/hooks/useAuth";
@@ -12,8 +12,6 @@ import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSectio
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
 import { ProfileRevealRequests } from "@/components/profile/ProfileRevealRequests";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useConnections } from "@/hooks/useConnections";
 import { useRevealRequests } from "@/hooks/useRevealRequests";
@@ -194,30 +192,9 @@ const Profile = () => {
     );
   }
 
-  const handleToggleAnon = async () => {
-    if (!isOwnProfile || !user) return;
-    
-    const newValue = !profileData.is_anon;
-    
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_anon: newValue })
-        .eq("user_id", user.id);
-      
-      if (error) throw error;
-      
-      setProfileData(prev => prev ? { ...prev, is_anon: newValue } : null);
-      toast.success(newValue ? "Anon mode enabled" : "Anon mode disabled");
-    } catch (error) {
-      console.error("Error toggling anon mode:", error);
-      toast.error("Failed to update anon mode");
-    }
-  };
-
   // Determine if content should be blurred
   // Blur if: profile is anon AND viewer is not owner AND no mutual connection AND no approved reveal
-  const shouldBlur = profileData.is_anon && !isOwnProfile && !isMutualConnection && !hasApprovedAccess;
+  const shouldBlur = (profileData.is_anon ?? true) && !isOwnProfile && !isMutualConnection && !hasApprovedAccess;
 
   return (
     <div className="min-h-screen bg-background">
@@ -241,38 +218,6 @@ const Profile = () => {
         </Button>
       </div>
 
-      {/* Anon Mode Toggle - top right */}
-      {isOwnProfile && (
-        <div className="fixed top-4 right-4 z-50">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleToggleAnon}
-                className={cn(
-                  "bg-background/80 backdrop-blur-sm gap-2",
-                  profileData.is_anon && "border-primary text-primary"
-                )}
-              >
-                {profileData.is_anon ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-                {profileData.is_anon ? "Anon" : "Public"}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="max-w-[200px] text-xs">
-                {profileData.is_anon 
-                  ? "Anon mode is ON. Your village participation, projects, and activity are hidden from others."
-                  : "Click to enable Anon mode and hide your public info from other users."}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="max-w-3xl mx-auto px-4 py-8 pt-16 space-y-0">
