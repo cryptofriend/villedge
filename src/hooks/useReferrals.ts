@@ -98,13 +98,13 @@ export function useCreateInvitationCode() {
 
       if (codeError) throw codeError;
 
-      // Insert the code
+      // Insert the code with max 2 uses
       const { data, error } = await supabase
         .from('invitation_codes')
         .insert({
           code: code,
           owner_id: user.id,
-          max_uses: 5,
+          max_uses: 2,
         })
         .select()
         .single();
