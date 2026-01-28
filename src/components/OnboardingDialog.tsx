@@ -88,13 +88,33 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
         return;
       }
 
-      // Update profile with new username
-      const { error: updateError } = await supabase
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({ username: cleanUsername })
-        .eq('user_id', user.id);
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (updateError) throw updateError;
+      if (existingProfile) {
+        // Update existing profile
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ username: cleanUsername })
+          .eq('user_id', user.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new profile
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            username: cleanUsername,
+            display_name: cleanUsername,
+          });
+
+        if (insertError) throw insertError;
+      }
 
       toast.success('Welcome to Villedge! 🎉');
       onOpenChange(false);

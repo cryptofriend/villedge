@@ -12,6 +12,7 @@ import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSectio
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
 import { ProfileRevealRequests } from "@/components/profile/ProfileRevealRequests";
+import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { cn } from "@/lib/utils";
 import { useConnections } from "@/hooks/useConnections";
 import { useRevealRequests } from "@/hooks/useRevealRequests";
@@ -39,6 +40,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [activities, setActivities] = useState<UserActivity[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [needsProfileCreation, setNeedsProfileCreation] = useState(false);
   
   // Connection and reveal hooks
   const { isMutualConnection } = useConnections(profileUserId || undefined);
@@ -68,6 +71,15 @@ const Profile = () => {
             .single();
           
           if (errorById || !profileById) {
+            // Profile not found - check if this is the current user trying to access their own profile
+            // The URL param could be their user_id (UUID format)
+            if (user?.id && username === user.id) {
+              // This is the current user but they have no profile - show onboarding
+              setNeedsProfileCreation(true);
+              setShowOnboarding(true);
+              setIsOwnProfile(true);
+              setProfileUserId(user.id);
+            }
             setLoading(false);
             return;
           }
@@ -176,6 +188,37 @@ const Profile = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading profile...</div>
+      </div>
+    );
+  }
+
+  // Handle onboarding completion - refresh profile data
+  const handleOnboardingClose = async (open: boolean) => {
+    setShowOnboarding(open);
+    if (!open && needsProfileCreation && user?.id) {
+      // Refresh profile data after onboarding
+      const { data: newProfile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (newProfile) {
+        setProfileData(newProfile);
+        setNeedsProfileCreation(false);
+        // Redirect to the new username URL
+        if (newProfile.username) {
+          navigate(`/profile/${newProfile.username}`, { replace: true });
+        }
+      }
+    }
+  };
+
+  // Show onboarding for new users who need to create a profile
+  if (needsProfileCreation) {
+    return (
+      <div className="min-h-screen bg-background">
+        <OnboardingDialog open={showOnboarding} onOpenChange={handleOnboardingClose} />
       </div>
     );
   }
