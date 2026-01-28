@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Network, Users } from "lucide-react";
+import { Network, Users, UserCheck } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useMutualConnections } from "@/hooks/useMutualConnections";
 
 interface Village {
   id: string;
@@ -19,6 +19,7 @@ export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps
   const navigate = useNavigate();
   const [villages, setVillages] = useState<Village[]>([]);
   const [loading, setLoading] = useState(true);
+  const { connections: mutualConnections, loading: connectionsLoading } = useMutualConnections(userId);
 
   useEffect(() => {
     const fetchConnectedVillages = async () => {
@@ -60,11 +61,14 @@ export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps
     fetchConnectedVillages();
   }, [userId]);
 
-  if (loading) {
+  const isLoading = loading || connectionsLoading;
+
+  if (isLoading) {
     return null;
   }
 
-  if (villages.length === 0) {
+  // Show section if there are villages or mutual connections
+  if (villages.length === 0 && mutualConnections.length === 0) {
     return null;
   }
 
@@ -75,52 +79,73 @@ export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps
         <h2 className="text-lg font-display font-semibold text-foreground">Connected Network</h2>
       </div>
 
-      {/* Villages */}
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Mutual Connections - Social Graph */}
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-3">
-            Villages
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {villages.map((village) => (
-              <button
-                key={village.id}
-                onClick={() => navigate(`/${village.id}`)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/30 hover:bg-muted/30 transition-all"
-              >
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={village.logo_url || undefined} alt={village.name} />
-                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                    {village.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium text-foreground">{village.name}</span>
-              </button>
-            ))}
+          <div className="flex items-center gap-2 mb-3">
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Mutual Connections
+            </p>
           </div>
-        </div>
-
-        {/* Collaborators placeholder */}
-        <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-3">
-            Frequent Collaborators
-          </p>
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-2">
-              {[1, 2, 3].map((i) => (
-                <Avatar key={i} className="h-8 w-8 ring-2 ring-background">
-                  <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                    ?
-                  </AvatarFallback>
-                </Avatar>
+          
+          {mutualConnections.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {mutualConnections.map((connection) => (
+                <button
+                  key={connection.user_id}
+                  onClick={() => navigate(`/profile/${connection.username || connection.user_id}`)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/30 hover:bg-muted/30 transition-all"
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={connection.avatar_url || undefined} alt={connection.username || ''} />
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {(connection.username || connection.display_name || 'U').slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">
+                    {connection.username || connection.display_name || 'User'}
+                  </span>
+                </button>
               ))}
             </div>
-            <span className="text-xs text-muted-foreground italic ml-2">
-              Coming soon
-            </span>
-          </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              No mutual connections yet
+            </p>
+          )}
         </div>
+
+        {/* Villages */}
+        {villages.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                Villages
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {villages.map((village) => (
+                <button
+                  key={village.id}
+                  onClick={() => navigate(`/${village.id}`)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/30 hover:bg-muted/30 transition-all"
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={village.logo_url || undefined} alt={village.name} />
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {village.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">{village.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
 };
+
