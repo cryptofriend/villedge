@@ -221,19 +221,21 @@ const Profile = () => {
 
       {/* Main Content */}
       <div className="max-w-3xl mx-auto px-4 py-8 pt-16 space-y-0">
-        {/* 1. Identity Header with editable name, username, avatar, social link */}
-        <ProfileIdentityHeader 
-          profile={profileData} 
-          isOwnProfile={isOwnProfile}
-          onProfileUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
-        />
+        {/* 1. Identity Header - blur avatar/wallet for private profiles */}
+        <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
+          <ProfileIdentityHeader 
+            profile={profileData} 
+            isOwnProfile={isOwnProfile}
+            onProfileUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
+          />
+        </div>
 
         {/* Connection actions for non-own profiles */}
         {!isOwnProfile && profileUserId && (
           <div className="flex items-center justify-between pt-4">
             <ProfileConnectionActions 
               targetUserId={profileUserId} 
-              isAnon={profileData.is_anon || false}
+              isAnon={profileData.is_anon ?? true}
             />
             {shouldBlur && (
               <span className="text-sm text-muted-foreground">
