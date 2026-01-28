@@ -259,9 +259,9 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         </div>
       </div>
 
-      {/* Info sidebar */}
-      <div className="absolute bottom-28 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:bottom-32 md:block">
-        <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
+      {/* Info sidebar - positioned above map markers and timeline */}
+      <div className="absolute top-24 right-4 z-[100] hidden w-64 max-h-[calc(100%-180px)] rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-72 lg:p-4">
+        <div className="mb-3 flex items-center justify-between border-b border-border pb-2">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">
               Villedge
@@ -289,7 +289,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           </ToggleGroup>
         </div>
 
-        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+        <div className="space-y-2 overflow-y-auto max-h-[calc(100%-120px)]">
           {filteredVillages.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
               No {villageTypeFilter} villages yet
