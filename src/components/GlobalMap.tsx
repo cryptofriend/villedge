@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings, Calendar, Building2 } from "lucide-react";
+import { Loader2, Users, Settings, Calendar, Building2, Mic } from "lucide-react";
 import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
@@ -309,15 +309,19 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             type="single" 
             value={villageTypeFilter} 
             onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
-            className="w-full"
+            className="w-full grid grid-cols-3"
           >
-            <ToggleGroupItem value="popup" className="flex-1 gap-1 text-xs py-1.5">
+            <ToggleGroupItem value="popup" className="gap-1 text-xs py-1.5">
               <Calendar className="h-3 w-3" />
               Popups
             </ToggleGroupItem>
-            <ToggleGroupItem value="permanent" className="flex-1 gap-1 text-xs py-1.5">
+            <ToggleGroupItem value="permanent" className="gap-1 text-xs py-1.5">
               <Building2 className="h-3 w-3" />
               Permanent
+            </ToggleGroupItem>
+            <ToggleGroupItem value="conference" className="gap-1 text-xs py-1.5">
+              <Mic className="h-3 w-3" />
+              Conferences
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
