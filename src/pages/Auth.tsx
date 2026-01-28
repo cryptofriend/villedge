@@ -403,30 +403,10 @@ export default function Auth() {
 
             {/* Login Buttons */}
             <div className="space-y-3">
-              {/* Biometric Button */}
-              <Button
-                onClick={handleBiometricConnect}
-                className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-                disabled={anyLoading}
-              >
-                {isBiometricLoading ? (
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>{isAuthenticating ? 'Signing in...' : 'Connecting...'}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <Fingerprint className="h-5 w-5" />
-                    <span>Sign in with Biometric</span>
-                  </div>
-                )}
-              </Button>
-
-              {/* Privy Button - Email & Social */}
+              {/* Privy Button - Email & Social (Primary) */}
               <Button
                 onClick={handlePrivyConnect}
-                variant="outline"
-                className="w-full h-12 text-base font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
                 disabled={anyLoading}
               >
                 {isPrivyLoading ? (
@@ -442,27 +422,44 @@ export default function Auth() {
                 )}
               </Button>
 
-              {/* Telegram Button */}
-              <Button
-                onClick={handleTonConnect}
-                variant="outline"
-                className="w-full h-12 text-base font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
-                disabled={anyLoading}
-              >
-                {isTonLoading ? (
-                  <div className="flex items-center gap-3">
+              {/* Biometric & Telegram Row */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Biometric Button */}
+                <Button
+                  onClick={handleBiometricConnect}
+                  variant="outline"
+                  className="h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                  disabled={anyLoading}
+                >
+                  {isBiometricLoading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Signing in...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.64 8.8C16.49 10.38 15.84 14.22 15.51 15.99C15.37 16.74 15.09 16.99 14.83 17.02C14.25 17.07 13.81 16.64 13.25 16.27C12.37 15.69 11.87 15.33 11.02 14.77C10.03 14.12 10.67 13.76 11.24 13.18C11.39 13.03 13.95 10.7 14 10.49C14.0069 10.4582 14.006 10.4252 13.9973 10.3938C13.9886 10.3624 13.972 10.3337 13.96 10.31C13.89 10.26 13.78 10.28 13.69 10.3C13.57 10.32 12.22 11.16 9.59 12.82C9.19 13.09 8.83 13.22 8.51 13.21C8.15 13.2 7.47 13.01 6.96 12.85C6.33 12.65 5.84 12.54 5.88 12.19C5.9 12.01 6.15 11.82 6.62 11.63C9.44 10.39 11.34 9.58 12.32 9.19C15 8.07 15.55 7.89 15.92 7.88C15.99 7.88 16.16 7.9 16.27 7.99C16.36 8.06 16.39 8.16 16.4 8.24C16.39 8.3 16.41 8.47 16.4 8.59L16.64 8.8Z" fill="currentColor"/>
-                    </svg>
-                    <span>Sign with Telegram</span>
-                  </div>
-                )}
-              </Button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Fingerprint className="h-5 w-5" />
+                      <span>Biometric</span>
+                    </div>
+                  )}
+                </Button>
+
+                {/* Telegram Button */}
+                <Button
+                  onClick={handleTonConnect}
+                  variant="outline"
+                  className="h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                  disabled={anyLoading}
+                >
+                  {isTonLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.64 8.8C16.49 10.38 15.84 14.22 15.51 15.99C15.37 16.74 15.09 16.99 14.83 17.02C14.25 17.07 13.81 16.64 13.25 16.27C12.37 15.69 11.87 15.33 11.02 14.77C10.03 14.12 10.67 13.76 11.24 13.18C11.39 13.03 13.95 10.7 14 10.49C14.0069 10.4582 14.006 10.4252 13.9973 10.3938C13.9886 10.3624 13.972 10.3337 13.96 10.31C13.89 10.26 13.78 10.28 13.69 10.3C13.57 10.32 12.22 11.16 9.59 12.82C9.19 13.09 8.83 13.22 8.51 13.21C8.15 13.2 7.47 13.01 6.96 12.85C6.33 12.65 5.84 12.54 5.88 12.19C5.9 12.01 6.15 11.82 6.62 11.63C9.44 10.39 11.34 9.58 12.32 9.19C15 8.07 15.55 7.89 15.92 7.88C15.99 7.88 16.16 7.9 16.27 7.99C16.36 8.06 16.39 8.16 16.4 8.24C16.39 8.3 16.41 8.47 16.4 8.59L16.64 8.8Z" fill="currentColor"/>
+                      </svg>
+                      <span>Telegram</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
 
               {/* Divider */}
               <div className="relative my-4">
