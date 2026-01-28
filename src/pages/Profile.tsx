@@ -292,6 +292,9 @@ const Profile = () => {
         {/* Incoming reveal requests (only for own profile) */}
         {isOwnProfile && <ProfileRevealRequests />}
 
+        {/* Referral Section (only for own profile) - above Scenius */}
+        <ProfileReferralSection isOwnProfile={isOwnProfile} />
+
         {/* 2. Working On / Scenius Section */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
           <ProfileSceniusSection
@@ -314,9 +317,6 @@ const Profile = () => {
             <ProfileEventsCalendar userId={profileUserId} />
           </div>
         )}
-
-        {/* 5. Referral Section (only for own profile) - after Events */}
-        <ProfileReferralSection isOwnProfile={isOwnProfile} />
 
         {/* 6. Activity History */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
