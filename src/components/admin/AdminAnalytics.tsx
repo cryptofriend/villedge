@@ -19,14 +19,20 @@ interface RegistrationStats {
   };
 }
 
-interface VillageWithHost {
+interface HostInfo {
+  user_id: string;
+  username: string | null;
+  avatar_url: string | null;
+  display_name: string | null;
+  role: 'owner' | 'co-host';
+}
+
+interface VillageWithHosts {
   id: string;
   name: string;
   logo_url: string | null;
   created_by: string | null;
-  host_username: string | null;
-  host_avatar: string | null;
-  host_display_name: string | null;
+  hosts: HostInfo[];
   resident_count: number;
 }
 
@@ -35,7 +41,7 @@ export function AdminAnalytics() {
     total: 0,
     byMethod: { privy: 0, porto: 0, ethereum: 0, solana: 0, ton: 0 }
   });
-  const [villagesWithHosts, setVillagesWithHosts] = useState<VillageWithHost[]>([]);
+  const [villagesWithHosts, setVillagesWithHosts] = useState<VillageWithHosts[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,14 +95,23 @@ export function AdminAnalytics() {
           .order("created_at", { ascending: false });
 
         if (villages) {
+          // Fetch all village hosts (co-hosts)
+          const { data: villageHosts } = await supabase
+            .from("village_hosts")
+            .select("village_id, user_id, role");
+
+          // Get all unique user IDs (owners + co-hosts)
+          const ownerIds = villages.map(v => v.created_by).filter(Boolean) as string[];
+          const coHostIds = villageHosts?.map(h => h.user_id) || [];
+          const allHostIds = [...new Set([...ownerIds, ...coHostIds])];
+
           // Fetch host profiles
-          const hostIds = villages.map(v => v.created_by).filter(Boolean) as string[];
           const { data: hostProfiles } = await supabase
             .from("profiles")
             .select("user_id, username, avatar_url, display_name")
-            .in("user_id", hostIds);
+            .in("user_id", allHostIds);
 
-          const hostMap = new Map(hostProfiles?.map(p => [p.user_id, p]) || []);
+          const profileMap = new Map(hostProfiles?.map(p => [p.user_id, p]) || []);
 
           // Fetch resident counts per village
           const { data: stays } = await supabase
@@ -108,16 +123,42 @@ export function AdminAnalytics() {
             residentCounts.set(s.village_id, (residentCounts.get(s.village_id) || 0) + 1);
           });
 
-          const villagesData: VillageWithHost[] = villages.map(v => {
-            const host = v.created_by ? hostMap.get(v.created_by) : null;
+          const villagesData: VillageWithHosts[] = villages.map(v => {
+            const hosts: HostInfo[] = [];
+            
+            // Add owner first
+            if (v.created_by) {
+              const ownerProfile = profileMap.get(v.created_by);
+              hosts.push({
+                user_id: v.created_by,
+                username: ownerProfile?.username || null,
+                avatar_url: ownerProfile?.avatar_url || null,
+                display_name: ownerProfile?.display_name || null,
+                role: 'owner'
+              });
+            }
+
+            // Add co-hosts
+            const coHosts = villageHosts?.filter(h => h.village_id === v.id) || [];
+            coHosts.forEach(h => {
+              // Skip if already added as owner
+              if (h.user_id === v.created_by) return;
+              const profile = profileMap.get(h.user_id);
+              hosts.push({
+                user_id: h.user_id,
+                username: profile?.username || null,
+                avatar_url: profile?.avatar_url || null,
+                display_name: profile?.display_name || null,
+                role: h.role as 'owner' | 'co-host'
+              });
+            });
+
             return {
               id: v.id,
               name: v.name,
               logo_url: v.logo_url,
               created_by: v.created_by,
-              host_username: host?.username || null,
-              host_avatar: host?.avatar_url || null,
-              host_display_name: host?.display_name || null,
+              hosts,
               resident_count: residentCounts.get(v.id) || 0,
             };
           });
@@ -240,18 +281,24 @@ export function AdminAnalytics() {
                 </div>
 
                 {/* Host Info */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                   <Crown className="h-4 w-4 text-amber-500" />
-                  {village.host_username ? (
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={village.host_avatar || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {(village.host_display_name || village.host_username)?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">@{village.host_username}</span>
-                    </div>
+                  {village.hosts.length > 0 ? (
+                    village.hosts.map((host, idx) => (
+                      <div key={host.user_id} className="flex items-center gap-1">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={host.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {(host.display_name || host.username)?.[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">
+                          @{host.username || 'unknown'}
+                          {host.role === 'owner' && <span className="text-amber-500 ml-0.5">★</span>}
+                        </span>
+                        {idx < village.hosts.length - 1 && <span className="text-muted-foreground">,</span>}
+                      </div>
+                    ))
                   ) : (
                     <span className="text-sm text-muted-foreground">No host</span>
                   )}
