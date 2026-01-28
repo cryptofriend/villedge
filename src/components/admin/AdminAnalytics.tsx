@@ -2,10 +2,21 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { 
   Users, Mail, Fingerprint, Wallet, Globe, Crown, 
-  BarChart3, Building2 
+  BarChart3, Building2, Pencil, Trash2, Plus, UserPlus, X
 } from "lucide-react";
 
 interface RegistrationStats {
@@ -42,135 +53,255 @@ export function AdminAnalytics() {
   });
   const [villagesWithHosts, setVillagesWithHosts] = useState<VillageWithHosts[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Edit hosts dialog state
+  const [editingVillage, setEditingVillage] = useState<VillageWithHosts | null>(null);
+  const [newCoHostUsername, setNewCoHostUsername] = useState("");
+  const [newOwnerUsername, setNewOwnerUsername] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchAnalytics = async () => {
+    try {
+      // Fetch all profiles
+      const { data: profiles, count: profileCount } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact" });
+
+      // Analyze registration methods from user_wallets
+      const { data: wallets } = await supabase
+        .from("user_wallets")
+        .select("user_id, wallet_type");
+
+      // Count unique users by their primary wallet type
+      const userWalletTypes = new Map<string, string>();
+      wallets?.forEach(w => {
+        const priority = { porto: 4, ethereum: 3, solana: 2, ton: 1 };
+        const currentType = userWalletTypes.get(w.user_id);
+        if (!currentType || (priority[w.wallet_type as keyof typeof priority] || 0) > (priority[currentType as keyof typeof priority] || 0)) {
+          userWalletTypes.set(w.user_id, w.wallet_type);
+        }
+      });
+
+      // Count by method
+      const byMethod = { privy: 0, porto: 0, ethereum: 0, solana: 0, ton: 0 };
+      
+      userWalletTypes.forEach((type) => {
+        if (type in byMethod) {
+          byMethod[type as keyof typeof byMethod]++;
+        }
+      });
+
+      const usersWithWallets = new Set(wallets?.map(w => w.user_id) || []);
+      const privyUsers = profiles?.filter(p => !usersWithWallets.has(p.user_id)) || [];
+      byMethod.privy = privyUsers.length;
+
+      setRegistrationStats({
+        total: profileCount || 0,
+        byMethod
+      });
+
+      // Fetch villages with hosts and resident counts
+      const { data: villages } = await supabase
+        .from("villages")
+        .select("id, name, logo_url, created_by")
+        .order("created_at", { ascending: false });
+
+      if (villages) {
+        const { data: villageHosts } = await supabase
+          .from("village_hosts")
+          .select("village_id, user_id, role");
+
+        const ownerIds = villages.map(v => v.created_by).filter(Boolean) as string[];
+        const coHostIds = villageHosts?.map(h => h.user_id) || [];
+        const allHostIds = [...new Set([...ownerIds, ...coHostIds])];
+
+        const { data: hostProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, username, avatar_url")
+          .in("user_id", allHostIds);
+
+        const profileMap = new Map(hostProfiles?.map(p => [p.user_id, p]) || []);
+
+        const { data: stays } = await supabase
+          .from("stays")
+          .select("village_id");
+
+        const residentCounts = new Map<string, number>();
+        stays?.forEach(s => {
+          residentCounts.set(s.village_id, (residentCounts.get(s.village_id) || 0) + 1);
+        });
+
+        const villagesData: VillageWithHosts[] = villages.map(v => {
+          const hosts: HostInfo[] = [];
+          
+          if (v.created_by) {
+            const ownerProfile = profileMap.get(v.created_by);
+            hosts.push({
+              user_id: v.created_by,
+              username: ownerProfile?.username || null,
+              avatar_url: ownerProfile?.avatar_url || null,
+              role: 'owner'
+            });
+          }
+
+          const coHosts = villageHosts?.filter(h => h.village_id === v.id) || [];
+          coHosts.forEach(h => {
+            if (h.user_id === v.created_by) return;
+            const profile = profileMap.get(h.user_id);
+            hosts.push({
+              user_id: h.user_id,
+              username: profile?.username || null,
+              avatar_url: profile?.avatar_url || null,
+              role: h.role as 'owner' | 'co-host'
+            });
+          });
+
+          return {
+            id: v.id,
+            name: v.name,
+            logo_url: v.logo_url,
+            created_by: v.created_by,
+            hosts,
+            resident_count: residentCounts.get(v.id) || 0,
+          };
+        });
+
+        setVillagesWithHosts(villagesData);
+      }
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        // Fetch all profiles
-        const { data: profiles, count: profileCount } = await supabase
-          .from("profiles")
-          .select("*", { count: "exact" });
-
-        // Analyze registration methods from user_wallets
-        const { data: wallets } = await supabase
-          .from("user_wallets")
-          .select("user_id, wallet_type");
-
-        // Count unique users by their primary wallet type
-        const userWalletTypes = new Map<string, string>();
-        wallets?.forEach(w => {
-          // If user already has a type, prioritize porto > ethereum > solana > ton
-          const priority = { porto: 4, ethereum: 3, solana: 2, ton: 1 };
-          const currentType = userWalletTypes.get(w.user_id);
-          if (!currentType || (priority[w.wallet_type as keyof typeof priority] || 0) > (priority[currentType as keyof typeof priority] || 0)) {
-            userWalletTypes.set(w.user_id, w.wallet_type);
-          }
-        });
-
-        // Count by method
-        const byMethod = { privy: 0, porto: 0, ethereum: 0, solana: 0, ton: 0 };
-        
-        // Users with wallets
-        userWalletTypes.forEach((type) => {
-          if (type in byMethod) {
-            byMethod[type as keyof typeof byMethod]++;
-          }
-        });
-
-        // Users without wallets are likely privy (email) users
-        const usersWithWallets = new Set(wallets?.map(w => w.user_id) || []);
-        const privyUsers = profiles?.filter(p => !usersWithWallets.has(p.user_id)) || [];
-        byMethod.privy = privyUsers.length;
-
-        setRegistrationStats({
-          total: profileCount || 0,
-          byMethod
-        });
-
-        // Fetch villages with hosts and resident counts
-        const { data: villages } = await supabase
-          .from("villages")
-          .select("id, name, logo_url, created_by")
-          .order("created_at", { ascending: false });
-
-        if (villages) {
-          // Fetch all village hosts (co-hosts)
-          const { data: villageHosts } = await supabase
-            .from("village_hosts")
-            .select("village_id, user_id, role");
-
-          // Get all unique user IDs (owners + co-hosts)
-          const ownerIds = villages.map(v => v.created_by).filter(Boolean) as string[];
-          const coHostIds = villageHosts?.map(h => h.user_id) || [];
-          const allHostIds = [...new Set([...ownerIds, ...coHostIds])];
-
-          // Fetch host profiles
-          const { data: hostProfiles } = await supabase
-            .from("profiles")
-            .select("user_id, username, avatar_url")
-            .in("user_id", allHostIds);
-
-          const profileMap = new Map(hostProfiles?.map(p => [p.user_id, p]) || []);
-
-          // Fetch resident counts per village
-          const { data: stays } = await supabase
-            .from("stays")
-            .select("village_id");
-
-          const residentCounts = new Map<string, number>();
-          stays?.forEach(s => {
-            residentCounts.set(s.village_id, (residentCounts.get(s.village_id) || 0) + 1);
-          });
-
-          const villagesData: VillageWithHosts[] = villages.map(v => {
-            const hosts: HostInfo[] = [];
-            
-            // Add owner first
-            if (v.created_by) {
-              const ownerProfile = profileMap.get(v.created_by);
-              hosts.push({
-                user_id: v.created_by,
-                username: ownerProfile?.username || null,
-                avatar_url: ownerProfile?.avatar_url || null,
-                role: 'owner'
-              });
-            }
-
-            // Add co-hosts
-            const coHosts = villageHosts?.filter(h => h.village_id === v.id) || [];
-            coHosts.forEach(h => {
-              // Skip if already added as owner
-              if (h.user_id === v.created_by) return;
-              const profile = profileMap.get(h.user_id);
-              hosts.push({
-                user_id: h.user_id,
-                username: profile?.username || null,
-                avatar_url: profile?.avatar_url || null,
-                role: h.role as 'owner' | 'co-host'
-              });
-            });
-
-            return {
-              id: v.id,
-              name: v.name,
-              logo_url: v.logo_url,
-              created_by: v.created_by,
-              hosts,
-              resident_count: residentCounts.get(v.id) || 0,
-            };
-          });
-
-          setVillagesWithHosts(villagesData);
-        }
-      } catch (error) {
-        console.error("Error fetching analytics:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAnalytics();
   }, []);
+
+  // Find user by username
+  const findUserByUsername = async (username: string) => {
+    const cleanUsername = username.replace(/^@/, '').trim().toLowerCase();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("user_id, username, avatar_url")
+      .ilike("username", cleanUsername)
+      .maybeSingle();
+    
+    if (error) throw error;
+    return data;
+  };
+
+  // Add co-host
+  const handleAddCoHost = async () => {
+    if (!editingVillage || !newCoHostUsername.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      const user = await findUserByUsername(newCoHostUsername);
+      if (!user) {
+        toast.error("User not found");
+        return;
+      }
+
+      // Check if already a host
+      if (editingVillage.hosts.some(h => h.user_id === user.user_id)) {
+        toast.error("User is already a host");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("village_hosts")
+        .insert({
+          village_id: editingVillage.id,
+          user_id: user.user_id,
+          role: "co-host"
+        });
+
+      if (error) throw error;
+
+      toast.success(`Added @${user.username} as co-host`);
+      setNewCoHostUsername("");
+      await fetchAnalytics();
+      
+      // Update editing village state
+      const updated = villagesWithHosts.find(v => v.id === editingVillage.id);
+      if (updated) setEditingVillage(updated);
+    } catch (error) {
+      console.error("Error adding co-host:", error);
+      toast.error("Failed to add co-host");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Remove co-host
+  const handleRemoveCoHost = async (userId: string) => {
+    if (!editingVillage) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("village_hosts")
+        .delete()
+        .eq("village_id", editingVillage.id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      toast.success("Removed co-host");
+      await fetchAnalytics();
+      
+      const updated = villagesWithHosts.find(v => v.id === editingVillage.id);
+      if (updated) setEditingVillage(updated);
+    } catch (error) {
+      console.error("Error removing co-host:", error);
+      toast.error("Failed to remove co-host");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Change owner
+  const handleChangeOwner = async () => {
+    if (!editingVillage || !newOwnerUsername.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      const user = await findUserByUsername(newOwnerUsername);
+      if (!user) {
+        toast.error("User not found");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("villages")
+        .update({ created_by: user.user_id })
+        .eq("id", editingVillage.id);
+
+      if (error) throw error;
+
+      toast.success(`Changed owner to @${user.username}`);
+      setNewOwnerUsername("");
+      await fetchAnalytics();
+      
+      const updated = villagesWithHosts.find(v => v.id === editingVillage.id);
+      if (updated) setEditingVillage(updated);
+    } catch (error) {
+      console.error("Error changing owner:", error);
+      toast.error("Failed to change owner");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Refresh editing village data when villagesWithHosts updates
+  useEffect(() => {
+    if (editingVillage) {
+      const updated = villagesWithHosts.find(v => v.id === editingVillage.id);
+      if (updated) setEditingVillage(updated);
+    }
+  }, [villagesWithHosts]);
 
   if (loading) {
     return (
@@ -308,6 +439,16 @@ export function AdminAnalytics() {
                     {village.resident_count}
                   </Badge>
                 </div>
+
+                {/* Edit Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => setEditingVillage(village)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
               </div>
             ))}
 
@@ -320,6 +461,117 @@ export function AdminAnalytics() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Hosts Dialog */}
+      <Dialog open={!!editingVillage} onOpenChange={(open) => !open && setEditingVillage(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {editingVillage?.logo_url && (
+                <img src={editingVillage.logo_url} alt="" className="h-6 w-6 rounded" />
+              )}
+              Edit Hosts: {editingVillage?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Manage owner and co-hosts for this village
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 pt-4">
+            {/* Current Owner */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-500" />
+                Owner
+              </Label>
+              {editingVillage?.hosts.find(h => h.role === 'owner') ? (
+                <div className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={editingVillage.hosts.find(h => h.role === 'owner')?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {editingVillage.hosts.find(h => h.role === 'owner')?.username?.[0]?.toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium">
+                    @{editingVillage.hosts.find(h => h.role === 'owner')?.username || 'unknown'}
+                  </span>
+                  <Badge variant="secondary" className="ml-auto">Owner</Badge>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No owner assigned</p>
+              )}
+              
+              {/* Change Owner */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="@username"
+                  value={newOwnerUsername}
+                  onChange={(e) => setNewOwnerUsername(e.target.value)}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleChangeOwner} 
+                  disabled={!newOwnerUsername.trim() || isSubmitting}
+                  size="sm"
+                >
+                  Change
+                </Button>
+              </div>
+            </div>
+
+            {/* Co-hosts */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Co-hosts
+              </Label>
+              
+              {editingVillage?.hosts.filter(h => h.role === 'co-host').map(host => (
+                <div key={host.user_id} className="flex items-center gap-2 p-2 rounded-lg border">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={host.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {host.username?.[0]?.toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="flex-1">@{host.username || 'unknown'}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => handleRemoveCoHost(host.user_id)}
+                    disabled={isSubmitting}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              
+              {editingVillage?.hosts.filter(h => h.role === 'co-host').length === 0 && (
+                <p className="text-sm text-muted-foreground">No co-hosts yet</p>
+              )}
+
+              {/* Add Co-host */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="@username"
+                  value={newCoHostUsername}
+                  onChange={(e) => setNewCoHostUsername(e.target.value)}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleAddCoHost} 
+                  disabled={!newCoHostUsername.trim() || isSubmitting}
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
