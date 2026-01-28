@@ -145,12 +145,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
   // Create village markers
   const createVillageMarkers = useCallback(() => {
-    if (!map.current || villages.length === 0) return;
+    if (!map.current || filteredVillages.length === 0) return;
     
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
 
-    villages.forEach((village, index) => {
+    filteredVillages.forEach((village, index) => {
       const el = document.createElement("div");
       el.className = "village-marker";
       el.style.zIndex = String(10 + index);
@@ -233,14 +233,14 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       clusterMarkersRef.current.set(village.id, marker);
     });
-  }, [villages, navigate]);
+  }, [filteredVillages, navigate]);
 
-  // Create markers when villages load
+  // Create markers when filtered villages change
   useEffect(() => {
-    if (mapReady && villages.length > 0) {
+    if (mapReady) {
       createVillageMarkers();
     }
-  }, [mapReady, villages, createVillageMarkers]);
+  }, [mapReady, filteredVillages, createVillageMarkers]);
 
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ touchAction: 'manipulation', overscrollBehavior: 'contain' }}>
