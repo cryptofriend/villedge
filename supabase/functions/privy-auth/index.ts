@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
     }
 
     let userId: string;
+    let isNewUser = false;
     const existingUser = existingUsers.users.find(u => u.email === userEmail);
 
     if (existingUser) {
@@ -111,6 +112,7 @@ Deno.serve(async (req) => {
       }
 
       userId = newUser.user.id;
+      isNewUser = true;
       console.log("privy-auth: Created new user:", userId);
 
       // Create profile
@@ -158,6 +160,7 @@ Deno.serve(async (req) => {
         verified: true,
         actionLink: linkData.properties?.action_link,
         userId: userId,
+        isNewUser: isNewUser,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

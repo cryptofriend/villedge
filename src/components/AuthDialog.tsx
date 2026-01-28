@@ -11,6 +11,7 @@ import { Loader2, Shield, Fingerprint, Globe, Sparkles, Mail } from 'lucide-reac
 import { supabase } from '@/integrations/supabase/client';
 import { usePrivyConfig } from '@/components/PrivyProvider';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
+import { OnboardingDialog } from '@/components/OnboardingDialog';
 
 interface AuthDialogProps {
   open: boolean;
@@ -38,6 +39,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'ton' | 'privy' | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Close dialog when user authenticates
   useEffect(() => {
@@ -69,7 +71,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
     }
   }, [tonWallet, user, isAuthenticating, authType]);
 
-  const authenticateWithPrivy = async (privyUserId: string, email?: string, walletAddress?: string) => {
+  const authenticateWithPrivy = async (privyUserId: string, email?: string, walletAddress?: string): Promise<boolean> => {
     setIsAuthenticating(true);
     
     try {
@@ -95,7 +97,12 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
           if (sessionError) throw sessionError;
         }
 
-        toast.success('Welcome to Villedge!');
+        // Show onboarding for new users
+        if (data?.isNewUser) {
+          setShowOnboarding(true);
+        } else {
+          toast.success('Welcome back!');
+        }
       }
       return true;
     } catch (error) {
@@ -182,7 +189,9 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const anyLoading = isBiometricLoading || isTonLoading || isPrivyLoading || privyAppIdLoading;
 
   return (
-    <Dialog open={open} onOpenChange={() => {}} modal={true}>
+    <>
+      <OnboardingDialog open={showOnboarding} onOpenChange={setShowOnboarding} />
+      <Dialog open={open && !showOnboarding} onOpenChange={() => {}} modal={true}>
       <DialogContent 
         className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50 [&>button]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
@@ -307,5 +316,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
