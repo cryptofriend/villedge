@@ -12,6 +12,7 @@ import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSectio
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
 import { ProfileRevealRequests } from "@/components/profile/ProfileRevealRequests";
+import { ProfileReferralSection } from "@/components/profile/ProfileReferralSection";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { cn } from "@/lib/utils";
 import { useConnections } from "@/hooks/useConnections";
@@ -290,6 +291,9 @@ const Profile = () => {
 
         {/* Incoming reveal requests (only for own profile) */}
         {isOwnProfile && <ProfileRevealRequests />}
+
+        {/* Referral Section (only for own profile) */}
+        <ProfileReferralSection isOwnProfile={isOwnProfile} />
 
         {/* 2. Working On / Scenius Section */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>

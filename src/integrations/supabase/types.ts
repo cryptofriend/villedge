@@ -151,6 +151,36 @@ export type Database = {
         }
         Relationships: []
       }
+      invitation_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          max_uses: number
+          owner_id: string
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          max_uses?: number
+          owner_id: string
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          max_uses?: number
+          owner_id?: string
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
       notification_routes: {
         Row: {
           chat_id: string
@@ -238,6 +268,7 @@ export type Database = {
           display_name: string | null
           id: string
           is_anon: boolean
+          is_verified: boolean
           offerings: string | null
           project_description: string | null
           project_url: string | null
@@ -256,6 +287,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_anon?: boolean
+          is_verified?: boolean
           offerings?: string | null
           project_description?: string | null
           project_url?: string | null
@@ -274,6 +306,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_anon?: boolean
+          is_verified?: boolean
           offerings?: string | null
           project_description?: string | null
           project_url?: string | null
@@ -344,6 +377,38 @@ export type Database = {
           village_id?: string
         }
         Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          invitation_code_id: string | null
+          referred_id: string
+          referrer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invitation_code_id?: string | null
+          referred_id: string
+          referrer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invitation_code_id?: string | null
+          referred_id?: string
+          referrer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_invitation_code_id_fkey"
+            columns: ["invitation_code_id"]
+            isOneToOne: false
+            referencedRelation: "invitation_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       residents: {
         Row: {
@@ -934,6 +999,7 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }
+      generate_invitation_code: { Args: never; Returns: string }
       generate_username: { Args: { display_name: string }; Returns: string }
       has_approved_reveal: {
         Args: { _requester: string; _target: string }
@@ -947,6 +1013,11 @@ export type Database = {
         Args: { _user_id: string; _village_id: string }
         Returns: boolean
       }
+      use_invitation_code: {
+        Args: { _code_id: string; _referred_id: string; _referrer_id: string }
+        Returns: boolean
+      }
+      validate_invitation_code: { Args: { _code: string }; Returns: Json }
     }
     Enums: {
       wallet_type: "porto" | "ethereum" | "solana" | "ton"

@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { address, walletType } = await req.json();
+    const { address, walletType, invitationCode } = await req.json();
 
     if (!address || typeof address !== "string") {
       console.error("porto-auth: Missing or invalid address");
@@ -125,6 +125,23 @@ Deno.serve(async (req) => {
         console.log("porto-auth: Updated profile avatar for existing user");
       }
     } else {
+      // Validate invitation code if provided
+      let codeValidation = null;
+      let isVerified = false;
+      
+      if (invitationCode && invitationCode.trim()) {
+        const { data: validationResult, error: validationError } = await supabase
+          .rpc('validate_invitation_code', { _code: invitationCode.trim().toUpperCase() });
+        
+        if (validationError) {
+          console.error("porto-auth: Error validating invitation code:", validationError);
+        } else {
+          codeValidation = validationResult;
+          isVerified = codeValidation?.valid === true;
+          console.log("porto-auth: Invitation code validation:", codeValidation);
+        }
+      }
+      
       // Create new user
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: walletEmail,
@@ -162,7 +179,7 @@ Deno.serve(async (req) => {
         ? `${baseUsername}-${Date.now().toString(36).slice(-4)}`
         : baseUsername;
 
-      // Create profile for new user with username
+      // Create profile for new user with username and verification status
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -170,13 +187,14 @@ Deno.serve(async (req) => {
           display_name: truncatedAddress,
           avatar_url: avatarUrl,
           username: finalUsername,
+          is_verified: isVerified,
         });
       
       if (profileError) {
         console.error("porto-auth: Error creating profile:", profileError);
         // Don't throw - user was created, profile creation failure is not critical
       } else {
-        console.log("porto-auth: Created profile for new user with username:", finalUsername);
+        console.log("porto-auth: Created profile for new user with username:", finalUsername, "verified:", isVerified);
       }
 
       // Auto-link the wallet to user_wallets table
@@ -193,6 +211,16 @@ Deno.serve(async (req) => {
         console.error("porto-auth: Error linking wallet:", walletError);
       } else {
         console.log("porto-auth: Linked wallet for new user:", walletTypeEnum);
+      }
+      
+      // If invitation code was valid, use it to create referral
+      if (codeValidation?.valid && codeValidation?.code_id && codeValidation?.owner_id) {
+        await supabase.rpc('use_invitation_code', {
+          _code_id: codeValidation.code_id,
+          _referrer_id: codeValidation.owner_id,
+          _referred_id: userId,
+        });
+        console.log("porto-auth: Used invitation code, created referral");
       }
     }
 
