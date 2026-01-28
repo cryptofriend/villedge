@@ -168,7 +168,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
           <div className="space-y-2">
             <Label className="text-sm">What brings you here?</Label>
             <Input
-              placeholder="e.g., Building a DeFi app, learning Solidity..."
+              placeholder="e.g., Writing, making friends, building cool stuff..."
               value={intention}
               onChange={(e) => setIntention(e.target.value)}
               maxLength={100}
