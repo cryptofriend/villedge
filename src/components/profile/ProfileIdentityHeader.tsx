@@ -109,9 +109,6 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
   };
 
   const getChainIcon = () => {
-    if (evmAddress) {
-      return <div className="w-3 h-3 rounded-full bg-blue-600" />;
-    }
     if (tonAddress) {
       return (
         <svg className="w-4 h-4" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
