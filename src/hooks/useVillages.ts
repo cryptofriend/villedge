@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export type VillageType = 'popup' | 'permanent';
+
 export interface Village {
   id: string;
   name: string;
@@ -23,6 +25,7 @@ export interface Village {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  village_type: VillageType;
 }
 
 export interface VillageInput {
@@ -37,6 +40,7 @@ export interface VillageInput {
   focus?: string;
   luma_calendar_id?: string;
   created_by?: string;
+  village_type?: VillageType;
 }
 
 export const useVillages = () => {
@@ -56,6 +60,7 @@ export const useVillages = () => {
         ...v,
         center: v.center as [number, number],
         created_by: v.created_by || null,
+        village_type: v.village_type || 'popup',
       }));
 
       setVillages(mappedVillages);
