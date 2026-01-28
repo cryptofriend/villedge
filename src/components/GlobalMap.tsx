@@ -129,6 +129,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       el.style.position = "relative";
       
       const truncatedLocation = truncateText(village.location, 20);
+      const logoSrc = village.logo_url || '/placeholder.svg';
       el.innerHTML = `
         <div style="
           display: flex;
@@ -141,12 +142,13 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           cursor: pointer;
           transition: all 0.3s ease;
           max-width: 200px;
-            transform-origin: left center;
+          transform-origin: left center;
         ">
           <img 
-            src="${village.logo_url || '/placeholder.svg'}" 
+            src="${logoSrc}" 
             alt="${village.name}" 
             style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;"
+            onerror="this.onerror=null; this.src='/placeholder.svg';"
           />
           <div style="display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden;">
             <span style="font-weight: 600; font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${village.name}</span>
