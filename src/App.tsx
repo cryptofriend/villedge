@@ -12,6 +12,7 @@ import Village from "./pages/Village";
 import Embed from "./pages/Embed";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import AdminAnalyticsPage from "./pages/AdminAnalytics";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
                   <Route path="/embed" element={<Embed />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
                   <Route path="/profile/:username" element={<Profile />} />
                   {/* Village routes with category deep links */}
                   <Route path="/:villageSlug" element={<Village />} />

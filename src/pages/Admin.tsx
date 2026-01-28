@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, Bot, Bell, Save, Loader2, Settings, 
   MapPin, Globe, Activity, CheckCircle2, 
-  Clock, Wallet, MessageSquare, Send, Calendar, Users
+  Clock, Wallet, MessageSquare, Send, Calendar, Users, BarChart3
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
 import { BotNotificationSection } from "@/components/admin/BotNotificationSection";
-import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 
 const ADMIN_USER_IDS = [
   "9807c494-ba07-4438-9a89-07ac13334e78", // dev
@@ -412,6 +412,24 @@ export default function Admin() {
           </Badge>
         </div>
 
+        {/* Navigation Tabs */}
+        <Tabs value="bots" className="mb-6">
+          <TabsList>
+            <TabsTrigger value="bots" className="gap-2">
+              <Bot className="h-4 w-4" />
+              Bots
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics" 
+              onClick={() => navigate("/admin/analytics")}
+              className="gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card>
@@ -684,11 +702,6 @@ export default function Admin() {
             />
           </CardContent>
         </Card>
-
-        {/* Analytics Section */}
-        <div className="mt-6">
-          <AdminAnalytics />
-        </div>
 
         {/* AI Chat Assistant */}
         <div className="mt-6">
