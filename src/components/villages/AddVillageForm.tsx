@@ -12,12 +12,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, MapPin, CalendarIcon, Loader2 } from "lucide-react";
+import { Plus, MapPin, CalendarIcon, Loader2, Calendar as CalendarFull, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { VillageType } from "@/hooks/useVillages";
 
 interface AddVillageFormProps {
   onVillageAdded?: () => void;
@@ -33,6 +34,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [villageType, setVillageType] = useState<VillageType>("popup");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
 
@@ -101,20 +103,25 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
       return;
     }
 
-    if (!startDate || !endDate) {
-      toast.error("Please select start and end dates");
-      return;
-    }
+    // Only validate dates for popup villages
+    if (villageType === "popup") {
+      if (!startDate || !endDate) {
+        toast.error("Please select start and end dates");
+        return;
+      }
 
-    if (endDate < startDate) {
-      toast.error("End date must be after start date");
-      return;
+      if (endDate < startDate) {
+        toast.error("End date must be after start date");
+        return;
+      }
     }
 
     setIsSubmitting(true);
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const dates = `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`;
+    const dates = villageType === "popup" && startDate && endDate
+      ? `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`
+      : "Permanent";
 
     const { error } = await supabase.from('villages').insert({
       id: slug,
@@ -124,6 +131,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
       dates,
       description: `Welcome to ${name.trim()}`,
       created_by: user.id,
+      village_type: villageType,
     });
 
     setIsSubmitting(false);
@@ -147,6 +155,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     setCoordinates(null);
     setStartDate(undefined);
     setEndDate(undefined);
+    setVillageType("popup");
     setOpen(false);
     
     onVillageAdded?.();
@@ -177,6 +186,38 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
           <DialogTitle className="font-display text-xl">Create New Village</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Village Type Toggle */}
+          <div className="space-y-2">
+            <Label>Village Type *</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={villageType === "popup" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setVillageType("popup")}
+                className="flex-1 gap-2"
+              >
+                <CalendarFull className="h-4 w-4" />
+                Popup
+              </Button>
+              <Button
+                type="button"
+                variant={villageType === "permanent" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setVillageType("permanent")}
+                className="flex-1 gap-2"
+              >
+                <Building2 className="h-4 w-4" />
+                Permanent
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {villageType === "popup" 
+                ? "Temporary village with specific dates" 
+                : "Ongoing community without fixed dates"}
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Village Name *</Label>
             <Input
@@ -216,59 +257,64 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Start Date *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "MMM d, yyyy") : "Pick date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          {/* Conditionally show dates only for popup villages */}
+          {villageType === "popup" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "MMM d, yyyy") : "Pick date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-            <div className="space-y-2">
-              <Label>End Date *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "MMM d, yyyy") : "Pick date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="space-y-2">
+                <Label>End Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "MMM d, yyyy") : "Pick date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      onSelect={setEndDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>

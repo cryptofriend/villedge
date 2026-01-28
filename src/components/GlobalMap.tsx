@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings } from "lucide-react";
-import { useVillages, Village } from "@/hooks/useVillages";
+import { Loader2, Users, Settings, Calendar, Building2 } from "lucide-react";
+import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
 import { AuthButton } from "@/components/AuthButton";
@@ -10,6 +10,7 @@ import { PopupTimeline } from "@/components/PopupTimeline";
 import { useUserCount } from "@/hooks/useUserCount";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const ADMIN_USER_IDS = [
   "9807c494-ba07-4438-9a89-07ac13334e78", // dev
@@ -32,8 +33,14 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const { count: userCount } = useUserCount();
   const { user } = useAuth();
   const [mapReady, setMapReady] = useState(false);
+  const [villageTypeFilter, setVillageTypeFilter] = useState<VillageType>("popup");
 
   const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
+
+  // Filter villages by type
+  const filteredVillages = useMemo(() => {
+    return villages.filter(v => v.village_type === villageTypeFilter);
+  }, [villages, villageTypeFilter]);
 
   // Initialize map
   useEffect(() => {
@@ -74,19 +81,21 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     return `/${village.id}`;
   };
 
-  // Transform villages for PopupTimeline format
+  // Transform villages for PopupTimeline format (only popup villages)
   const timelineVillages = useMemo(() => {
-    return villages.map((v) => ({
-      id: v.id,
-      name: v.name,
-      logo: v.logo_url || '/placeholder.svg',
-      center: v.center as [number, number],
-      dates: v.dates,
-      location: v.location,
-      description: v.description,
-      participants: v.participants || undefined,
-      focus: v.focus || undefined,
-    }));
+    return villages
+      .filter(v => v.village_type === 'popup')
+      .map((v) => ({
+        id: v.id,
+        name: v.name,
+        logo: v.logo_url || '/placeholder.svg',
+        center: v.center as [number, number],
+        dates: v.dates,
+        location: v.location,
+        description: v.description,
+        participants: v.participants || undefined,
+        focus: v.focus || undefined,
+      }));
   }, [villages]);
 
   const activeVillage = timelineVillages[0] || {
@@ -252,7 +261,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       {/* Info sidebar */}
       <div className="absolute bottom-28 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:bottom-32 md:block">
-        <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
+        <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
           <div>
             <h3 className="font-display text-sm font-semibold text-foreground">
               Villedge
@@ -260,24 +269,51 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             <p className="text-xs text-muted-foreground">Click on a village to explore</p>
           </div>
         </div>
-        <div className="space-y-2">
-          {villages.map((village) => (
-            <button
-              key={village.id}
-              onClick={() => navigate(getVillageRoute(village))}
-              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors text-left"
-            >
-              <img 
-                src={village.logo_url || '/placeholder.svg'} 
-                alt={village.name} 
-                className="h-8 w-8 rounded object-cover"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground truncate">{village.name}</p>
-                <p className="text-xs text-muted-foreground truncate" title={village.location}>{village.location}</p>
-              </div>
-            </button>
-          ))}
+        
+        {/* Type Switcher */}
+        <div className="mb-3">
+          <ToggleGroup 
+            type="single" 
+            value={villageTypeFilter} 
+            onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
+            className="w-full"
+          >
+            <ToggleGroupItem value="popup" className="flex-1 gap-1.5 text-xs">
+              <Calendar className="h-3.5 w-3.5" />
+              Popups
+            </ToggleGroupItem>
+            <ToggleGroupItem value="permanent" className="flex-1 gap-1.5 text-xs">
+              <Building2 className="h-3.5 w-3.5" />
+              Permanent
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+
+        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          {filteredVillages.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-4">
+              No {villageTypeFilter} villages yet
+            </p>
+          ) : (
+            filteredVillages.map((village) => (
+              <button
+                key={village.id}
+                onClick={() => navigate(getVillageRoute(village))}
+                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+              >
+                <img 
+                  src={village.logo_url || '/placeholder.svg'} 
+                  alt={village.name} 
+                  className="h-8 w-8 rounded object-cover"
+                  onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground truncate">{village.name}</p>
+                  <p className="text-xs text-muted-foreground truncate" title={village.location}>{village.location}</p>
+                </div>
+              </button>
+            ))
+          )}
         </div>
       </div>
 

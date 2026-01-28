@@ -796,6 +796,7 @@ export type Database = {
           thumbnail_url: string | null
           twitter_url: string | null
           updated_at: string
+          village_type: string
           wallet_address: string | null
           website_url: string | null
         }
@@ -819,6 +820,7 @@ export type Database = {
           thumbnail_url?: string | null
           twitter_url?: string | null
           updated_at?: string
+          village_type?: string
           wallet_address?: string | null
           website_url?: string | null
         }
@@ -842,6 +844,7 @@ export type Database = {
           thumbnail_url?: string | null
           twitter_url?: string | null
           updated_at?: string
+          village_type?: string
           wallet_address?: string | null
           website_url?: string | null
         }
