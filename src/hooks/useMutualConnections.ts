@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 interface MutualConnection {
   user_id: string;
   username: string | null;
-  display_name: string | null;
   avatar_url: string | null;
 }
 
@@ -70,7 +69,7 @@ export const useMutualConnections = (userId?: string) => {
         // Fetch profiles for mutual connections
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("user_id, username, display_name, avatar_url")
+          .select("user_id, username, avatar_url")
           .in("user_id", mutualIds);
 
         setConnections(profiles || []);

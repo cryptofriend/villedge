@@ -142,12 +142,12 @@ const Profile = () => {
           });
         }
 
-        // Fetch bulletin posts by display_name
-        if (profile.display_name) {
+        // Fetch bulletin posts by username
+        if (profile.username) {
           const { data: bulletinPosts } = await supabase
             .from("bulletin")
             .select("id, village_id, created_at, message")
-            .eq("author_name", profile.display_name)
+            .eq("author_name", profile.username)
             .order("created_at", { ascending: false })
             .limit(20);
 

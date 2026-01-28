@@ -20,7 +20,6 @@ export interface Referral {
   created_at: string;
   referred_profile?: {
     username: string | null;
-    display_name: string | null;
     avatar_url: string | null;
   };
 }
@@ -68,7 +67,7 @@ export function useReferrals() {
         const referredIds = referrals.map(r => r.referred_id);
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('user_id, username, display_name, avatar_url')
+          .select('user_id, username, avatar_url')
           .in('user_id', referredIds);
 
         const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
@@ -144,7 +143,7 @@ export function useReferrerInfo() {
       // Get referrer profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('username, display_name, avatar_url')
+        .select('username, avatar_url')
         .eq('user_id', data.referrer_id)
         .single();
 

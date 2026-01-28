@@ -10,7 +10,7 @@ export interface VillageHost {
   invited_by: string | null;
   created_at: string;
   profile?: {
-    display_name: string | null;
+    username: string | null;
     avatar_url: string | null;
   };
 }
@@ -41,7 +41,7 @@ export const useVillageHosts = (villageId: string) => {
       const userIds = (hostsData || []).map(h => h.user_id);
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('user_id, display_name, avatar_url')
+        .select('user_id, username, avatar_url')
         .in('user_id', userIds);
 
       const profilesMap = new Map(

@@ -25,8 +25,8 @@ export const MobileBottomNav = ({ activeView, onViewChange }: MobileBottomNavPro
   const { user, profile, isAuthenticated, loading } = useAuth();
 
   const getInitials = () => {
-    if (profile?.display_name) {
-      return profile.display_name.slice(0, 2).toUpperCase();
+    if (profile?.username) {
+      return profile.username.slice(0, 2).toUpperCase();
     }
     if (user?.email) {
       return user.email.slice(0, 2).toUpperCase();

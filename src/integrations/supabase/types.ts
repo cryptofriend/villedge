@@ -265,7 +265,6 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
-          display_name: string | null
           id: string
           is_anon: boolean
           is_verified: boolean
@@ -284,7 +283,6 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          display_name?: string | null
           id?: string
           is_anon?: boolean
           is_verified?: boolean
@@ -303,7 +301,6 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
-          display_name?: string | null
           id?: string
           is_anon?: boolean
           is_verified?: boolean

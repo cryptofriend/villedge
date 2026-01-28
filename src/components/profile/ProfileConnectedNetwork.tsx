@@ -106,11 +106,11 @@ export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={connection.avatar_url || undefined} alt={connection.username || ''} />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                      {(connection.username || connection.display_name || 'U').slice(0, 2).toUpperCase()}
+                      {(connection.username || 'U').slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium text-foreground">
-                    {connection.username || connection.display_name || 'User'}
+                    @{connection.username || 'user'}
                   </span>
                 </button>
               ))}

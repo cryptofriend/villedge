@@ -57,7 +57,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
 
     try {
       // Use profile data for the stay
-      const nickname = profile?.display_name || user.email?.split('@')[0] || "Anonymous";
+      const nickname = profile?.username || user.email?.split('@')[0] || "Anonymous";
       
       const stay: StayInput = {
         village_id: villageId,

@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
           .from('profiles')
           .insert({
             user_id: userId,
-            display_name: truncatedAddress,
+            username: truncatedAddress.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
             avatar_url: avatarUrl,
           });
         console.log("porto-auth: Created missing profile for existing user");
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
         email_confirm: true,
         user_metadata: {
           wallet_address: normalizedAddress,
-          display_name: truncatedAddress,
+          username: truncatedAddress.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         },
       });
 
@@ -184,7 +184,6 @@ Deno.serve(async (req) => {
         .from('profiles')
         .insert({
           user_id: userId,
-          display_name: truncatedAddress,
           avatar_url: avatarUrl,
           username: finalUsername,
           is_verified: isVerified,
