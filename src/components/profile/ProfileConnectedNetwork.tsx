@@ -19,7 +19,7 @@ export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps
   const navigate = useNavigate();
   const [villages, setVillages] = useState<Village[]>([]);
   const [loading, setLoading] = useState(true);
-  const { connections: mutualConnections, loading: connectionsLoading } = useMutualConnections(userId);
+  const { connections: mutualConnections, followersCount, followingCount, loading: connectionsLoading } = useMutualConnections(userId);
 
   useEffect(() => {
     const fetchConnectedVillages = async () => {
@@ -82,11 +82,17 @@ export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps
       <div className="space-y-6">
         {/* Mutual Connections - Social Graph */}
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Mutual Connections
-            </p>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                Mutual Connections
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span><span className="font-medium text-foreground">{followersCount}</span> followers</span>
+              <span><span className="font-medium text-foreground">{followingCount}</span> following</span>
+            </div>
           </div>
           
           {mutualConnections.length > 0 ? (
