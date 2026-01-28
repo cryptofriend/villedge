@@ -4,6 +4,7 @@ import { CalendarIcon, Plus, Plane, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -25,11 +26,13 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [status, setStatus] = useState<"planning" | "confirmed">("planning");
+  const [intention, setIntention] = useState("");
 
   const resetForm = () => {
     setStartDate(undefined);
     setEndDate(undefined);
     setStatus("planning");
+    setIntention("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,7 +65,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
         villa: "Default",
         start_date: format(startDate, "yyyy-MM-dd"),
         end_date: format(endDate, "yyyy-MM-dd"),
-        intention: profile?.bio || undefined,
+        intention: intention.trim() || profile?.bio || undefined,
         social_profile: profile?.social_url || undefined,
         offerings: profile?.offerings || undefined,
         asks: profile?.asks || undefined,
@@ -159,6 +162,17 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+
+          {/* Intention */}
+          <div className="space-y-2">
+            <Label className="text-sm">What brings you here?</Label>
+            <Input
+              placeholder="e.g., Building a DeFi app, learning Solidity..."
+              value={intention}
+              onChange={(e) => setIntention(e.target.value)}
+              maxLength={100}
+            />
           </div>
 
           {/* Status */}
