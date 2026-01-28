@@ -1,15 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
-import { useLogin as usePrivyLogin, usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Loader2, Shield, Fingerprint, Globe, Sparkles, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+
+// Check if Privy is available
+const PRIVY_ENABLED = !!import.meta.env.VITE_PRIVY_APP_ID;
+
+// Conditionally import Privy hooks
+let usePrivy: any = () => ({ authenticated: false, user: null, logout: () => {} });
+let usePrivyLogin: any = () => ({ login: () => {} });
+
+if (PRIVY_ENABLED) {
+  try {
+    const privyModule = await import('@privy-io/react-auth');
+    usePrivy = privyModule.usePrivy;
+    usePrivyLogin = privyModule.useLogin;
+  } catch (e) {
+    console.warn('Privy not available');
+  }
+}
 
 interface AuthDialogProps {
   open: boolean;
@@ -33,8 +49,9 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const [tonConnectUI] = useTonConnectUI();
   const tonWallet = useTonWallet();
   
-  // Privy
-  const { authenticated: privyAuthenticated, user: privyUser, logout: privyLogout } = usePrivy();
+  // Privy - only use if enabled
+  const privyState = PRIVY_ENABLED ? usePrivy() : { authenticated: false, user: null, logout: () => {} };
+  const { authenticated: privyAuthenticated, user: privyUser, logout: privyLogout } = privyState;
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'ton' | 'privy' | null>(null);
@@ -184,21 +201,25 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
     }
   };
 
-  // Privy login hook
-  const { login: privyLogin } = usePrivyLogin({
+  // Privy login hook - only use if enabled
+  const privyLoginHook = PRIVY_ENABLED ? usePrivyLogin({
     onComplete: () => {
       // Will be handled by the useEffect when privyAuthenticated changes
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Privy login error:', error);
       toast.error('Login failed');
       setAuthType(null);
     },
-  });
+  }) : { login: () => {} };
 
   const handlePrivyConnect = () => {
+    if (!PRIVY_ENABLED) {
+      toast.error('Email login not configured');
+      return;
+    }
     setAuthType('privy');
-    privyLogin();
+    privyLoginHook.login();
   };
 
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
