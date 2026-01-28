@@ -292,9 +292,6 @@ const Profile = () => {
         {/* Incoming reveal requests (only for own profile) */}
         {isOwnProfile && <ProfileRevealRequests />}
 
-        {/* Referral Section (only for own profile) */}
-        <ProfileReferralSection isOwnProfile={isOwnProfile} />
-
         {/* 2. Working On / Scenius Section */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
           <ProfileSceniusSection
@@ -306,17 +303,20 @@ const Profile = () => {
           />
         </div>
 
-        {/* 3. Village Timeline / Participation */}
+        {/* 3. Village Timeline / My Villages */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
           <ProfileVillageTimeline userId={profileUserId || undefined} />
         </div>
 
-        {/* 5. Events Calendar */}
+        {/* 4. Events Calendar */}
         {profileUserId && (
           <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
             <ProfileEventsCalendar userId={profileUserId} />
           </div>
         )}
+
+        {/* 5. Referral Section (only for own profile) - after Events */}
+        <ProfileReferralSection isOwnProfile={isOwnProfile} />
 
         {/* 6. Activity History */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>

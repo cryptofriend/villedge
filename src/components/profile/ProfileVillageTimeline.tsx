@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { MapPin, Check, HelpCircle } from "lucide-react";
+import { MapPin, Check, HelpCircle, Flag } from "lucide-react";
 import { format, differenceInDays, startOfMonth, endOfMonth, addMonths, isBefore } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -213,7 +213,7 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
       <section className="py-6 border-b border-border">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
           <MapPin className="h-4 w-4" />
-          Village Participation
+          My Villages
         </h2>
         <div className="text-sm text-muted-foreground">Loading...</div>
       </section>
@@ -225,7 +225,7 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
       <section className="py-6 border-b border-border">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
           <MapPin className="h-4 w-4" />
-          Village Participation
+          My Villages
         </h2>
         <p className="text-sm text-muted-foreground">
           No village participation yet
@@ -238,7 +238,7 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
     <section className="py-6 border-b border-border">
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
         <MapPin className="h-4 w-4" />
-        Village Participation
+        My Villages
         {isOwnProfile && (
           <span className="text-xs text-muted-foreground font-normal ml-auto">Click to toggle status</span>
         )}
@@ -283,6 +283,7 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
                       const startDate = new Date(stay.start_date);
                       const endDate = new Date(stay.end_date);
                       const duration = differenceInDays(endDate, startDate) + 1;
+                      const isCurrentlyAttending = today >= startDate && today <= endDate;
 
                       return (
                         <Tooltip key={stay.id}>
@@ -316,10 +317,13 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
                               )}>
                                 {stay.village_name}
                               </span>
-                              {isPlanning && (
+                              {isCurrentlyAttending && (
+                                <Flag className="h-3 w-3 text-emerald-500 flex-shrink-0" />
+                              )}
+                              {!isCurrentlyAttending && isPlanning && (
                                 <HelpCircle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                               )}
-                              {!isPlanning && (
+                              {!isCurrentlyAttending && !isPlanning && (
                                 <Check className="h-3 w-3 text-primary flex-shrink-0" />
                               )}
                             </button>
