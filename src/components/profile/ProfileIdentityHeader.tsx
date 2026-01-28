@@ -143,7 +143,7 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
         <div className="relative">
           <ProfileAvatarUpload
             avatarUrl={profile.avatar_url}
-            displayName={profile.display_name}
+            displayName={profile.username}
             isOwnProfile={isOwnProfile}
             userId={profile.user_id}
             onAvatarUpdate={(url) => onProfileUpdate?.({ avatar_url: url })}

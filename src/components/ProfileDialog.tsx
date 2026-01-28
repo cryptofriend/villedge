@@ -57,7 +57,7 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   const { balance, isLoading: isLoadingBalance } = usePersonalBalance(address);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
   const [socialProfile, setSocialProfile] = useState("");
   const [bio, setBio] = useState("");
   const [offerings, setOfferings] = useState("");
@@ -73,7 +73,7 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   useEffect(() => {
     if (open) {
       // Always sync form with latest profile data when dialog opens
-      setDisplayName(profile?.display_name || "");
+      setUsername(profile?.username || "");
       setSocialProfile(profile?.social_url || "");
       setBio(profile?.bio || "");
       setOfferings(profile?.offerings || "");
@@ -90,16 +90,16 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   // Get social platform info
   const socialPlatformInfo = getSocialPlatform(socialProfile);
 
-  // Generate preview avatar based on social profile or display name
+  // Generate preview avatar based on social profile or username
   const previewAvatar = socialProfile 
-    ? getBestAvatar(displayName || address || "user", socialProfile)
-    : profile?.avatar_url || getBestAvatar(displayName || address || "user", null);
+    ? getBestAvatar(username || address || "user", socialProfile)
+    : profile?.avatar_url || getBestAvatar(username || address || "user", null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!displayName.trim()) {
-      toast.error("Display name is required");
+    if (!username.trim()) {
+      toast.error("Username is required");
       return;
     }
 
@@ -107,10 +107,10 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
 
     try {
       // Generate avatar from social profile if provided
-      const avatarUrl = getBestAvatar(displayName.trim(), socialProfile || null);
+      const avatarUrl = getBestAvatar(username.trim(), socialProfile || null);
       
       const { error } = await updateProfile({
-        display_name: displayName.trim(),
+        username: username.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         avatar_url: avatarUrl,
         social_url: socialProfile.trim() || null,
         bio: bio.trim() || null,
@@ -147,15 +147,15 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
           {/* Avatar Preview */}
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={previewAvatar} alt={displayName} />
+              <AvatarImage src={previewAvatar} alt={username} />
               <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                {displayName.slice(0, 2).toUpperCase() || "??"}
+                {username.slice(0, 2).toUpperCase() || "??"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-foreground">
-                  {displayName || "Your Name"}
+                  @{username || "username"}
                 </p>
                 {/* Social Icon */}
                 {socialPlatformInfo && socialProfile && (
@@ -200,21 +200,21 @@ export const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
             </div>
           </div>
 
-          {/* Display Name */}
+          {/* Username */}
           <div className="space-y-2">
-            <Label htmlFor="displayName" className="flex items-center gap-2">
+            <Label htmlFor="username" className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
-              Display Name <span className="text-destructive">*</span>
+              Username <span className="text-destructive">*</span>
             </Label>
             <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value.slice(0, 30))}
-              placeholder="Your name or nickname"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30))}
+              placeholder="your-username"
               maxLength={30}
               required
             />
-            <p className="text-xs text-muted-foreground">{displayName.length}/30 characters</p>
+            <p className="text-xs text-muted-foreground">{username.length}/30 characters • lowercase letters, numbers, hyphens only</p>
           </div>
 
           {/* Social Profile */}

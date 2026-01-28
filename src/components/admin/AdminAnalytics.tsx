@@ -23,7 +23,6 @@ interface HostInfo {
   user_id: string;
   username: string | null;
   avatar_url: string | null;
-  display_name: string | null;
   role: 'owner' | 'co-host';
 }
 
@@ -108,7 +107,7 @@ export function AdminAnalytics() {
           // Fetch host profiles
           const { data: hostProfiles } = await supabase
             .from("profiles")
-            .select("user_id, username, avatar_url, display_name")
+            .select("user_id, username, avatar_url")
             .in("user_id", allHostIds);
 
           const profileMap = new Map(hostProfiles?.map(p => [p.user_id, p]) || []);
@@ -133,7 +132,6 @@ export function AdminAnalytics() {
                 user_id: v.created_by,
                 username: ownerProfile?.username || null,
                 avatar_url: ownerProfile?.avatar_url || null,
-                display_name: ownerProfile?.display_name || null,
                 role: 'owner'
               });
             }
@@ -148,7 +146,6 @@ export function AdminAnalytics() {
                 user_id: h.user_id,
                 username: profile?.username || null,
                 avatar_url: profile?.avatar_url || null,
-                display_name: profile?.display_name || null,
                 role: h.role as 'owner' | 'co-host'
               });
             });
@@ -289,7 +286,7 @@ export function AdminAnalytics() {
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={host.avatar_url || undefined} />
                           <AvatarFallback className="text-xs">
-                            {(host.display_name || host.username)?.[0]?.toUpperCase()}
+                            {host.username?.[0]?.toUpperCase() || '?'}
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm">

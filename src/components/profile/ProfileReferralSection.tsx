@@ -44,7 +44,7 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={referrerInfo.avatar_url || ''} />
-                <AvatarFallback>{referrerInfo.display_name?.[0] || '?'}</AvatarFallback>
+                <AvatarFallback>{referrerInfo.username?.[0] || '?'}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="text-sm text-muted-foreground">Invited by</p>
@@ -52,7 +52,7 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
                   onClick={() => navigate(`/profile/${referrerInfo.username}`)}
                   className="font-medium text-primary hover:underline"
                 >
-                  @{referrerInfo.username || referrerInfo.display_name}
+                  @{referrerInfo.username || 'unknown'}
                 </button>
               </div>
             </div>
@@ -176,7 +176,7 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={referral.referred_profile?.avatar_url || ''} />
                     <AvatarFallback>
-                      {referral.referred_profile?.display_name?.[0] || '?'}
+                      {referral.referred_profile?.username?.[0] || '?'}
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium">

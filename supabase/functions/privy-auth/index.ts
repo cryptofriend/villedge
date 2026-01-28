@@ -80,20 +80,19 @@ Deno.serve(async (req) => {
         .single();
       
       if (!existingProfile) {
-        const displayName = email?.split('@')[0] || `privy-${privyUserId.slice(-8)}`;
+        const username = email?.split('@')[0] || `privy-${privyUserId.slice(-8)}`;
         await supabase
           .from('profiles')
           .insert({
             user_id: userId,
-            display_name: displayName,
             avatar_url: avatarUrl,
-            username: displayName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 30),
+            username: username.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 30),
           });
         console.log("privy-auth: Created missing profile for existing user");
       }
     } else {
       // Create new user
-      const displayName = email?.split('@')[0] || `privy-${privyUserId.slice(-8)}`;
+      const username = email?.split('@')[0] || `privy-${privyUserId.slice(-8)}`;
       
       // Validate invitation code if provided
       let codeValidation = null;
@@ -116,7 +115,7 @@ Deno.serve(async (req) => {
         email: userEmail,
         email_confirm: true,
         user_metadata: {
-          display_name: displayName,
+          username: username,
           avatar_url: avatarUrl,
           privy_user_id: privyUserId,
           wallet_address: walletAddress,
@@ -133,15 +132,14 @@ Deno.serve(async (req) => {
       console.log("privy-auth: Created new user:", userId);
 
       // Create profile with verification status
-      const username = displayName.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 30) || `privy-${Date.now().toString(36)}`;
+      const finalUsername = username.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 30) || `privy-${Date.now().toString(36)}`;
       
       await supabase
         .from('profiles')
         .insert({
           user_id: userId,
-          display_name: displayName,
           avatar_url: avatarUrl,
-          username: username,
+          username: finalUsername,
           wallet_address: walletAddress,
           is_verified: isVerified,
         });
