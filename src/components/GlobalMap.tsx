@@ -149,11 +149,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
-    
-    // Anchor the marker to the *logo center* (not the pill's left edge) so text width
-    // changes/zoom transforms don't make the marker appear to shift.
-    // left padding (8) + half logo (16) = 24px
-    const ANCHOR_TO_LOGO_CENTER_PX = 24;
 
     villages.forEach((village, index) => {
       const el = document.createElement("div");
@@ -163,48 +158,63 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       
       const truncatedLocation = truncateText(village.location, 20);
       const logoSrc = village.logo_url || '/placeholder.svg';
+      
+      // Structure: pointer arrow at bottom center, pill above it
       el.innerHTML = `
         <div style="
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 8px;
-          background: rgba(250, 248, 245, 0.95);
-          padding: 8px 16px 8px 8px;
-          border-radius: 24px;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-          cursor: pointer;
-          transition: all 0.3s ease;
-          max-width: 200px;
-          transform-origin: left center;
         ">
-          <img 
-            src="${logoSrc}" 
-            alt="${village.name}" 
-            style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;"
-            onerror="this.onerror=null; this.src='/placeholder.svg';"
-          />
-          <div style="display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden;">
-            <span style="font-weight: 600; font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${village.name}</span>
-            <span style="font-size: 10px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${truncatedLocation}</span>
+          <div class="village-marker-pill" style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(250, 248, 245, 0.95);
+            padding: 8px 16px 8px 8px;
+            border-radius: 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            max-width: 200px;
+          ">
+            <img 
+              src="${logoSrc}" 
+              alt="${village.name}" 
+              style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;"
+              onerror="this.onerror=null; this.src='/placeholder.svg';"
+            />
+            <div style="display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden;">
+              <span style="font-weight: 600; font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${village.name}</span>
+              <span style="font-size: 10px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${truncatedLocation}</span>
+            </div>
           </div>
+          <div style="
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid rgba(250, 248, 245, 0.95);
+            margin-top: -1px;
+          "></div>
         </div>
       `;
 
       el.addEventListener("mouseenter", () => {
         el.style.zIndex = "1000";
-        const container = el.firstElementChild as HTMLElement;
-        if (container) {
-          container.style.transform = "scale(1.05)";
-          container.style.boxShadow = "0 6px 20px rgba(0,0,0,0.2)";
+        const pill = el.querySelector('.village-marker-pill') as HTMLElement;
+        if (pill) {
+          pill.style.transform = "scale(1.05)";
+          pill.style.boxShadow = "0 6px 20px rgba(0,0,0,0.2)";
         }
       });
 
       el.addEventListener("mouseleave", () => {
         el.style.zIndex = String(10 + index);
-        const container = el.firstElementChild as HTMLElement;
-        if (container) {
-          container.style.transform = "scale(1)";
-          container.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
+        const pill = el.querySelector('.village-marker-pill') as HTMLElement;
+        if (pill) {
+          pill.style.transform = "scale(1)";
+          pill.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
         }
       });
 
@@ -213,11 +223,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         navigate(route);
       });
 
+      // Use 'bottom' anchor so the arrow tip points exactly at the coordinate
       const marker = new mapboxgl.Marker({
         element: el,
-        anchor: 'left',
-        // shift left so the anchor point sits at the logo center
-        offset: [-ANCHOR_TO_LOGO_CENTER_PX, 0],
+        anchor: 'bottom',
       })
         .setLngLat(village.center)
         .addTo(map.current!);
