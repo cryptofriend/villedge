@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserPlus, UserMinus, Eye, Loader2, Check, X } from "lucide-react";
+import { Eye, Loader2, Check, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConnections } from "@/hooks/useConnections";
 import { useRevealRequests } from "@/hooks/useRevealRequests";
@@ -17,39 +17,27 @@ export const ProfileConnectionActions = ({
   isAnon,
   className,
 }: ProfileConnectionActionsProps) => {
-  const { isFollowing, isMutualConnection, follow, unfollow, loading: connectionLoading } = useConnections(targetUserId);
+  const { isMutualConnection, follow, loading: connectionLoading } = useConnections(targetUserId);
   const { pendingRequest, hasApprovedAccess, requestReveal, loading: revealLoading } = useRevealRequests(targetUserId);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const handleFollow = async () => {
-    setActionLoading(true);
-    const success = await follow();
-    if (success) {
-      toast.success("Following user");
-    } else {
-      toast.error("Failed to follow user");
-    }
-    setActionLoading(false);
-  };
-
-  const handleUnfollow = async () => {
-    setActionLoading(true);
-    const success = await unfollow();
-    if (success) {
-      toast.success("Unfollowed user");
-    } else {
-      toast.error("Failed to unfollow user");
-    }
-    setActionLoading(false);
-  };
-
   const handleRequestReveal = async () => {
     setActionLoading(true);
-    const success = await requestReveal();
-    if (success) {
+    
+    // First follow the user (required for mutual connection)
+    const followSuccess = await follow();
+    if (!followSuccess) {
+      toast.error("Failed to send request");
+      setActionLoading(false);
+      return;
+    }
+    
+    // Then send reveal request
+    const revealSuccess = await requestReveal();
+    if (revealSuccess) {
       toast.success("Reveal request sent");
     } else {
-      toast.error("Failed to send request");
+      toast.error("Failed to send reveal request");
     }
     setActionLoading(false);
   };
@@ -62,67 +50,47 @@ export const ProfileConnectionActions = ({
     );
   }
 
+  // If already has access (mutual connection or approved reveal), show connected state
+  if (isMutualConnection || hasApprovedAccess) {
+    return (
+      <div className={cn("flex items-center gap-2", className)}>
+        <Button variant="secondary" size="sm" disabled className="gap-1.5">
+          <UserCheck className="h-4 w-4" />
+          Connected
+        </Button>
+      </div>
+    );
+  }
+
+  // If profile is not anon, no action needed
+  if (!isAnon) {
+    return null;
+  }
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      {/* Follow/Unfollow button */}
-      {isFollowing ? (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleUnfollow}
-          disabled={actionLoading}
-          className="gap-1.5"
-        >
-          {actionLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <UserMinus className="h-4 w-4" />
-          )}
-          {isMutualConnection ? "Connected" : "Following"}
+      {pendingRequest ? (
+        <Button variant="secondary" size="sm" disabled className="gap-1.5">
+          <Check className="h-4 w-4" />
+          Request Sent
         </Button>
       ) : (
         <Button
           variant="default"
           size="sm"
-          onClick={handleFollow}
+          onClick={handleRequestReveal}
           disabled={actionLoading}
           className="gap-1.5"
         >
           {actionLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <UserPlus className="h-4 w-4" />
+            <Eye className="h-4 w-4" />
           )}
-          Follow
+          Request Reveal
         </Button>
-      )}
-
-      {/* Request reveal button (only show if profile is anon and no mutual connection) */}
-      {isAnon && !isMutualConnection && !hasApprovedAccess && (
-        <>
-          {pendingRequest ? (
-            <Button variant="secondary" size="sm" disabled className="gap-1.5">
-              <Check className="h-4 w-4" />
-              Request Sent
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRequestReveal}
-              disabled={actionLoading}
-              className="gap-1.5"
-            >
-              {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-              Request Reveal
-            </Button>
-          )}
-        </>
       )}
     </div>
   );
 };
+
