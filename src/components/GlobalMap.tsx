@@ -170,13 +170,13 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(250, 248, 245, 0.95);
-            padding: 8px 16px 8px 8px;
+            background: rgba(250, 248, 245, 0.97);
+            padding: 8px 12px 8px 8px;
             border-radius: 24px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.15);
             cursor: pointer;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            max-width: 200px;
+            max-width: 240px;
           ">
             <img 
               src="${logoSrc}" 
@@ -184,17 +184,35 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;"
               onerror="this.onerror=null; this.src='/placeholder.svg';"
             />
-            <div style="display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden;">
+            <div style="display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden; flex: 1;">
               <span style="font-weight: 600; font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${village.name}</span>
               <span style="font-size: 10px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${truncatedLocation}</span>
             </div>
+            <button class="back-home-btn" style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 28px;
+              height: 28px;
+              border-radius: 50%;
+              background: rgba(0,0,0,0.08);
+              border: none;
+              cursor: pointer;
+              transition: background 0.2s ease;
+              flex-shrink: 0;
+            " title="Back Home">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </button>
           </div>
           <div style="
             width: 0;
             height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid rgba(250, 248, 245, 0.95);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid rgba(250, 248, 245, 0.97);
             margin-top: -1px;
           "></div>
         </div>
@@ -218,7 +236,29 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         }
       });
 
-      el.addEventListener("click", () => {
+      // Back home button click handler
+      const backHomeBtn = el.querySelector('.back-home-btn');
+      if (backHomeBtn) {
+        backHomeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          navigate('/');
+          map.current?.flyTo({
+            center: DEFAULT_CENTER,
+            zoom: DEFAULT_ZOOM,
+            duration: 1500,
+          });
+        });
+        backHomeBtn.addEventListener('mouseenter', () => {
+          (backHomeBtn as HTMLElement).style.background = 'rgba(0,0,0,0.15)';
+        });
+        backHomeBtn.addEventListener('mouseleave', () => {
+          (backHomeBtn as HTMLElement).style.background = 'rgba(0,0,0,0.08)';
+        });
+      }
+
+      el.addEventListener("click", (e) => {
+        // Don't navigate if clicking the back home button
+        if ((e.target as HTMLElement).closest('.back-home-btn')) return;
         const route = getVillageRoute(village);
         navigate(route);
       });
