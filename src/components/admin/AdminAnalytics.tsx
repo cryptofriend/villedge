@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   Users, Mail, Fingerprint, Wallet, Globe, Crown, 
-  BarChart3, Building2, Pencil, Trash2, Plus, UserPlus, X
+  BarChart3, Building2, Pencil, Trash2, Plus, UserPlus, 
+  CheckCircle2, Clock, Ticket
 } from "lucide-react";
 
 interface RegistrationStats {
@@ -46,12 +48,23 @@ interface VillageWithHosts {
   resident_count: number;
 }
 
+interface UserInfo {
+  user_id: string;
+  username: string | null;
+  avatar_url: string | null;
+  is_verified: boolean;
+  created_at: string;
+  registration_type: 'privy' | 'porto' | 'ethereum' | 'solana' | 'ton';
+  invite_codes_used: number;
+}
+
 export function AdminAnalytics() {
   const [registrationStats, setRegistrationStats] = useState<RegistrationStats>({
     total: 0,
     byMethod: { privy: 0, porto: 0, ethereum: 0, solana: 0, ton: 0 }
   });
   const [villagesWithHosts, setVillagesWithHosts] = useState<VillageWithHosts[]>([]);
+  const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Edit hosts dialog state
@@ -168,6 +181,40 @@ export function AdminAnalytics() {
 
         setVillagesWithHosts(villagesData);
       }
+
+      // Fetch users with registration type and invite codes usage
+      const { data: invitationCodes } = await supabase
+        .from("invitation_codes")
+        .select("owner_id, used_count");
+
+      const inviteCodesUsedMap = new Map<string, number>();
+      invitationCodes?.forEach(code => {
+        const current = inviteCodesUsedMap.get(code.owner_id) || 0;
+        inviteCodesUsedMap.set(code.owner_id, current + code.used_count);
+      });
+
+      const usersData: UserInfo[] = (profiles || []).map(p => {
+        const walletType = userWalletTypes.get(p.user_id);
+        const regType = walletType || 'privy';
+        
+        return {
+          user_id: p.user_id,
+          username: p.username,
+          avatar_url: p.avatar_url,
+          is_verified: p.is_verified,
+          created_at: p.created_at,
+          registration_type: regType as UserInfo['registration_type'],
+          invite_codes_used: inviteCodesUsedMap.get(p.user_id) || 0,
+        };
+      });
+
+      // Sort: verified first, then by created_at desc
+      usersData.sort((a, b) => {
+        if (a.is_verified !== b.is_verified) return b.is_verified ? 1 : -1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setUsers(usersData);
     } catch (error) {
       console.error("Error fetching analytics:", error);
     } finally {
@@ -459,6 +506,103 @@ export function AdminAnalytics() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Users List */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              All Users
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="gap-1">
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                {users.filter(u => u.is_verified).length} verified
+              </Badge>
+              <Badge variant="secondary">{users.length} total</Badge>
+            </div>
+          </div>
+          <CardDescription>
+            User accounts with registration method and invite code usage
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[400px]">
+            <div className="space-y-2">
+              {users.map((user) => {
+                const regConfig = {
+                  privy: { icon: Mail, label: "Email", color: "text-blue-500", bg: "bg-blue-500/10" },
+                  porto: { icon: Fingerprint, label: "Porto", color: "text-purple-500", bg: "bg-purple-500/10" },
+                  ethereum: { icon: Wallet, label: "ETH", color: "text-indigo-500", bg: "bg-indigo-500/10" },
+                  solana: { icon: Wallet, label: "SOL", color: "text-green-500", bg: "bg-green-500/10" },
+                  ton: { icon: Globe, label: "TON", color: "text-cyan-500", bg: "bg-cyan-500/10" },
+                }[user.registration_type];
+                const RegIcon = regConfig.icon;
+
+                return (
+                  <div 
+                    key={user.user_id}
+                    className="flex items-center gap-3 p-2 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                  >
+                    {/* Avatar */}
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.avatar_url || undefined} />
+                      <AvatarFallback className="text-sm">
+                        {user.username?.[0]?.toUpperCase() || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Username */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        @{user.username || 'unknown'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+
+                    {/* Registration Type */}
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${regConfig.bg}`}>
+                      <RegIcon className={`h-3 w-3 ${regConfig.color}`} />
+                      <span className={`text-xs font-medium ${regConfig.color}`}>{regConfig.label}</span>
+                    </div>
+
+                    {/* Verification Status */}
+                    {user.is_verified ? (
+                      <Badge variant="outline" className="gap-1 border-green-500/50 text-green-600">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        New
+                      </Badge>
+                    )}
+
+                    {/* Invite Codes Used */}
+                    <div className="flex items-center gap-1.5 shrink-0" title="Invite codes used">
+                      <Ticket className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {user.invite_codes_used}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {users.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No users found</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
 
