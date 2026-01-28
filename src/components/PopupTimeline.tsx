@@ -28,13 +28,37 @@ const parseDateRange = (dateStr: string): { start: Date | null; end: Date | null
     return { start: null, end: null };
   }
 
-  // Parse formats like "Jan 15 – Feb 15, 2026" or "Mar 2 – 7, 2025" or "Dec 8, 2025 – Mar 2, 2026"
   const months: { [key: string]: number } = {
     jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
     jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
   };
 
   try {
+    // Handle simple month-only format like "May 2025" or "Aug 2025"
+    const simpleMonthMatch = dateStr.match(/^([a-zA-Z]+)\s+(\d{4})$/);
+    if (simpleMonthMatch) {
+      const month = months[simpleMonthMatch[1].toLowerCase().slice(0, 3)];
+      const year = parseInt(simpleMonthMatch[2]);
+      if (month !== undefined) {
+        const start = new Date(year, month, 1);
+        const end = new Date(year, month + 1, 0); // Last day of month
+        return { start, end };
+      }
+    }
+
+    // Handle "Apr 1, 2025" single date format
+    const singleDateMatch = dateStr.match(/^([a-zA-Z]+)\s+(\d+),?\s+(\d{4})$/);
+    if (singleDateMatch) {
+      const month = months[singleDateMatch[1].toLowerCase().slice(0, 3)];
+      const day = parseInt(singleDateMatch[2]);
+      const year = parseInt(singleDateMatch[3]);
+      if (month !== undefined) {
+        const date = new Date(year, month, day);
+        return { start: date, end: new Date(year, month, day + 1) }; // Show as 1-day event
+      }
+    }
+
+    // Parse formats like "Jan 15 – Feb 15, 2026" or "Mar 2 – 7, 2025" or "Dec 8, 2025 – Mar 2, 2026"
     // Split by dash/en-dash
     const parts = dateStr.split(/[–-]/);
     if (parts.length !== 2) return { start: null, end: null };
@@ -100,8 +124,9 @@ const getTimelinePosition = (
   return { left: Math.max(0, left), width: Math.max(1, Math.min(width, 100 - left)) };
 };
 
-// Color palette for villages
+// Color palette for villages and conferences
 const villageColors: { [key: string]: string } = {
+  // Popup villages
   "proof-of-retreat": "#8E9456",
   "network-school-v2": "#4A5568",
   "ethchiangmai": "#6B7280",
@@ -111,6 +136,54 @@ const villageColors: { [key: string]: string } = {
   "zuafrique-2": "#ED8936",
   "edge-esmeralda": "#667EEA",
   "edge-city-austin": "#667EEA",
+  // Conferences - ETHGlobal events (purple)
+  "ethglobal-singapore-2025": "#7C3AED",
+  "ethglobal-london-2025": "#7C3AED",
+  "ethglobal-brussels-2024": "#7C3AED",
+  "ethglobal-sanfrancisco-2024": "#7C3AED",
+  "ethglobal-bangkok-2024": "#7C3AED",
+  "ethglobal-istanbul-2023": "#7C3AED",
+  "ethglobal-tokyo-2024": "#7C3AED",
+  "ethglobal-sydney-2024": "#7C3AED",
+  "ethglobal-newyork-2024": "#7C3AED",
+  "ethglobal-waterloo-2024": "#7C3AED",
+  "ethglobal-paris-2024": "#7C3AED",
+  "ethglobal-lisbon-2023": "#7C3AED",
+  "ethglobal-cannes-2025": "#7C3AED",
+  // Major conferences (blue)
+  "ethdenver-2025": "#3B82F6",
+  "ethcc-cannes-2025": "#EC4899",
+  "ethcc-brussels-2024": "#EC4899",
+  "consensus-hk-2025": "#F59E0B",
+  "devcon-7": "#10B981",
+  "devconnect-2025": "#10B981",
+  "edcon-2025": "#6366F1",
+  // Regional ETH events (teal/cyan)
+  "eth-seoul-2025": "#14B8A6",
+  "ethmumbai-2025": "#14B8A6",
+  "ethprague-2025": "#14B8A6",
+  "ethberlin-2025": "#14B8A6",
+  "ethwarsaw-2025": "#14B8A6",
+  "ethportugal-2025": "#14B8A6",
+  "ethdam-2025": "#14B8A6",
+  "ethoxford-2025": "#14B8A6",
+  "etherindia-2025": "#14B8A6",
+  "ethlatam-2025": "#F97316",
+  "ethargentina-2025": "#F97316",
+  "ethbrasil-2025": "#F97316",
+  "ethmexico-2025": "#F97316",
+  "ethbogota-2025": "#F97316",
+  "ethbucharest-2025": "#14B8A6",
+  "ethzurich-2025": "#14B8A6",
+  "ethvienna-2025": "#14B8A6",
+  "ethkl-2025": "#14B8A6",
+  "ethshanghai-2025": "#14B8A6",
+  "ethbeijing-2025": "#14B8A6",
+  "ethcapetown-2025": "#14B8A6",
+  "ethdubai-2025": "#14B8A6",
+  // Other
+  "dappcon-2025": "#8B5CF6",
+  "nftnyc-2025": "#EF4444",
 };
 
 export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onVillageClick }: PopupTimelineProps) => {
