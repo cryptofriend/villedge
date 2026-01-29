@@ -7,6 +7,7 @@ const corsHeaders = {
 type PublicConfigResponse = {
   privyAppId: string | null;
   magicPublishableKey: string | null;
+  telegramBotId: string | null;
 };
 
 Deno.serve(async (req) => {
@@ -18,10 +19,15 @@ Deno.serve(async (req) => {
   try {
     const privyAppId = Deno.env.get("VITE_PRIVY_APP_ID") ?? null;
     const magicPublishableKey = Deno.env.get("VITE_MAGIC_PUBLISHABLE_KEY") ?? null;
+    
+    // Extract bot ID from the token (format: BOT_ID:SECRET_HASH)
+    const telegramBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? null;
+    const telegramBotId = telegramBotToken ? telegramBotToken.split(':')[0] : null;
 
     const body: PublicConfigResponse = {
       privyAppId,
       magicPublishableKey,
+      telegramBotId,
     };
 
     return new Response(JSON.stringify(body), {

@@ -32,8 +32,8 @@ console.warn = (...args) => {
   originalConsoleWarn.apply(console, args);
 };
 
-// Telegram bot ID (numeric) - proofofretreatbot
-const TELEGRAM_BOT_ID = '7911561126';
+// Telegram bot ID will be fetched from public-config
+const TELEGRAM_BOT_ID_FALLBACK = '7911561126';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -54,8 +54,17 @@ export default function Auth() {
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'magic' | 'google' | null>(null);
-  const [showDebug, setShowDebug] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [telegramBotId, setTelegramBotId] = useState<string>(TELEGRAM_BOT_ID_FALLBACK);
+
+  // Fetch telegram bot ID from public-config
+  useEffect(() => {
+    supabase.functions.invoke('public-config').then(({ data }) => {
+      if (data?.telegramBotId) {
+        setTelegramBotId(data.telegramBotId);
+      }
+    }).catch(console.error);
+  }, []);
 
   const handleGoogleLogin = async () => {
     setAuthType('google');
@@ -371,8 +380,8 @@ export default function Auth() {
 
                 {/* Telegram Button */}
                 <div className="flex flex-col items-center gap-1">
-                  <TelegramLoginWidget
-                    botName={TELEGRAM_BOT_ID}
+                <TelegramLoginWidget
+                    botName={telegramBotId}
                     disabled={anyLoading}
                     isLoading={isTelegramLoading}
                     onStart={() => setAuthType('telegram')}
