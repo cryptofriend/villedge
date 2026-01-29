@@ -210,15 +210,15 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
           <div className="absolute top-1/2 left-1/4 w-12 h-12 bg-sage-light/20 rounded-full blur-lg animate-pulse-gentle" />
           
           <DialogHeader className="relative z-10 space-y-3">
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center">
               <button
                 onClick={() => navigate('/')}
-                className="w-10 h-10 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 flex items-center justify-center hover:bg-background/80 hover:border-primary/30 transition-all duration-300 shadow-soft"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 hover:bg-background/80 hover:border-primary/30 transition-all duration-300 shadow-soft text-sm font-medium text-muted-foreground hover:text-foreground"
                 title="Back to Home"
               >
-                <Home className="h-5 w-5 text-primary" />
+                <Home className="h-4 w-4" />
+                <span>Back Home</span>
               </button>
-              <span className="font-display text-xl font-semibold text-foreground">Villedge</span>
             </div>
             <DialogTitle className="text-center text-2xl font-display font-bold bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">
               Join
