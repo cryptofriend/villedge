@@ -157,18 +157,21 @@ export function OnboardingDialog({ open, onOpenChange, initialInvitationCode }: 
 
         if (updateError) throw updateError;
         
-        // If valid code, use it to create referral
+        // If valid code, use it to create referral and mutual connection
         if (isVerified && invitationCode.trim()) {
           const code = invitationCode.trim().toUpperCase();
           const { data: codeData } = await supabase.rpc('validate_invitation_code', { _code: code });
           const result = codeData as { valid: boolean; code_id?: string; owner_id?: string } | null;
           
           if (result?.valid && result?.code_id && result?.owner_id) {
-            await supabase.rpc('use_invitation_code', {
+            const { error: useCodeError } = await supabase.rpc('use_invitation_code', {
               _code_id: result.code_id,
               _referrer_id: result.owner_id,
               _referred_id: user.id,
             });
+            if (useCodeError) {
+              console.error('Error using invitation code:', useCodeError);
+            }
           }
         }
       } else {
@@ -186,18 +189,21 @@ export function OnboardingDialog({ open, onOpenChange, initialInvitationCode }: 
 
         if (insertError) throw insertError;
         
-        // If valid code, use it
+        // If valid code, use it to create referral and mutual connection
         if (isVerified && invitationCode.trim()) {
           const code = invitationCode.trim().toUpperCase();
           const { data: codeData } = await supabase.rpc('validate_invitation_code', { _code: code });
           const result = codeData as { valid: boolean; code_id?: string; owner_id?: string } | null;
           
           if (result?.valid && result?.code_id && result?.owner_id) {
-            await supabase.rpc('use_invitation_code', {
+            const { error: useCodeError } = await supabase.rpc('use_invitation_code', {
               _code_id: result.code_id,
               _referrer_id: result.owner_id,
               _referred_id: user.id,
             });
+            if (useCodeError) {
+              console.error('Error using invitation code:', useCodeError);
+            }
           }
         }
       }
