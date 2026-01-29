@@ -60,7 +60,7 @@ const Profile = () => {
           .from("profiles")
           .select("*")
           .eq("username", username)
-          .single();
+          .maybeSingle();
 
         // If not found by username, try by user_id (for backward compatibility)
         if (error || !profile) {
@@ -68,7 +68,7 @@ const Profile = () => {
             .from("profiles")
             .select("*")
             .eq("user_id", username)
-            .single();
+            .maybeSingle();
           
           if (errorById || !profileById) {
             // Profile not found - check if this is the current user trying to access their own profile
