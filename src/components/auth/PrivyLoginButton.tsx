@@ -9,6 +9,7 @@ type PrivyLoginButtonProps = {
   disabled?: boolean;
   isLoading?: boolean;
   className?: string;
+  label?: string;
   onStart: () => void;
   onAuthenticated: (args: {
     privyUserId: string;
@@ -22,6 +23,7 @@ export function PrivyLoginButton({
   disabled,
   isLoading,
   className,
+  label = "Sign in with Email",
   onStart,
   onAuthenticated,
 }: PrivyLoginButtonProps) {
@@ -70,7 +72,7 @@ export function PrivyLoginButton({
       ) : (
         <div className="flex items-center gap-2">
           <Mail className="h-5 w-5" />
-          <span>Sign in with Email</span>
+          <span>{label}</span>
         </div>
       )}
     </Button>
