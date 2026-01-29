@@ -995,6 +995,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_connection_request: {
+        Args: { _request_id: string; _target_user_id: string }
+        Returns: boolean
+      }
       cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }
       generate_invitation_code: { Args: never; Returns: string }
       generate_username: { Args: { display_name: string }; Returns: string }

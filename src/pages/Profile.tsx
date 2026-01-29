@@ -11,17 +11,15 @@ import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimel
 import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSection";
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
-import { ProfileRevealRequests } from "@/components/profile/ProfileRevealRequests";
+import { ProfileConnectionRequests } from "@/components/profile/ProfileConnectionRequests";
 import { ProfileReferralSection } from "@/components/profile/ProfileReferralSection";
 import { ProfileVerificationSection } from "@/components/profile/ProfileVerificationSection";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { cn } from "@/lib/utils";
-import { useConnections } from "@/hooks/useConnections";
-import { useRevealRequests } from "@/hooks/useRevealRequests";
+import { useConnectionRequests } from "@/hooks/useConnectionRequests";
 
 export interface ProfileData extends ProfileType {
   title?: string | null;
-  is_anon?: boolean;
 }
 
 export interface UserActivity {
@@ -45,9 +43,8 @@ const Profile = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [needsProfileCreation, setNeedsProfileCreation] = useState(false);
   
-  // Connection and reveal hooks
-  const { isMutualConnection } = useConnections(profileUserId || undefined);
-  const { hasApprovedAccess } = useRevealRequests(profileUserId || undefined);
+  // Connection hook
+  const { isConnected } = useConnectionRequests(profileUserId || undefined);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -238,8 +235,8 @@ const Profile = () => {
   }
 
   // Determine if content should be blurred
-  // Blur if: profile is anon AND viewer is not owner AND no mutual connection AND no approved reveal
-  const shouldBlur = (profileData.is_anon ?? true) && !isOwnProfile && !isMutualConnection && !hasApprovedAccess;
+  // All profiles are anonymous by default - blur unless owner or connected
+  const shouldBlur = !isOwnProfile && !isConnected;
 
   return (
     <div className="min-h-screen bg-background">
@@ -278,10 +275,7 @@ const Profile = () => {
         {/* Connection actions for non-own profiles */}
         {!isOwnProfile && profileUserId && (
           <div className="flex items-center justify-between pt-4">
-            <ProfileConnectionActions 
-              targetUserId={profileUserId} 
-              isAnon={profileData.is_anon ?? true}
-            />
+            <ProfileConnectionActions targetUserId={profileUserId} />
             {shouldBlur && (
               <span className="text-sm text-muted-foreground">
                 This profile is private
@@ -290,8 +284,8 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Incoming reveal requests (only for own profile) */}
-        {isOwnProfile && <ProfileRevealRequests />}
+        {/* Incoming connection requests (only for own profile) */}
+        {isOwnProfile && <ProfileConnectionRequests />}
 
         {/* Verification Section (only for own profile) */}
         <ProfileVerificationSection 

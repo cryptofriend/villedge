@@ -1,21 +1,21 @@
 import { useState } from "react";
-import { Check, X, Loader2, Eye } from "lucide-react";
+import { Check, X, Loader2, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRevealRequests, RevealRequest } from "@/hooks/useRevealRequests";
+import { useConnectionRequests, ConnectionRequest } from "@/hooks/useConnectionRequests";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
-export const ProfileRevealRequests = () => {
-  const { incomingRequests, respondToRequest, loading } = useRevealRequests();
+export const ProfileConnectionRequests = () => {
+  const { incomingRequests, respondToRequest, loading } = useConnectionRequests();
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
   const handleRespond = async (requestId: string, approved: boolean) => {
     setRespondingId(requestId);
     const success = await respondToRequest(requestId, approved);
     if (success) {
-      toast.success(approved ? "Access granted" : "Request denied");
+      toast.success(approved ? "Connected!" : "Request declined");
     } else {
       toast.error("Failed to respond to request");
     }
@@ -34,8 +34,8 @@ export const ProfileRevealRequests = () => {
     <Card className="border-primary/20 bg-primary/5">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-medium flex items-center gap-2">
-          <Eye className="h-4 w-4" />
-          Reveal Requests ({incomingRequests.length})
+          <Link2 className="h-4 w-4" />
+          Connection Requests ({incomingRequests.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
