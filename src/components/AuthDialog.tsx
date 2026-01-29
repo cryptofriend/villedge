@@ -215,9 +215,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
             <DialogTitle className="text-center text-2xl font-display font-bold">
               Join the Network
             </DialogTitle>
-            <p className="text-center text-sm text-muted-foreground">
-              Sign in to explore popup villages
-            </p>
           </DialogHeader>
         </div>
 
@@ -301,31 +298,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-background px-2 text-muted-foreground">secure & decentralized</span>
-            </div>
-          </div>
-
-          {/* Features */}
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/70 pt-2">
-            <span className="flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              Self-Custody
-            </span>
-            <span className="flex items-center gap-1">
-              <Fingerprint className="h-3 w-3" />
-              Passwordless
-            </span>
-            <span className="flex items-center gap-1">
-              <Globe className="h-3 w-3" />
-              Cross-Platform
-            </span>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
