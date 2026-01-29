@@ -3,11 +3,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Shield, Fingerprint, Globe, Home } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Loader2, Fingerprint, ChevronDown, Diamond } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { MagicLoginButton } from '@/components/auth/MagicLoginButton';
 import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
@@ -25,7 +25,6 @@ interface AuthDialogProps {
 
 export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   
   // Porto/Biometric wallet
   const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -36,9 +35,14 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { publicKey, connected: solanaConnected, connecting: solanaConnecting, disconnect: disconnectSolana } = useWallet();
   const { setVisible: openSolanaModal } = useWalletModal();
   
+  // TON wallet
+  const [tonConnectUI] = useTonConnectUI();
+  const tonWallet = useTonWallet();
+  
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'magic' | 'google' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'magic' | 'google' | 'ton' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOtherMethods, setShowOtherMethods] = useState(false);
 
   const handleGoogleLogin = async () => {
     setAuthType('google');
@@ -56,8 +60,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
       setAuthType(null);
     }
   };
-
-  const isGoogleLoading = isAuthenticating && authType === 'google';
 
   // Close dialog when user authenticates
   useEffect(() => {
@@ -81,7 +83,15 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
     }
   }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
 
-  const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum') => {
+  // When TON wallet connects, authenticate with backend
+  useEffect(() => {
+    if (tonWallet && !user && !isAuthenticating && authType === 'ton') {
+      const tonAddress = tonWallet.account.address;
+      authenticateWithBackend(tonAddress, 'ton');
+    }
+  }, [tonWallet, user, isAuthenticating, authType]);
+
+  const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum' | 'ton') => {
     setIsAuthenticating(true);
     
     try {
@@ -114,6 +124,8 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
       if (type === 'solana') {
         disconnectSolana();
+      } else if (type === 'ton') {
+        tonConnectUI.disconnect();
       } else {
         disconnect();
       }
@@ -136,151 +148,145 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
     }
   };
 
+  const handleTonConnect = () => {
+    setAuthType('ton');
+    tonConnectUI.openModal();
+  };
+
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isTelegramLoading = isAuthenticating && authType === 'telegram';
   const isMagicLoading = isAuthenticating && authType === 'magic';
   const isGoogleBtnLoading = authType === 'google';
-  const anyLoading = isBiometricLoading || isTelegramLoading || isMagicLoading || isGoogleBtnLoading;
+  const isTonLoading = isAuthenticating && authType === 'ton';
+  const anyLoading = isBiometricLoading || isTelegramLoading || isMagicLoading || isGoogleBtnLoading || isTonLoading;
 
   return (
     <>
       <OnboardingDialog open={showOnboarding} onOpenChange={setShowOnboarding} />
       <Dialog open={open && !showOnboarding} onOpenChange={() => {}} modal={true}>
-      <DialogContent 
-        className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50 [&>button]:hidden"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
-        {/* Header with branding */}
-        <div className="bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 p-6 pb-4">
-          <DialogHeader className="space-y-3">
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={() => navigate('/')}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors text-primary"
-                title="Back to Home"
-              >
-                <Home className="h-4 w-4" />
-                <span className="text-sm font-medium">Back Home</span>
-              </button>
-              <span className="font-display text-xl font-semibold text-foreground">Villedge</span>
-            </div>
-            <DialogTitle className="text-center text-2xl font-display font-bold">
-              Join the Network
-            </DialogTitle>
-            <p className="text-center text-sm text-muted-foreground">
-              Sign in to explore popup villages
-            </p>
-          </DialogHeader>
-        </div>
+        <DialogContent 
+          className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50 [&>button]:hidden"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          {/* Simple centered content like homepage */}
+          <div className="flex flex-col items-center justify-center px-6 py-12 space-y-8">
+            {/* Header */}
+            <h2 className="font-display text-3xl font-bold text-foreground">Get Started</h2>
 
-        {/* Login content */}
-        <div className="p-6 space-y-4">
-          {/* Google Sign In - Primary */}
-          <Button
-            onClick={handleGoogleLogin}
-            disabled={anyLoading}
-            className="w-full h-12 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl"
-          >
-            {isGoogleBtnLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <div className="flex items-center gap-2">
-                <svg className="h-5 w-5" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span>Continue with Google</span>
-              </div>
-            )}
-          </Button>
-
-          {/* Magic Link Button - Email with Wallet */}
-          <MagicLoginButton
-            disabled={anyLoading}
-            className="w-full h-12 text-base font-medium border-2 border-border bg-background hover:bg-muted text-foreground rounded-xl transition-all duration-200"
-            onStart={() => setAuthType('magic')}
-            onSuccess={(isNewUser) => {
-              if (isNewUser) {
-                setShowOnboarding(true);
-              }
-            }}
-            onError={() => setAuthType(null)}
-          />
-
-          {/* Biometric & Telegram Row */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Biometric Button */}
-            <div className="flex flex-col items-center gap-1">
+            {/* Login Buttons */}
+            <div className="w-full max-w-sm space-y-3">
+              {/* Google Sign In - Primary */}
               <Button
-                onClick={handleBiometricConnect}
-                variant="outline"
-                className="w-full h-11 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                onClick={handleGoogleLogin}
                 disabled={anyLoading}
+                className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
               >
-                {isBiometricLoading ? (
+                {isGoogleBtnLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Fingerprint className="h-5 w-5" />
-                    <span>Biometric</span>
+                    <svg className="h-5 w-5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Continue with Google</span>
                   </div>
                 )}
               </Button>
-              <span className="text-[10px] text-muted-foreground/60">Works on Safari & Chrome</span>
-            </div>
 
-            {/* Telegram Button */}
-            <div className="flex flex-col items-center gap-1">
-            <TelegramLoginWidget
-                botName={TELEGRAM_BOT_ID}
-                disabled={anyLoading}
-                isLoading={isTelegramLoading}
-                onStart={() => setAuthType('telegram')}
-                onSuccess={(isNewUser) => {
-                  if (isNewUser) {
-                    setShowOnboarding(true);
-                  } else {
-                    toast.success('Welcome back!');
-                  }
-                }}
-                onError={() => setAuthType(null)}
-                className="w-full"
-              />
-              <span className="text-[10px] text-muted-foreground/60">Works perfect with TG app</span>
+              {/* Other Methods Collapsible */}
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShowOtherMethods(!showOtherMethods)}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>Other Methods</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showOtherMethods ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showOtherMethods && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Magic Link Button - Email with Wallet */}
+                    <MagicLoginButton
+                      disabled={anyLoading}
+                      className="w-full h-12 text-sm font-medium border-2 border-border bg-background hover:bg-muted text-foreground rounded-xl transition-all duration-200"
+                      onStart={() => setAuthType('magic')}
+                      onSuccess={(isNewUser) => {
+                        if (isNewUser) {
+                          setShowOnboarding(true);
+                        }
+                      }}
+                      onError={() => setAuthType(null)}
+                    />
+
+                    {/* Biometric, TON & Telegram Row */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Biometric Login */}
+                      <div className="flex flex-col items-center gap-1">
+                        <Button
+                          onClick={handleBiometricConnect}
+                          variant="outline"
+                          className="w-full h-11 text-xs font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                          disabled={anyLoading}
+                        >
+                          {isBiometricLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <Fingerprint className="h-4 w-4" />
+                              <span>Biometric</span>
+                            </div>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* TON Login */}
+                      <div className="flex flex-col items-center gap-1">
+                        <Button
+                          onClick={handleTonConnect}
+                          variant="outline"
+                          className="w-full h-11 text-xs font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                          disabled={anyLoading}
+                        >
+                          {isTonLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <Diamond className="h-4 w-4" />
+                              <span>TON</span>
+                            </div>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Telegram Login */}
+                      <TelegramLoginWidget
+                        botName={TELEGRAM_BOT_ID}
+                        disabled={anyLoading}
+                        isLoading={isTelegramLoading}
+                        onStart={() => setAuthType('telegram')}
+                        onSuccess={(isNewUser) => {
+                          if (isNewUser) {
+                            setShowOnboarding(true);
+                          } else {
+                            toast.success('Welcome back!');
+                          }
+                        }}
+                        onError={() => setAuthType(null)}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-background px-2 text-muted-foreground">secure & decentralized</span>
-            </div>
-          </div>
-
-          {/* Features */}
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/70 pt-2">
-            <span className="flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              Self-Custody
-            </span>
-            <span className="flex items-center gap-1">
-              <Fingerprint className="h-3 w-3" />
-              Passwordless
-            </span>
-            <span className="flex items-center gap-1">
-              <Globe className="h-3 w-3" />
-              Cross-Platform
-            </span>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
