@@ -870,7 +870,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                 <Tooltip key={id}>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => isVerified ? handleViewChange(id) : toast.error("Get verified to unlock this feature")}
+                      onClick={() => isVerified ? handleViewChange(id) : toast.error("Get an invitation code from a verified member to unlock full access", { action: { label: "DM @boogaav", onClick: () => window.open("https://x.com/boogaav", "_blank") } })}
                       className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
                         !isVerified
                           ? "text-muted-foreground/50 cursor-not-allowed"
