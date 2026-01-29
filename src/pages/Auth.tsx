@@ -6,7 +6,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { MagicLoginButton } from '@/components/auth/MagicLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
@@ -32,6 +32,7 @@ export default function Auth() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'magic' | 'google' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOtherMethods, setShowOtherMethods] = useState(false);
 
   const handleGoogleLogin = async () => {
     setAuthType('google');
@@ -285,39 +286,55 @@ export default function Auth() {
                 )}
               </Button>
 
-              {/* Magic Link Button - Email with Wallet */}
-              <MagicLoginButton
-                disabled={anyLoading}
-                className="w-full h-14 text-base font-medium border-2 border-border bg-background hover:bg-muted text-foreground rounded-xl transition-all duration-200"
-                onStart={() => setAuthType('magic')}
-                onSuccess={(isNewUser) => {
-                  if (isNewUser) {
-                    setShowOnboarding(true);
-                  } else {
-                    navigate(from, { replace: true });
-                  }
-                }}
-                onError={() => setAuthType(null)}
-              />
-
-              {/* Biometric Login */}
-              <div className="flex flex-col items-center gap-1">
-                <Button
-                  onClick={handleBiometricConnect}
-                  variant="outline"
-                  className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
-                  disabled={anyLoading}
+              {/* Other Methods Collapsible */}
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShowOtherMethods(!showOtherMethods)}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {isBiometricLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Fingerprint className="h-5 w-5" />
-                      <span>Biometric</span>
+                  <span>Other Methods</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showOtherMethods ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showOtherMethods && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Magic Link Button - Email with Wallet */}
+                    <MagicLoginButton
+                      disabled={anyLoading}
+                      className="w-full h-12 text-sm font-medium border-2 border-border bg-background hover:bg-muted text-foreground rounded-xl transition-all duration-200"
+                      onStart={() => setAuthType('magic')}
+                      onSuccess={(isNewUser) => {
+                        if (isNewUser) {
+                          setShowOnboarding(true);
+                        } else {
+                          navigate(from, { replace: true });
+                        }
+                      }}
+                      onError={() => setAuthType(null)}
+                    />
+
+                    {/* Biometric Login */}
+                    <div className="flex flex-col items-center gap-1">
+                      <Button
+                        onClick={handleBiometricConnect}
+                        variant="outline"
+                        className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                        disabled={anyLoading}
+                      >
+                        {isBiometricLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Fingerprint className="h-5 w-5" />
+                            <span>Biometric</span>
+                          </div>
+                        )}
+                      </Button>
+                      <span className="text-[10px] text-muted-foreground/60">Works on Safari & Chrome</span>
                     </div>
-                  )}
-                </Button>
-                <span className="text-[10px] text-muted-foreground/60">Works on Safari & Chrome</span>
+                  </div>
+                )}
               </div>
 
             </div>
