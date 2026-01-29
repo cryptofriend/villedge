@@ -31,7 +31,6 @@ import { Comment } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ShowTimeButton } from "@/components/ShowTimeButton";
 
 // Default center (first village or fallback)
 const DEFAULT_CENTER: [number, number] = [108.1885, 10.9355];
@@ -897,7 +896,6 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
               ))}
               </div>
             )}
-            <ShowTimeButton villageId={activeVillage?.id} />
             <AuthButton />
           </div>
         </div>
