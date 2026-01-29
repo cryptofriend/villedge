@@ -6,11 +6,10 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Shield, Fingerprint, Globe, Sparkles, Mail, Home } from 'lucide-react';
+import { Loader2, Shield, Fingerprint, Globe, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { usePrivyConfig } from '@/components/PrivyProvider';
-import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
+import { MagicLoginButton } from '@/components/auth/MagicLoginButton';
 import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 
@@ -26,8 +25,6 @@ interface AuthDialogProps {
 export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyConfig();
   
   // Porto/Biometric wallet
   const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -39,7 +36,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { setVisible: openSolanaModal } = useWalletModal();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'privy' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'magic' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Close dialog when user authenticates
@@ -63,50 +60,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
       authenticateWithBackend(publicKey.toBase58(), 'solana');
     }
   }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
-
-  const authenticateWithPrivy = async (privyUserId: string, email?: string, walletAddress?: string): Promise<boolean> => {
-    setIsAuthenticating(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('privy-auth', {
-        body: { privyUserId, email, walletAddress },
-      });
-
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || 'Authentication failed');
-      }
-
-      if (data?.verified && data?.actionLink) {
-        const url = new URL(data.actionLink);
-        const token = url.searchParams.get('token');
-        const tokenType = url.searchParams.get('type');
-
-        if (token && tokenType) {
-          const { error: sessionError } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: tokenType as 'magiclink',
-          });
-
-          if (sessionError) throw sessionError;
-        }
-
-        // Show onboarding for new users
-        if (data?.isNewUser) {
-          setShowOnboarding(true);
-        } else {
-          toast.success('Welcome back!');
-        }
-      }
-      return true;
-    } catch (error) {
-      console.error('Privy auth error:', error);
-      toast.error(error instanceof Error ? error.message : 'Authentication failed');
-      return false;
-    } finally {
-      setIsAuthenticating(false);
-      setAuthType(null);
-    }
-  };
 
   const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum') => {
     setIsAuthenticating(true);
@@ -165,8 +118,8 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
 
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isTelegramLoading = isAuthenticating && authType === 'telegram';
-  const isPrivyLoading = isAuthenticating && authType === 'privy';
-  const anyLoading = isBiometricLoading || isTelegramLoading || isPrivyLoading || privyAppIdLoading;
+  const isMagicLoading = isAuthenticating && authType === 'magic';
+  const anyLoading = isBiometricLoading || isTelegramLoading || isMagicLoading;
 
   return (
     <>
@@ -202,38 +155,18 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
 
         {/* Login content */}
         <div className="p-6 space-y-4">
-          {/* Privy Button - Email & Wallet (Primary) */}
-          {privyAppId ? (
-            <PrivyLoginButton
-              active={authType === 'privy'}
-              disabled={anyLoading}
-              isLoading={isPrivyLoading}
-              className="w-full h-12 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl"
-              onStart={() => setAuthType('privy')}
-              onAuthenticated={async ({ privyUserId, email, walletAddress }) =>
-                authenticateWithPrivy(privyUserId, email, walletAddress)
+          {/* Magic Link Button - Email with Wallet (Primary) */}
+          <MagicLoginButton
+            disabled={anyLoading}
+            className="w-full h-12 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl"
+            onStart={() => setAuthType('magic')}
+            onSuccess={(isNewUser) => {
+              if (isNewUser) {
+                setShowOnboarding(true);
               }
-              label="Sign in Email or Wallet"
-            />
-          ) : (
-            <Button
-              onClick={() => toast.error('Email login not configured')}
-              className="w-full h-12 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl"
-              disabled={anyLoading}
-            >
-              {privyAppIdLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Loading...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
-                  <span>Sign in Email or Wallet</span>
-                </div>
-              )}
-            </Button>
-          )}
+            }}
+            onError={() => setAuthType(null)}
+          />
 
           {/* Biometric & Telegram Row */}
           <div className="grid grid-cols-2 gap-3">

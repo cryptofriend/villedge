@@ -6,10 +6,9 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug, Mail } from 'lucide-react';
+import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { usePrivyConfig } from '@/components/PrivyProvider';
-import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
+import { MagicLoginButton } from '@/components/auth/MagicLoginButton';
 import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 
@@ -32,8 +31,8 @@ console.warn = (...args) => {
   originalConsoleWarn.apply(console, args);
 };
 
-// Get bot username from env or use default
-const TELEGRAM_BOT_USERNAME = 'proofofretreatbot';
+// Telegram bot ID (numeric) - proofofretreatbot
+const TELEGRAM_BOT_ID = '7911561126';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -51,11 +50,9 @@ export default function Auth() {
   // Solana wallet
   const { publicKey, connected: solanaConnected, connecting: solanaConnecting, disconnect: disconnectSolana } = useWallet();
   const { setVisible: openSolanaModal } = useWalletModal();
-
-  const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyConfig();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'privy' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'magic' | null>(null);
   const [showDebug, setShowDebug] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -108,46 +105,6 @@ export default function Auth() {
       authenticateWithBackend(publicKey.toBase58(), 'solana');
     }
   }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
-
-  const authenticateWithPrivy = async (privyUserId: string, email?: string, walletAddress?: string) => {
-    setIsAuthenticating(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('privy-auth', {
-        body: { privyUserId, email, walletAddress },
-      });
-
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || 'Authentication failed');
-      }
-
-      if (data?.verified && data?.actionLink) {
-        const url = new URL(data.actionLink);
-        const token = url.searchParams.get('token');
-        const tokenType = url.searchParams.get('type');
-
-        if (token && tokenType) {
-          const { error: sessionError } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: tokenType as 'magiclink',
-          });
-
-          if (sessionError) throw sessionError;
-        }
-
-        toast.success('Welcome to Villedge!');
-        navigate(from, { replace: true });
-      }
-      return true;
-    } catch (error) {
-      console.error('Privy auth error:', error);
-      toast.error(error instanceof Error ? error.message : 'Authentication failed');
-      return false;
-    } finally {
-      setIsAuthenticating(false);
-      setAuthType(null);
-    }
-  };
 
   const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum' | 'ton') => {
     setIsAuthenticating(true);
@@ -221,10 +178,6 @@ export default function Auth() {
     }
   };
 
-  // Telegram login is handled by <TelegramLoginWidget /> component
-
-  // Privy login is handled by <PrivyLoginButton /> when configured.
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -237,8 +190,8 @@ export default function Auth() {
   const isSolanaLoading = (solanaConnecting || isAuthenticating) && authType === 'solana';
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
   const isTelegramLoading = isAuthenticating && authType === 'telegram';
-  const isPrivyLoading = isAuthenticating && authType === 'privy';
-  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTelegramLoading || isPrivyLoading || privyAppIdLoading;
+  const isMagicLoading = isAuthenticating && authType === 'magic';
+  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTelegramLoading || isMagicLoading;
 
   const features = [
     {
@@ -339,38 +292,20 @@ export default function Auth() {
 
             {/* Login Buttons */}
             <div className="space-y-3">
-              {/* Privy Button - Email & Wallet (Primary) */}
-              {privyAppId ? (
-                <PrivyLoginButton
-                  active={authType === 'privy'}
-                  disabled={anyLoading}
-                  isLoading={isPrivyLoading}
-                  className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-                  onStart={() => setAuthType('privy')}
-                  onAuthenticated={async ({ privyUserId, email, walletAddress }) =>
-                    authenticateWithPrivy(privyUserId, email, walletAddress)
+              {/* Magic Link Button - Email with Wallet (Primary) */}
+              <MagicLoginButton
+                disabled={anyLoading}
+                className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+                onStart={() => setAuthType('magic')}
+                onSuccess={(isNewUser) => {
+                  if (isNewUser) {
+                    setShowOnboarding(true);
+                  } else {
+                    navigate(from, { replace: true });
                   }
-                  label="Sign in Email or Wallet"
-                />
-              ) : (
-                <Button
-                  onClick={() => toast.error('Email login not configured')}
-                  className="w-full h-14 text-base font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
-                  disabled={anyLoading}
-                >
-                  {privyAppIdLoading ? (
-                    <div className="flex items-center gap-3">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Loading...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5" />
-                      <span>Sign in Email or Wallet</span>
-                    </div>
-                  )}
-                </Button>
-              )}
+                }}
+                onError={() => setAuthType(null)}
+              />
 
               {/* Biometric & Telegram Row */}
               <div className="grid grid-cols-2 gap-3">
@@ -397,7 +332,7 @@ export default function Auth() {
                 {/* Telegram Button */}
                 <div className="flex flex-col items-center gap-1">
                   <TelegramLoginWidget
-                    botName={TELEGRAM_BOT_USERNAME}
+                    botName={TELEGRAM_BOT_ID}
                     disabled={anyLoading}
                     isLoading={isTelegramLoading}
                     onStart={() => setAuthType('telegram')}
@@ -442,47 +377,42 @@ export default function Auth() {
                   </span>
                 </div>
               </div>
-
-              {/* Debug Section */}
-              <div className="mt-6 pt-4 border-t border-border">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDebug(!showDebug)}
-                  className="w-full text-xs text-muted-foreground"
-                >
-                  <Bug className="h-3 w-3 mr-1" />
-                  {showDebug ? 'Hide Debug' : 'Show Debug Tools'}
-                </Button>
-                
-                {showDebug && (
-                  <div className="mt-3 space-y-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copyLogsToClipboard}
-                      className="w-full text-xs"
-                    >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copy Console Logs
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copyWalletState}
-                      className="w-full text-xs"
-                    >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copy Wallet State
-                    </Button>
-                    <p className="text-[10px] text-muted-foreground text-center mt-2">
-                      isIframe: {String(window.self !== window.top)}
-                    </p>
-                  </div>
-                )}
-              </div>
             </div>
 
+            {/* Debug Tools (hidden by default) */}
+            <div className="mt-8 pt-4 border-t border-border/50">
+              <button
+                type="button"
+                className="text-xs text-muted-foreground/50 hover:text-muted-foreground flex items-center gap-1 mx-auto"
+                onClick={() => setShowDebug(!showDebug)}
+              >
+                <Bug className="h-3 w-3" />
+                {showDebug ? 'Hide Debug Tools' : 'Show Debug Tools'}
+              </button>
+              
+              {showDebug && (
+                <div className="mt-4 space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyLogsToClipboard}
+                    className="w-full text-xs gap-2"
+                  >
+                    <Copy className="h-3 w-3" />
+                    Copy Console Logs
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyWalletState}
+                    className="w-full text-xs gap-2"
+                  >
+                    <Copy className="h-3 w-3" />
+                    Copy Wallet State
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
