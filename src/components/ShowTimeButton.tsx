@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const ShowTimeButton = () => {
+interface ShowTimeButtonProps {
+  villageId?: string;
+}
+
+export const ShowTimeButton = ({ villageId }: ShowTimeButtonProps) => {
   const [isEnabled, setIsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +31,8 @@ export const ShowTimeButton = () => {
     fetchSetting();
   }, []);
 
-  if (loading || !isEnabled) return null;
+  // Only show for proof-of-retreat village when enabled
+  if (loading || !isEnabled || villageId !== "proof-of-retreat") return null;
 
   return (
     <Button
