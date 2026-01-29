@@ -390,69 +390,8 @@ export default function Auth() {
                 </div>
               </div>
 
-              {/* Divider */}
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border"></div>
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-background px-2 text-muted-foreground">secure & decentralized</span>
-                </div>
-              </div>
-
-              {/* Info text */}
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/70">
-                  <span className="flex items-center gap-1">
-                    <Shield className="h-3 w-3" />
-                    Self-Custody
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Fingerprint className="h-3 w-3" />
-                    Passwordless
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Globe className="h-3 w-3" />
-                    Cross-Platform
-                  </span>
-                </div>
-              </div>
             </div>
 
-            {/* Debug Tools (hidden by default) */}
-            <div className="mt-8 pt-4 border-t border-border/50">
-              <button
-                type="button"
-                className="text-xs text-muted-foreground/50 hover:text-muted-foreground flex items-center gap-1 mx-auto"
-                onClick={() => setShowDebug(!showDebug)}
-              >
-                <Bug className="h-3 w-3" />
-                {showDebug ? 'Hide Debug Tools' : 'Show Debug Tools'}
-              </button>
-              
-              {showDebug && (
-                <div className="mt-4 space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyLogsToClipboard}
-                    className="w-full text-xs gap-2"
-                  >
-                    <Copy className="h-3 w-3" />
-                    Copy Console Logs
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyWalletState}
-                    className="w-full text-xs gap-2"
-                  >
-                    <Copy className="h-3 w-3" />
-                    Copy Wallet State
-                  </Button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
