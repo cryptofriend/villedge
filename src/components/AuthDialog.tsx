@@ -14,8 +14,8 @@ import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 
-// Get bot username from env or use default
-const TELEGRAM_BOT_USERNAME = 'proofofretreatbot';
+// Telegram bot ID (numeric) - proofofretreatbot
+const TELEGRAM_BOT_ID = '7911561126';
 
 interface AuthDialogProps {
   open: boolean;
@@ -259,8 +259,8 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
 
             {/* Telegram Button */}
             <div className="flex flex-col items-center gap-1">
-              <TelegramLoginWidget
-                botName={TELEGRAM_BOT_USERNAME}
+            <TelegramLoginWidget
+                botName={TELEGRAM_BOT_ID}
                 disabled={anyLoading}
                 isLoading={isTelegramLoading}
                 onStart={() => setAuthType('telegram')}

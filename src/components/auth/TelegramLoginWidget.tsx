@@ -119,8 +119,11 @@ export function TelegramLoginWidget({
     const top = window.screenY + (window.outerHeight - height) / 2;
     
     const origin = window.location.origin;
+    // Extract bot_id (numeric) from botName - if it's already numeric use it, otherwise we need the actual bot ID
+    // The Telegram OAuth widget requires the numeric bot_id, not the username
+    const botId = botName.replace('@', '');
     const popup = window.open(
-      `https://oauth.telegram.org/auth?bot_id=${botName.replace('@', '')}&origin=${encodeURIComponent(origin)}&embed=0&request_access=write&return_to=${encodeURIComponent(origin)}`,
+      `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${encodeURIComponent(origin)}&embed=0&request_access=write&return_to=${encodeURIComponent(origin)}`,
       'telegram-login',
       `width=${width},height=${height},left=${left},top=${top},status=yes,scrollbars=no`
     );
