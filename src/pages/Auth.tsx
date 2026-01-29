@@ -6,34 +6,11 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug } from 'lucide-react';
+import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { MagicLoginButton } from '@/components/auth/MagicLoginButton';
-import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { lovable } from '@/integrations/lovable';
-
-// Debug log collector
-const debugLogs: string[] = [];
-const originalConsoleLog = console.log;
-const originalConsoleError = console.error;
-const originalConsoleWarn = console.warn;
-
-console.log = (...args) => {
-  debugLogs.push(`[LOG] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}`);
-  originalConsoleLog.apply(console, args);
-};
-console.error = (...args) => {
-  debugLogs.push(`[ERROR] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}`);
-  originalConsoleError.apply(console, args);
-};
-console.warn = (...args) => {
-  debugLogs.push(`[WARN] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}`);
-  originalConsoleWarn.apply(console, args);
-};
-
-// Telegram bot ID will be fetched from public-config
-const TELEGRAM_BOT_ID_FALLBACK = '7911561126';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -53,18 +30,8 @@ export default function Auth() {
   const { setVisible: openSolanaModal } = useWalletModal();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'magic' | 'google' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'magic' | 'google' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [telegramBotId, setTelegramBotId] = useState<string>(TELEGRAM_BOT_ID_FALLBACK);
-
-  // Fetch telegram bot ID from public-config
-  useEffect(() => {
-    supabase.functions.invoke('public-config').then(({ data }) => {
-      if (data?.telegramBotId) {
-        setTelegramBotId(data.telegramBotId);
-      }
-    }).catch(console.error);
-  }, []);
 
   const handleGoogleLogin = async () => {
     setAuthType('google');
@@ -89,28 +56,6 @@ export default function Auth() {
     console.log('[Auth] isConnected:', isConnected, 'address:', address);
     console.log('[Auth] solanaConnected:', solanaConnected, 'publicKey:', publicKey?.toBase58());
   }, [connectors, isConnected, address, solanaConnected, publicKey]);
-
-  const copyLogsToClipboard = async () => {
-    const logsText = debugLogs.slice(-50).join('\n');
-    await navigator.clipboard.writeText(logsText);
-    toast.success('Logs copied to clipboard!');
-  };
-
-  const copyWalletState = async () => {
-    const state = {
-      connectors: connectors.map(c => ({ id: c.id, name: c.name })),
-      isConnected,
-      address,
-      solanaConnected,
-      solanaPublicKey: publicKey?.toBase58(),
-      authType,
-      isAuthenticating,
-      userAgent: navigator.userAgent,
-      isIframe: window.self !== window.top,
-    };
-    await navigator.clipboard.writeText(JSON.stringify(state, null, 2));
-    toast.success('Wallet state copied to clipboard!');
-  };
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -216,10 +161,9 @@ export default function Auth() {
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isSolanaLoading = (solanaConnecting || isAuthenticating) && authType === 'solana';
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
-  const isTelegramLoading = isAuthenticating && authType === 'telegram';
   const isMagicLoading = isAuthenticating && authType === 'magic';
   const isGoogleLoading = authType === 'google';
-  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTelegramLoading || isMagicLoading || isGoogleLoading;
+  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isMagicLoading || isGoogleLoading;
 
   const features = [
     {
@@ -356,47 +300,24 @@ export default function Auth() {
                 onError={() => setAuthType(null)}
               />
 
-              {/* Biometric & Telegram Row */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Biometric Button */}
-                <div className="flex flex-col items-center gap-1">
-                  <Button
-                    onClick={handleBiometricConnect}
-                    variant="outline"
-                    className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
-                    disabled={anyLoading}
-                  >
-                    {isBiometricLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Fingerprint className="h-5 w-5" />
-                        <span>Biometric</span>
-                      </div>
-                    )}
-                  </Button>
-                  <span className="text-[10px] text-muted-foreground/60">Works on Safari & Chrome</span>
-                </div>
-
-                {/* Telegram Button */}
-                <div className="flex flex-col items-center gap-1">
-                <TelegramLoginWidget
-                    botName={telegramBotId}
-                    disabled={anyLoading}
-                    isLoading={isTelegramLoading}
-                    onStart={() => setAuthType('telegram')}
-                    onSuccess={(isNewUser) => {
-                      if (isNewUser) {
-                        setShowOnboarding(true);
-                      } else {
-                        navigate(from, { replace: true });
-                      }
-                    }}
-                    onError={() => setAuthType(null)}
-                    className="w-full"
-                  />
-                  <span className="text-[10px] text-muted-foreground/60">Works perfect with TG app</span>
-                </div>
+              {/* Biometric Login */}
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handleBiometricConnect}
+                  variant="outline"
+                  className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                  disabled={anyLoading}
+                >
+                  {isBiometricLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Fingerprint className="h-5 w-5" />
+                      <span>Biometric</span>
+                    </div>
+                  )}
+                </Button>
+                <span className="text-[10px] text-muted-foreground/60">Works on Safari & Chrome</span>
               </div>
 
             </div>
