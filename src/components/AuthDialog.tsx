@@ -221,7 +221,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
               <span className="font-display text-xl font-semibold text-foreground">Villedge</span>
             </div>
             <DialogTitle className="text-center text-2xl font-display font-bold bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">
-              Join the Network
+              Join
             </DialogTitle>
           </DialogHeader>
         </div>
