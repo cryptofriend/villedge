@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { 
   ArrowLeft, Bot, Bell, Save, Loader2, Settings, 
   MapPin, Globe, Activity, CheckCircle2, 
-  Clock, Wallet, MessageSquare, Send, Calendar, Users, BarChart3
+  Clock, Wallet, MessageSquare, Send, Calendar, Users, BarChart3, Sparkles
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
@@ -58,8 +59,10 @@ export default function Admin() {
   
   // Settings state
   const [chatId, setChatId] = useState("");
+  const [showTimeEnabled, setShowTimeEnabled] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingShowTime, setSavingShowTime] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   
   // Stats state
@@ -96,6 +99,17 @@ export default function Admin() {
         
         if (settingsData) {
           setChatId(settingsData.value || "");
+        }
+
+        // Fetch showtime setting
+        const { data: showTimeData } = await supabase
+          .from("settings")
+          .select("*")
+          .eq("key", "showtime_enabled")
+          .maybeSingle();
+        
+        if (showTimeData) {
+          setShowTimeEnabled(showTimeData.value === "true");
         }
 
         // Fetch villages with wallets
@@ -193,6 +207,37 @@ export default function Admin() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleShowTime = async (enabled: boolean) => {
+    setSavingShowTime(true);
+    try {
+      const { error } = await supabase
+        .from("settings")
+        .update({ 
+          value: enabled ? "true" : "false",
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id 
+        })
+        .eq("key", "showtime_enabled");
+      
+      if (error) throw error;
+      
+      setShowTimeEnabled(enabled);
+      toast({
+        title: enabled ? "Show Time Enabled" : "Show Time Disabled",
+        description: `Show Time button is now ${enabled ? 'visible' : 'hidden'} on the map`
+      });
+    } catch (err: any) {
+      console.error("Error toggling showtime:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update setting",
+        variant: "destructive"
+      });
+    } finally {
+      setSavingShowTime(false);
     }
   };
 
@@ -525,6 +570,24 @@ export default function Admin() {
                       )}
                     </Button>
                   </div>
+                </div>
+
+                <Separator />
+
+                {/* Show Time Toggle */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Sparkles className="h-3 w-3 text-[#E8D878]" />
+                      Show Time Button
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Display button in map header</p>
+                  </div>
+                  <Switch
+                    checked={showTimeEnabled}
+                    onCheckedChange={handleToggleShowTime}
+                    disabled={savingShowTime || loadingSettings}
+                  />
                 </div>
 
                 <Separator />
