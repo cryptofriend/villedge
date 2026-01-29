@@ -202,13 +202,14 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
         {/* Header with branding */}
         <div className="bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 p-6 pb-4">
           <DialogHeader className="space-y-3">
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => navigate('/')}
-                className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors text-primary"
                 title="Back to Home"
               >
-                <Home className="h-5 w-5 text-primary" />
+                <Home className="h-4 w-4" />
+                <span className="text-sm font-medium">Back Home</span>
               </button>
               <span className="font-display text-xl font-semibold text-foreground">Villedge</span>
             </div>
