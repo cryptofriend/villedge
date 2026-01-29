@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "./useAuth";
 
 export interface Stay {
   id: string;
@@ -21,6 +22,7 @@ export interface Stay {
   status: "planning" | "confirmed" | null;
   user_id: string | null;
   is_anon?: boolean; // From joined profile
+  is_visible?: boolean; // Backend-enforced visibility flag
 }
 
 export interface StayInput {
@@ -54,6 +56,7 @@ export const hashSecret = async (secret: string): Promise<string> => {
 export const useStays = (villageId?: string) => {
   const [stays, setStays] = useState<Stay[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const fetchStays = useCallback(async () => {
     if (!villageId) {
@@ -63,46 +66,23 @@ export const useStays = (villageId?: string) => {
     }
 
     try {
-      // Fetch stays first
+      // Use the privacy-enforcing RPC function
       const { data: staysData, error: staysError } = await supabase
-        .from("stays")
-        .select("*")
-        .eq("village_id", villageId)
-        .order("start_date", { ascending: true });
+        .rpc("get_stays_with_privacy", {
+          _village_id: villageId,
+          _viewer_id: user?.id || null,
+        });
 
       if (staysError) throw staysError;
       
-      // Get unique user_ids that are not null
-      const userIds = [...new Set((staysData || []).map(s => s.user_id).filter(Boolean))] as string[];
-      
-      // Fetch profiles for those users to get is_anon status
-      let profilesMap: Record<string, boolean> = {};
-      if (userIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("user_id, is_anon")
-          .in("user_id", userIds);
-        
-        profilesMap = (profilesData || []).reduce((acc, p) => {
-          acc[p.user_id] = p.is_anon ?? true; // Default to anon if not set
-          return acc;
-        }, {} as Record<string, boolean>);
-      }
-      
-      // Map stays with is_anon status (default true for stays without user_id)
-      const staysWithAnon = (staysData || []).map((stay) => ({
-        ...stay,
-        is_anon: stay.user_id ? (profilesMap[stay.user_id] ?? true) : true,
-      }));
-      
-      setStays(staysWithAnon as Stay[]);
+      setStays((staysData || []) as Stay[]);
     } catch (err) {
       console.error("Error fetching stays:", err);
       toast.error("Failed to load stays");
     } finally {
       setLoading(false);
     }
-  }, [villageId]);
+  }, [villageId, user?.id]);
 
   useEffect(() => {
     fetchStays();
