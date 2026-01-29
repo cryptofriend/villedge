@@ -16,7 +16,7 @@ import { AuthButton } from "./AuthButton";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { VillageSocialIcons } from "./VillageSocialIcons";
 import { EditVillageDialog } from "./villages/EditVillageDialog";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar, Coins } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar, Coins, Lock } from "lucide-react";
 import { TreasuryList } from "./treasury/TreasuryList";
 import { ExpandablePanel } from "./ExpandablePanel";
 import { toast } from "sonner";
@@ -25,10 +25,12 @@ import { useVillages, Village } from "@/hooks/useVillages";
 import { useSceniusProjects } from "@/hooks/useSceniusProjects";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Comment } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Default center (first village or fallback)
 const DEFAULT_CENTER: [number, number] = [108.1885, 10.9355];
@@ -56,6 +58,8 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const [activeVillage, setActiveVillage] = useState<Village | null>(null);
   const { spots, loading: spotsLoading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots(activeVillage?.id);
   const { isHost, canCreate } = usePermissions();
+  const { profile, isAuthenticated } = useAuth();
+  const isVerified = profile?.is_verified ?? false;
   
   // State
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
@@ -854,61 +858,42 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                 <MapPin className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Map</span>
               </button>
-              <button
-                onClick={() => handleViewChange("residents")}
-                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                  activeView === "residents"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <CalendarDays className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Residents</span>
-              </button>
-              <button
-                onClick={() => handleViewChange("scenius")}
-                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                  activeView === "scenius"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Scenius</span>
-              </button>
-              <button
-                onClick={() => handleViewChange("bulletin")}
-                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                  activeView === "bulletin"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Bulletin</span>
-              </button>
-              <button
-                onClick={() => handleViewChange("treasury")}
-                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                  activeView === "treasury"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Coins className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Treasury</span>
-              </button>
-              <button
-                onClick={() => handleViewChange("events")}
-                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                  activeView === "events"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Calendar className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Events</span>
-              </button>
+              
+              {/* Restricted tabs for verified users only */}
+              {[
+                { id: "residents" as CategoryType, icon: CalendarDays, label: "Residents" },
+                { id: "scenius" as CategoryType, icon: Sparkles, label: "Scenius" },
+                { id: "bulletin" as CategoryType, icon: MessageSquare, label: "Bulletin" },
+                { id: "treasury" as CategoryType, icon: Coins, label: "Treasury" },
+                { id: "events" as CategoryType, icon: Calendar, label: "Events" },
+              ].map(({ id, icon: Icon, label }) => (
+                <Tooltip key={id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => isVerified ? handleViewChange(id) : toast.error("Get verified to unlock this feature")}
+                      className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                        !isVerified
+                          ? "text-muted-foreground/50 cursor-not-allowed"
+                          : activeView === id
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {!isVerified ? (
+                        <Lock className="h-3.5 w-3.5" />
+                      ) : (
+                        <Icon className="h-3.5 w-3.5" />
+                      )}
+                      <span className="hidden sm:inline">{label}</span>
+                    </button>
+                  </TooltipTrigger>
+                  {!isVerified && (
+                    <TooltipContent>
+                      <p>Get verified to unlock</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              ))}
               </div>
             )}
             <AuthButton />
@@ -1126,6 +1111,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         <MobileBottomNav
           activeView={activeView}
           onViewChange={handleViewChange}
+          isVerified={isVerified}
         />
       )}
     </div>
