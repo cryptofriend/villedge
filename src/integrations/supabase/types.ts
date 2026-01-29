@@ -998,6 +998,30 @@ export type Database = {
       cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }
       generate_invitation_code: { Args: never; Returns: string }
       generate_username: { Args: { display_name: string }; Returns: string }
+      get_stays_with_privacy: {
+        Args: { _viewer_id?: string; _village_id: string }
+        Returns: {
+          asks: string
+          created_at: string
+          end_date: string
+          id: string
+          intention: string
+          is_anon: boolean
+          is_host: boolean
+          is_visible: boolean
+          nickname: string
+          offerings: string
+          project_description: string
+          project_url: string
+          secret_hash: string
+          social_profile: string
+          start_date: string
+          status: string
+          user_id: string
+          villa: string
+          village_id: string
+        }[]
+      }
       has_approved_reveal: {
         Args: { _requester: string; _target: string }
         Returns: boolean
