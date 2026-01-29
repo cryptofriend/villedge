@@ -12,7 +12,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserCurrentVillage } from "@/hooks/useUserCurrentVillage";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ShowTimeButton } from "@/components/ShowTimeButton";
 
 const ADMIN_USER_IDS = [
   "9807c494-ba07-4438-9a89-07ac13334e78", // dev
@@ -282,13 +281,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             </p>
           </div>
           
-          {/* User count badge + ShowTime + Auth button */}
+          {/* User count badge + Auth button */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm">
               <Users className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-foreground">{userCount}</span>
             </div>
-            <ShowTimeButton />
             <AuthButton />
           </div>
         </div>
