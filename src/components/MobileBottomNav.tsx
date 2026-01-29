@@ -38,7 +38,9 @@ export const MobileBottomNav = ({ activeView, onViewChange, isVerified = false }
 
   const handleNavClick = (item: typeof navItems[0]) => {
     if (item.requiresVerification && !isVerified) {
-      toast.error("Get verified to unlock this feature");
+      toast.error("Get an invitation code from a verified member to unlock full access", {
+        action: { label: "DM @boogaav", onClick: () => window.open("https://x.com/boogaav", "_blank") }
+      });
       return;
     }
     onViewChange(item.id);
