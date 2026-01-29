@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, Profile as ProfileType } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ import { ProfileReferralSection } from "@/components/profile/ProfileReferralSect
 import { ProfileVerificationSection } from "@/components/profile/ProfileVerificationSection";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useConnectionRequests } from "@/hooks/useConnectionRequests";
 
 export interface ProfileData extends ProfileType {
@@ -33,7 +34,7 @@ export interface UserActivity {
 const Profile = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
@@ -238,10 +239,21 @@ const Profile = () => {
   // All profiles are anonymous by default - blur unless owner or connected
   const shouldBlur = !isOwnProfile && !isConnected;
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Signed out successfully");
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Back Button */}
-      <div className="fixed top-4 left-4 z-50">
+      {/* Navigation Bar */}
+      <div className="fixed top-4 left-4 right-4 z-50 flex justify-between items-center">
         <Button
           variant="outline"
           size="sm"
@@ -258,6 +270,19 @@ const Profile = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
+
+        {/* Sign Out Button - only show on own profile */}
+        {isOwnProfile && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSignOut}
+            className="bg-background/80 backdrop-blur-sm text-muted-foreground hover:text-destructive hover:border-destructive"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        )}
       </div>
 
 
