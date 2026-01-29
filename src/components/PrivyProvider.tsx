@@ -34,7 +34,7 @@ export const PrivyProvider = ({ children }: PrivyProviderProps) => {
       <PrivyProviderBase
         appId={appId}
         config={{
-          loginMethods: ['email', 'wallet', 'google', 'apple'],
+          loginMethods: ['email', 'wallet'],
           appearance: {
             theme: 'light',
             accentColor: '#676FFF',
