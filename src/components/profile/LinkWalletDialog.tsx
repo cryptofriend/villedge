@@ -11,7 +11,6 @@ import { Fingerprint, Wallet, Loader2 } from "lucide-react";
 import { useUserWallets, WalletType } from "@/hooks/useUserWallets";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useTonConnectUI, useTonAddress } from "@tonconnect/ui-react";
 import { porto } from "@/lib/wagmi";
 import { toast } from "sonner";
 
@@ -31,10 +30,6 @@ export const LinkWalletDialog = ({ open, onOpenChange }: LinkWalletDialogProps) 
 
   // Solana
   const { publicKey: solanaPublicKey, connect: connectSolana, disconnect: disconnectSolana, wallets: solanaWallets, select: selectSolanaWallet } = useWallet();
-
-  // TON
-  const [tonConnectUI] = useTonConnectUI();
-  const tonAddress = useTonAddress();
 
   const handleLinkPorto = async () => {
     setLinking("porto");
@@ -124,34 +119,6 @@ export const LinkWalletDialog = ({ open, onOpenChange }: LinkWalletDialogProps) 
     }
   };
 
-  const handleLinkTon = async () => {
-    setLinking("ton");
-    try {
-      // Disconnect first if connected
-      if (tonAddress) {
-        await tonConnectUI.disconnect();
-      }
-
-      // Open TON Connect modal
-      await tonConnectUI.openModal();
-
-      // The actual linking will happen when the user connects
-      // We'll use a subscription to detect when the connection is made
-      const unsubscribe = tonConnectUI.onStatusChange(async (wallet) => {
-        if (wallet?.account?.address) {
-          await linkWallet(wallet.account.address, "ton", false);
-          onOpenChange(false);
-          unsubscribe();
-        }
-        setLinking(null);
-      });
-    } catch (error) {
-      console.error("TON link error:", error);
-      toast.error("Failed to link TON wallet");
-      setLinking(null);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -211,23 +178,6 @@ export const LinkWalletDialog = ({ open, onOpenChange }: LinkWalletDialogProps) 
             <div className="text-left">
               <div className="font-medium">Solana</div>
               <div className="text-xs text-muted-foreground">Phantom, Solflare, etc.</div>
-            </div>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-3 h-14"
-            onClick={handleLinkTon}
-            disabled={linking !== null}
-          >
-            {linking === "ton" ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Wallet className="h-5 w-5 text-cyan-500" />
-            )}
-            <div className="text-left">
-              <div className="font-medium">TON</div>
-              <div className="text-xs text-muted-foreground">Tonkeeper, OpenMask, etc.</div>
             </div>
           </Button>
         </div>

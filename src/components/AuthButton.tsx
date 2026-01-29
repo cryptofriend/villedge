@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAccount, useDisconnect, useBalance } from 'wagmi';
-import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -16,26 +15,18 @@ export function AuthButton() {
   const { disconnect: disconnectEvm } = useDisconnect();
   const { data: balanceData } = useBalance({ address: evmAddress });
   
-  // TON wallet
-  const [tonConnectUI] = useTonConnectUI();
-  const tonWallet = useTonWallet();
-  
   const [profileOpen, setProfileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   // Determine which wallet is connected
-  const tonAddress = tonWallet?.account?.address;
-  const activeAddress = evmAddress || tonAddress;
+  const activeAddress = evmAddress;
 
   const handleSignOut = async () => {
     setSigningOut(true);
     try {
-      // Disconnect all wallet types
+      // Disconnect EVM wallet if connected
       if (evmAddress) {
         disconnectEvm();
-      }
-      if (tonWallet) {
-        await tonConnectUI.disconnect();
       }
       await signOut();
       toast.success('Signed out successfully');
