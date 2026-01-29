@@ -195,24 +195,32 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
       <OnboardingDialog open={showOnboarding} onOpenChange={setShowOnboarding} />
       <Dialog open={open && !showOnboarding} onOpenChange={() => {}} modal={true}>
       <DialogContent 
-        className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50 [&>button]:hidden"
+        className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50 [&>button]:hidden shadow-elevated"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        {/* Header with branding */}
-        <div className="bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 p-6 pb-4">
-          <DialogHeader className="space-y-3">
+        {/* Animated Header with branding */}
+        <div className="relative p-6 pb-4 overflow-hidden">
+          {/* Animated gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-sage-light/20 to-accent/10 animate-gradient-shift" />
+          
+          {/* Floating decorative orbs */}
+          <div className="absolute top-4 left-8 w-20 h-20 bg-primary/10 rounded-full blur-2xl animate-float" />
+          <div className="absolute bottom-2 right-6 w-16 h-16 bg-accent/15 rounded-full blur-xl animate-float" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/4 w-12 h-12 bg-sage-light/20 rounded-full blur-lg animate-pulse-gentle" />
+          
+          <DialogHeader className="relative z-10 space-y-3">
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => navigate('/')}
-                className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+                className="w-10 h-10 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 flex items-center justify-center hover:bg-background/80 hover:border-primary/30 transition-all duration-300 shadow-soft"
                 title="Back to Home"
               >
                 <Home className="h-5 w-5 text-primary" />
               </button>
               <span className="font-display text-xl font-semibold text-foreground">Villedge</span>
             </div>
-            <DialogTitle className="text-center text-2xl font-display font-bold">
+            <DialogTitle className="text-center text-2xl font-display font-bold bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">
               Join the Network
             </DialogTitle>
           </DialogHeader>
