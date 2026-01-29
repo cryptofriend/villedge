@@ -4,9 +4,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, ChevronDown } from 'lucide-react';
+import { Loader2, ArrowLeft, Shield, Fingerprint, Sparkles, ChevronDown, Diamond } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { MagicLoginButton } from '@/components/auth/MagicLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
@@ -29,8 +30,12 @@ export default function Auth() {
   const { publicKey, connected: solanaConnected, connecting: solanaConnecting, disconnect: disconnectSolana } = useWallet();
   const { setVisible: openSolanaModal } = useWalletModal();
   
+  // TON wallet
+  const [tonConnectUI] = useTonConnectUI();
+  const tonWallet = useTonWallet();
+  
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'magic' | 'google' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'magic' | 'google' | 'ton' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOtherMethods, setShowOtherMethods] = useState(false);
 
@@ -79,6 +84,14 @@ export default function Auth() {
     }
   }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
 
+  // When TON wallet connects, authenticate with backend
+  useEffect(() => {
+    if (tonWallet && !user && !isAuthenticating && authType === 'ton') {
+      const tonAddress = tonWallet.account.address;
+      authenticateWithBackend(tonAddress, 'ton');
+    }
+  }, [tonWallet, user, isAuthenticating, authType]);
+
   const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum' | 'ton') => {
     setIsAuthenticating(true);
     
@@ -113,6 +126,8 @@ export default function Auth() {
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
       if (type === 'solana') {
         disconnectSolana();
+      } else if (type === 'ton') {
+        tonConnectUI.disconnect();
       } else {
         disconnect();
       }
@@ -151,6 +166,11 @@ export default function Auth() {
     }
   };
 
+  const handleTonConnect = () => {
+    setAuthType('ton');
+    tonConnectUI.openModal();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -164,7 +184,8 @@ export default function Auth() {
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
   const isMagicLoading = isAuthenticating && authType === 'magic';
   const isGoogleLoading = authType === 'google';
-  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isMagicLoading || isGoogleLoading;
+  const isTonLoading = isAuthenticating && authType === 'ton';
+  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isMagicLoading || isGoogleLoading || isTonLoading;
 
   const features = [
     {
@@ -178,7 +199,7 @@ export default function Auth() {
       description: "Your keys, your identity. Fully decentralized."
     },
     {
-      icon: Globe,
+      icon: Diamond,
       title: "Cross-Platform",
       description: "Works seamlessly across all your devices."
     },
@@ -314,24 +335,47 @@ export default function Auth() {
                       onError={() => setAuthType(null)}
                     />
 
-                    {/* Biometric Login */}
-                    <div className="flex flex-col items-center gap-1">
-                      <Button
-                        onClick={handleBiometricConnect}
-                        variant="outline"
-                        className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
-                        disabled={anyLoading}
-                      >
-                        {isBiometricLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Fingerprint className="h-5 w-5" />
-                            <span>Biometric</span>
-                          </div>
-                        )}
-                      </Button>
-                      <span className="text-[10px] text-muted-foreground/60">Works with Safari and Chrome</span>
+                    {/* Biometric & TON Login Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Biometric Login */}
+                      <div className="flex flex-col items-center gap-1">
+                        <Button
+                          onClick={handleBiometricConnect}
+                          variant="outline"
+                          className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                          disabled={anyLoading}
+                        >
+                          {isBiometricLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Fingerprint className="h-5 w-5" />
+                              <span>Biometric</span>
+                            </div>
+                          )}
+                        </Button>
+                        <span className="text-[10px] text-muted-foreground/60">Works with Safari and Chrome</span>
+                      </div>
+
+                      {/* TON Login */}
+                      <div className="flex flex-col items-center gap-1">
+                        <Button
+                          onClick={handleTonConnect}
+                          variant="outline"
+                          className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                          disabled={anyLoading}
+                        >
+                          {isTonLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Diamond className="h-5 w-5" />
+                              <span>TON</span>
+                            </div>
+                          )}
+                        </Button>
+                        <span className="text-[10px] text-muted-foreground/60">TON Wallet</span>
+                      </div>
                     </div>
                   </div>
                 )}
