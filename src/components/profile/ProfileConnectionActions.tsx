@@ -1,48 +1,51 @@
 import { useState } from "react";
-import { Eye, Loader2, Check, UserCheck } from "lucide-react";
+import { Link2, Loader2, Check, UserCheck, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useConnections } from "@/hooks/useConnections";
-import { useRevealRequests } from "@/hooks/useRevealRequests";
+import { useConnectionRequests } from "@/hooks/useConnectionRequests";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ProfileConnectionActionsProps {
   targetUserId: string;
-  isAnon: boolean;
   className?: string;
 }
 
 export const ProfileConnectionActions = ({
   targetUserId,
-  isAnon,
   className,
 }: ProfileConnectionActionsProps) => {
-  const { isMutualConnection, follow, loading: connectionLoading } = useConnections(targetUserId);
-  const { pendingRequest, hasApprovedAccess, requestReveal, loading: revealLoading } = useRevealRequests(targetUserId);
+  const { 
+    isConnected, 
+    pendingRequest, 
+    sendConnectionRequest, 
+    disconnect,
+    loading 
+  } = useConnectionRequests(targetUserId);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const handleRequestReveal = async () => {
+  const handleConnect = async () => {
     setActionLoading(true);
-    
-    // First follow the user (required for mutual connection)
-    const followSuccess = await follow();
-    if (!followSuccess) {
-      toast.error("Failed to send request");
-      setActionLoading(false);
-      return;
-    }
-    
-    // Then send reveal request
-    const revealSuccess = await requestReveal();
-    if (revealSuccess) {
-      toast.success("Reveal request sent");
+    const success = await sendConnectionRequest();
+    if (success) {
+      toast.success("Connection request sent");
     } else {
-      toast.error("Failed to send reveal request");
+      toast.error("Failed to send request");
     }
     setActionLoading(false);
   };
 
-  if (connectionLoading || revealLoading) {
+  const handleDisconnect = async () => {
+    setActionLoading(true);
+    const success = await disconnect();
+    if (success) {
+      toast.success("Disconnected");
+    } else {
+      toast.error("Failed to disconnect");
+    }
+    setActionLoading(false);
+  };
+
+  if (loading) {
     return (
       <div className={cn("flex items-center gap-2", className)}>
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -50,21 +53,26 @@ export const ProfileConnectionActions = ({
     );
   }
 
-  // If already has access (mutual connection or approved reveal), show connected state
-  if (isMutualConnection || hasApprovedAccess) {
+  // Already connected - show connected state with disconnect option
+  if (isConnected) {
     return (
       <div className={cn("flex items-center gap-2", className)}>
-        <Button variant="secondary" size="sm" disabled className="gap-1.5">
-          <UserCheck className="h-4 w-4" />
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          className="gap-1.5"
+          onClick={handleDisconnect}
+          disabled={actionLoading}
+        >
+          {actionLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <UserCheck className="h-4 w-4" />
+          )}
           Connected
         </Button>
       </div>
     );
-  }
-
-  // If profile is not anon, no action needed
-  if (!isAnon) {
-    return null;
   }
 
   return (
@@ -78,19 +86,18 @@ export const ProfileConnectionActions = ({
         <Button
           variant="default"
           size="sm"
-          onClick={handleRequestReveal}
+          onClick={handleConnect}
           disabled={actionLoading}
           className="gap-1.5"
         >
           {actionLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Eye className="h-4 w-4" />
+            <Link2 className="h-4 w-4" />
           )}
-          Request Reveal
+          Connect
         </Button>
       )}
     </div>
   );
 };
-

@@ -9,8 +9,7 @@ interface MutualConnection {
 
 export const useMutualConnections = (userId?: string) => {
   const [connections, setConnections] = useState<MutualConnection[]>([]);
-  const [followersCount, setFollowersCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
+  const [connectionsCount, setConnectionsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,24 +18,9 @@ export const useMutualConnections = (userId?: string) => {
       return;
     }
 
-    const fetchMutualConnections = async () => {
+    const fetchConnections = async () => {
       setLoading(true);
       try {
-        // Get follower count
-        const { count: followers } = await supabase
-          .from("user_connections")
-          .select("id", { count: "exact", head: true })
-          .eq("following_id", userId);
-
-        // Get following count
-        const { count: following } = await supabase
-          .from("user_connections")
-          .select("id", { count: "exact", head: true })
-          .eq("follower_id", userId);
-
-        setFollowersCount(followers || 0);
-        setFollowingCount(following || 0);
-
         // Get users that the profile owner follows
         const { data: followingData } = await supabase
           .from("user_connections")
@@ -45,13 +29,14 @@ export const useMutualConnections = (userId?: string) => {
 
         if (!followingData || followingData.length === 0) {
           setConnections([]);
+          setConnectionsCount(0);
           setLoading(false);
           return;
         }
 
         const followingIds = followingData.map((f) => f.following_id);
 
-        // Get users that follow the profile owner back (mutual)
+        // Get users that follow the profile owner back (mutual = connected)
         const { data: followersData } = await supabase
           .from("user_connections")
           .select("follower_id")
@@ -60,19 +45,21 @@ export const useMutualConnections = (userId?: string) => {
 
         if (!followersData || followersData.length === 0) {
           setConnections([]);
+          setConnectionsCount(0);
           setLoading(false);
           return;
         }
 
         const mutualIds = followersData.map((f) => f.follower_id);
 
-        // Fetch profiles for mutual connections
+        // Fetch profiles for connections
         const { data: profiles } = await supabase
           .from("profiles")
           .select("user_id, username, avatar_url")
           .in("user_id", mutualIds);
 
         setConnections(profiles || []);
+        setConnectionsCount(mutualIds.length);
       } catch (error) {
         console.error("Error fetching mutual connections:", error);
         setConnections([]);
@@ -81,9 +68,9 @@ export const useMutualConnections = (userId?: string) => {
       }
     };
 
-    fetchMutualConnections();
+    fetchConnections();
   }, [userId]);
 
-  return { connections, followersCount, followingCount, loading };
+  return { connections, connectionsCount, loading };
 };
 
