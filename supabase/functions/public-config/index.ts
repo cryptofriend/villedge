@@ -6,6 +6,7 @@ const corsHeaders = {
 
 type PublicConfigResponse = {
   privyAppId: string | null;
+  magicPublishableKey: string | null;
 };
 
 Deno.serve(async (req) => {
@@ -16,9 +17,11 @@ Deno.serve(async (req) => {
 
   try {
     const privyAppId = Deno.env.get("VITE_PRIVY_APP_ID") ?? null;
+    const magicPublishableKey = Deno.env.get("VITE_MAGIC_PUBLISHABLE_KEY") ?? null;
 
     const body: PublicConfigResponse = {
       privyAppId,
+      magicPublishableKey,
     };
 
     return new Response(JSON.stringify(body), {
