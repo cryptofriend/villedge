@@ -437,33 +437,6 @@ export default function Auth() {
                 </div>
               </div>
 
-              {/* Divider */}
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border"></div>
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-background px-2 text-muted-foreground">secure & decentralized</span>
-                </div>
-              </div>
-
-              {/* Info text */}
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/70">
-                  <span className="flex items-center gap-1">
-                    <Shield className="h-3 w-3" />
-                    Self-Custody
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Fingerprint className="h-3 w-3" />
-                    Passwordless
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Globe className="h-3 w-3" />
-                    Cross-Platform
-                  </span>
-                </div>
-              </div>
 
               {/* Debug Section */}
               <div className="mt-6 pt-4 border-t border-border">
