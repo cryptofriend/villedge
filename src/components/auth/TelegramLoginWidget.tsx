@@ -119,40 +119,73 @@ export function TelegramLoginWidget({
     const top = window.screenY + (window.outerHeight - height) / 2;
     
     const origin = window.location.origin;
-    // Extract bot_id (numeric) from botName - if it's already numeric use it, otherwise we need the actual bot ID
-    // The Telegram OAuth widget requires the numeric bot_id, not the username
+    // Extract bot_id (numeric) from botName
     const botId = botName.replace('@', '');
+    
+    // Create a callback URL on our domain that will receive the auth data
+    const callbackUrl = `${origin}/auth/telegram-callback`;
+    
     const popup = window.open(
-      `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${encodeURIComponent(origin)}&embed=0&request_access=write&return_to=${encodeURIComponent(origin)}`,
+      `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${encodeURIComponent(origin)}&embed=0&request_access=write&return_to=${encodeURIComponent(callbackUrl)}`,
       'telegram-login',
       `width=${width},height=${height},left=${left},top=${top},status=yes,scrollbars=no`
     );
 
     if (popup) {
-      // Listen for auth callback via message
-      const handleMessage = (event: MessageEvent) => {
-        if (event.origin === 'https://oauth.telegram.org') {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.event === 'auth_result' && data.result) {
-              handleTelegramAuth(data.result);
-              popup.close();
-            }
-          } catch {
-            // Ignore parsing errors
+      // Poll the popup URL to detect when Telegram redirects to our callback
+      const checkPopup = setInterval(() => {
+        try {
+          // Check if popup was closed by user
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            return;
           }
+          
+          // Try to access the popup's location (will throw if cross-origin)
+          const popupUrl = popup.location.href;
+          
+          // Check if redirected to our callback URL
+          if (popupUrl && popupUrl.startsWith(callbackUrl)) {
+            clearInterval(checkPopup);
+            
+            // Extract auth data from URL hash fragment (Telegram puts it there)
+            const url = new URL(popupUrl);
+            const hashParams = new URLSearchParams(url.hash.slice(1));
+            const searchParams = url.searchParams;
+            
+            // Telegram may put data in hash or query params depending on the flow
+            const id = hashParams.get('id') || searchParams.get('id');
+            const first_name = hashParams.get('first_name') || searchParams.get('first_name');
+            const last_name = hashParams.get('last_name') || searchParams.get('last_name');
+            const username = hashParams.get('username') || searchParams.get('username');
+            const photo_url = hashParams.get('photo_url') || searchParams.get('photo_url');
+            const auth_date = hashParams.get('auth_date') || searchParams.get('auth_date');
+            const hash = hashParams.get('hash') || searchParams.get('hash');
+            
+            popup.close();
+            
+            if (id && hash && auth_date) {
+              handleTelegramAuth({
+                id: parseInt(id, 10),
+                first_name: first_name || '',
+                last_name: last_name || undefined,
+                username: username || undefined,
+                photo_url: photo_url || undefined,
+                auth_date: parseInt(auth_date, 10),
+                hash,
+              });
+            }
+          }
+        } catch {
+          // Cross-origin access denied - popup still on oauth.telegram.org
+          // This is expected, continue polling
         }
-      };
+      }, 200);
 
-      window.addEventListener('message', handleMessage);
-
-      // Check if popup is closed
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', handleMessage);
-        }
-      }, 500);
+      // Safety timeout - stop polling after 5 minutes
+      setTimeout(() => {
+        clearInterval(checkPopup);
+      }, 300000);
     }
   };
 

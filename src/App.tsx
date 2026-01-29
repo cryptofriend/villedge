@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import AdminAnalyticsPage from "./pages/AdminAnalytics";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import TelegramCallback from "./pages/TelegramCallback";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/embed" element={<Embed />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
                   <Route path="/profile/:username" element={<Profile />} />
