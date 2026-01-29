@@ -4,13 +4,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Globe, Sparkles, Copy, Bug, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePrivyConfig } from '@/components/PrivyProvider';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
+import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
+import { OnboardingDialog } from '@/components/OnboardingDialog';
 
 // Debug log collector
 const debugLogs: string[] = [];
@@ -31,6 +32,9 @@ console.warn = (...args) => {
   originalConsoleWarn.apply(console, args);
 };
 
+// Get bot username from env or use default
+const TELEGRAM_BOT_USERNAME = 'proofofretreatbot';
+
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,24 +51,20 @@ export default function Auth() {
   // Solana wallet
   const { publicKey, connected: solanaConnected, connecting: solanaConnecting, disconnect: disconnectSolana } = useWallet();
   const { setVisible: openSolanaModal } = useWalletModal();
-  
-  // TON wallet
-  const [tonConnectUI] = useTonConnectUI();
-  const tonWallet = useTonWallet();
 
   const { appId: privyAppId, loading: privyAppIdLoading } = usePrivyConfig();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'ton' | 'privy' | null>(null);
+  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'telegram' | 'privy' | null>(null);
   const [showDebug, setShowDebug] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Log wallet state for debugging
   useEffect(() => {
     console.log('[Auth] Connectors available:', connectors.map(c => ({ id: c.id, name: c.name })));
     console.log('[Auth] isConnected:', isConnected, 'address:', address);
     console.log('[Auth] solanaConnected:', solanaConnected, 'publicKey:', publicKey?.toBase58());
-    console.log('[Auth] tonWallet:', tonWallet?.account?.address);
-  }, [connectors, isConnected, address, solanaConnected, publicKey, tonWallet]);
+  }, [connectors, isConnected, address, solanaConnected, publicKey]);
 
   const copyLogsToClipboard = async () => {
     const logsText = debugLogs.slice(-50).join('\n');
@@ -79,8 +79,6 @@ export default function Auth() {
       address,
       solanaConnected,
       solanaPublicKey: publicKey?.toBase58(),
-      tonConnected: !!tonWallet,
-      tonAddress: tonWallet?.account?.address,
       authType,
       isAuthenticating,
       userAgent: navigator.userAgent,
@@ -110,15 +108,6 @@ export default function Auth() {
       authenticateWithBackend(publicKey.toBase58(), 'solana');
     }
   }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
-
-  // When TON wallet connects, authenticate with backend
-  useEffect(() => {
-    if (tonWallet && !user && !isAuthenticating && authType === 'ton') {
-      // TON address is in raw format, convert to user-friendly format
-      const tonAddress = tonWallet.account.address;
-      authenticateWithBackend(tonAddress, 'ton');
-    }
-  }, [tonWallet, user, isAuthenticating, authType]);
 
   const authenticateWithPrivy = async (privyUserId: string, email?: string, walletAddress?: string) => {
     setIsAuthenticating(true);
@@ -194,8 +183,6 @@ export default function Auth() {
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
       if (type === 'solana') {
         disconnectSolana();
-      } else if (type === 'ton') {
-        tonConnectUI.disconnect();
       } else {
         disconnect();
       }
@@ -234,16 +221,7 @@ export default function Auth() {
     }
   };
 
-  const handleTonConnect = async () => {
-    setAuthType('ton');
-    try {
-      await tonConnectUI.openModal();
-    } catch (error) {
-      console.error('TON connect error:', error);
-      toast.error('Failed to open TON wallet modal');
-      setAuthType(null);
-    }
-  };
+  // Telegram login is handled by <TelegramLoginWidget /> component
 
   // Privy login is handled by <PrivyLoginButton /> when configured.
 
@@ -258,9 +236,9 @@ export default function Auth() {
   const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isSolanaLoading = (solanaConnecting || isAuthenticating) && authType === 'solana';
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
-  const isTonLoading = isAuthenticating && authType === 'ton';
+  const isTelegramLoading = isAuthenticating && authType === 'telegram';
   const isPrivyLoading = isAuthenticating && authType === 'privy';
-  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTonLoading || isPrivyLoading || privyAppIdLoading;
+  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isTelegramLoading || isPrivyLoading || privyAppIdLoading;
 
   const features = [
     {
@@ -281,7 +259,9 @@ export default function Auth() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-background/15 backdrop-blur-sm">
+    <>
+      <OnboardingDialog open={showOnboarding} onOpenChange={setShowOnboarding} />
+      <div className="min-h-screen flex bg-background/15 backdrop-blur-sm">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 relative overflow-hidden backdrop-blur-sm">
         {/* Decorative elements */}
@@ -416,23 +396,21 @@ export default function Auth() {
 
                 {/* Telegram Button */}
                 <div className="flex flex-col items-center gap-1">
-                  <Button
-                    onClick={handleTonConnect}
-                    variant="outline"
-                    className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
+                  <TelegramLoginWidget
+                    botName={TELEGRAM_BOT_USERNAME}
                     disabled={anyLoading}
-                  >
-                    {isTonLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.64 8.8C16.49 10.38 15.84 14.22 15.51 15.99C15.37 16.74 15.09 16.99 14.83 17.02C14.25 17.07 13.81 16.64 13.25 16.27C12.37 15.69 11.87 15.33 11.02 14.77C10.03 14.12 10.67 13.76 11.24 13.18C11.39 13.03 13.95 10.7 14 10.49C14.0069 10.4582 14.006 10.4252 13.9973 10.3938C13.9886 10.3624 13.972 10.3337 13.96 10.31C13.89 10.26 13.78 10.28 13.69 10.3C13.57 10.32 12.22 11.16 9.59 12.82C9.19 13.09 8.83 13.22 8.51 13.21C8.15 13.2 7.47 13.01 6.96 12.85C6.33 12.65 5.84 12.54 5.88 12.19C5.9 12.01 6.15 11.82 6.62 11.63C9.44 10.39 11.34 9.58 12.32 9.19C15 8.07 15.55 7.89 15.92 7.88C15.99 7.88 16.16 7.9 16.27 7.99C16.36 8.06 16.39 8.16 16.4 8.24C16.39 8.3 16.41 8.47 16.4 8.59L16.64 8.8Z" fill="currentColor"/>
-                        </svg>
-                        <span>Telegram</span>
-                      </div>
-                    )}
-                  </Button>
+                    isLoading={isTelegramLoading}
+                    onStart={() => setAuthType('telegram')}
+                    onSuccess={(isNewUser) => {
+                      if (isNewUser) {
+                        setShowOnboarding(true);
+                      } else {
+                        navigate(from, { replace: true });
+                      }
+                    }}
+                    onError={() => setAuthType(null)}
+                    className="w-full"
+                  />
                   <span className="text-[10px] text-muted-foreground/60">Works perfect with TG app</span>
                 </div>
               </div>
@@ -509,5 +487,6 @@ export default function Auth() {
         </div>
       </div>
     </div>
+    </>
   );
 }

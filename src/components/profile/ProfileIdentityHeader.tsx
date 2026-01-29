@@ -8,7 +8,6 @@ import { ProfileAvatarUpload } from "./ProfileAvatarUpload";
 import { ProfileSocialLinks } from "./ProfileSocialLinks";
 import { LinkWalletDialog } from "./LinkWalletDialog";
 import { useAccount } from "wagmi";
-import { useTonWallet } from "@tonconnect/ui-react";
 import { usePersonalBalance } from "@/hooks/usePersonalBalance";
 import { PersonalTopUpDialog } from "@/components/PersonalTopUpDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,10 +24,8 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
   const navigate = useNavigate();
   const { user } = useAuth();
   const { address: evmAddress } = useAccount();
-  const tonWallet = useTonWallet();
   
-  const tonAddress = tonWallet?.account?.address;
-  const activeAddress = evmAddress || tonAddress;
+  const activeAddress = evmAddress;
   
   const { balance, isLoading: isLoadingBalance } = usePersonalBalance(activeAddress);
   
@@ -102,21 +99,11 @@ export const ProfileIdentityHeader = ({ profile, isOwnProfile, onProfileUpdate }
     if (evmAddress) {
       return `https://basescan.org/address/${evmAddress}`;
     }
-    if (tonAddress) {
-      return `https://tonscan.org/address/${tonAddress}`;
-    }
     return "#";
   };
 
   const getChainIcon = () => {
-    if (tonAddress) {
-      return (
-        <svg className="w-4 h-4" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56Z" fill="#0098EA"/>
-          <path d="M37.5603 15.6277H18.4386C14.9228 15.6277 12.6944 19.4202 14.4632 22.4861L26.2644 42.9409C27.0345 44.2765 28.9644 44.2765 29.7345 42.9409L41.5765 22.4861C43.3045 19.4202 41.0761 15.6277 37.5765 15.6277H37.5603ZM26.2491 36.8068L23.6027 31.883L17.4801 21.0252C17.0629 20.312 17.5765 19.3927 18.4386 19.3927H26.2491V36.8068ZM38.5765 21.0089L32.454 31.8667L29.8076 36.7905V19.3764H37.6181C38.4803 19.3764 38.9938 20.2957 38.5765 21.0089Z" fill="white"/>
-        </svg>
-      );
-    }
+    // No chain icon displayed for EVM addresses (minimalist approach)
     return null;
   };
 
