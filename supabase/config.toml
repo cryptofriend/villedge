@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.scrape-project-metadata]
 verify_jwt = false
+
+[functions.public-config]
+verify_jwt = false
+
+[functions.magic-auth]
+verify_jwt = false
