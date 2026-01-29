@@ -195,34 +195,29 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
       <OnboardingDialog open={showOnboarding} onOpenChange={setShowOnboarding} />
       <Dialog open={open && !showOnboarding} onOpenChange={() => {}} modal={true}>
       <DialogContent 
-        className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50 [&>button]:hidden shadow-elevated"
+        className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50 [&>button]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        {/* Animated Header with branding */}
-        <div className="relative p-6 pb-4 overflow-hidden">
-          {/* Animated gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-sage-light/20 to-accent/10 animate-gradient-shift" />
-          
-          {/* Floating decorative orbs */}
-          <div className="absolute top-4 left-8 w-20 h-20 bg-primary/10 rounded-full blur-2xl animate-float" />
-          <div className="absolute bottom-2 right-6 w-16 h-16 bg-accent/15 rounded-full blur-xl animate-float" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/4 w-12 h-12 bg-sage-light/20 rounded-full blur-lg animate-pulse-gentle" />
-          
-          <DialogHeader className="relative z-10 space-y-3">
-            <div className="flex items-center justify-center">
+        {/* Header with branding */}
+        <div className="bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 p-6 pb-4">
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => navigate('/')}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 hover:bg-background/80 hover:border-primary/30 transition-all duration-300 shadow-soft text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
                 title="Back to Home"
               >
-                <Home className="h-4 w-4" />
-                <span>Back Home</span>
+                <Home className="h-5 w-5 text-primary" />
               </button>
+              <span className="font-display text-xl font-semibold text-foreground">Villedge</span>
             </div>
-            <DialogTitle className="text-center text-2xl font-display font-bold bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text">
-              Join
+            <DialogTitle className="text-center text-2xl font-display font-bold">
+              Join the Network
             </DialogTitle>
+            <p className="text-center text-sm text-muted-foreground">
+              Sign in to explore popup villages
+            </p>
           </DialogHeader>
         </div>
 
@@ -306,6 +301,31 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-background px-2 text-muted-foreground">secure & decentralized</span>
+            </div>
+          </div>
+
+          {/* Features */}
+          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/70 pt-2">
+            <span className="flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              Self-Custody
+            </span>
+            <span className="flex items-center gap-1">
+              <Fingerprint className="h-3 w-3" />
+              Passwordless
+            </span>
+            <span className="flex items-center gap-1">
+              <Globe className="h-3 w-3" />
+              Cross-Platform
+            </span>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

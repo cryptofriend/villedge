@@ -232,21 +232,6 @@
     animation: float 4s ease-in-out infinite;
   }
 
-  /* Animated gradient shift for auth dialog */
-  @keyframes gradient-shift {
-    0%, 100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-  }
-
-  .animate-gradient-shift {
-    background-size: 200% 200%;
-    animation: gradient-shift 8s ease-in-out infinite;
-  }
-
   /* Hide scrollbar for timeline */
   .scrollbar-hide {
     -ms-overflow-style: none;
