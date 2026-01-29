@@ -331,7 +331,7 @@ export default function Auth() {
                           </div>
                         )}
                       </Button>
-                      <span className="text-[10px] text-muted-foreground/60">Works on Safari & Chrome</span>
+                      <span className="text-[10px] text-muted-foreground/60">Works with Safari and Chrome</span>
                     </div>
                   </div>
                 )}
