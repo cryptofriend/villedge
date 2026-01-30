@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePrivy, useLogin } from '@privy-io/react-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -123,8 +123,8 @@ export function PrivyLoginButton({
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          <span>Sign in with Email</span>
+          <Wallet className="h-5 w-5" />
+          <span>Sign in with Email or Crypto</span>
         </div>
       )}
     </Button>
