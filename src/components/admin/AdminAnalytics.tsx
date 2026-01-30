@@ -26,7 +26,6 @@ interface RegistrationStats {
   byMethod: {
     privy: number;
     porto: number;
-    ethereum: number;
     solana: number;
     ton: number;
   };
@@ -54,14 +53,14 @@ interface UserInfo {
   avatar_url: string | null;
   is_verified: boolean;
   created_at: string;
-  registration_type: 'privy' | 'porto' | 'ethereum' | 'solana' | 'ton';
+  registration_type: 'privy' | 'porto' | 'solana' | 'ton' | 'google';
   invite_codes_used: number;
 }
 
 export function AdminAnalytics() {
   const [registrationStats, setRegistrationStats] = useState<RegistrationStats>({
     total: 0,
-    byMethod: { privy: 0, porto: 0, ethereum: 0, solana: 0, ton: 0 }
+    byMethod: { privy: 0, porto: 0, solana: 0, ton: 0 }
   });
   const [villagesWithHosts, setVillagesWithHosts] = useState<VillageWithHosts[]>([]);
   const [users, setUsers] = useState<UserInfo[]>([]);
@@ -95,10 +94,14 @@ export function AdminAnalytics() {
         }
       });
 
-      // Count by method
-      const byMethod = { privy: 0, porto: 0, ethereum: 0, solana: 0, ton: 0 };
+      // Count by method (skip ethereum, map to privy as google users)
+      const byMethod = { privy: 0, porto: 0, solana: 0, ton: 0 };
       
       userWalletTypes.forEach((type) => {
+        if (type === 'ethereum') {
+          // Skip ethereum wallets in stats
+          return;
+        }
         if (type in byMethod) {
           byMethod[type as keyof typeof byMethod]++;
         }
@@ -385,9 +388,8 @@ export function AdminAnalytics() {
   }
 
   const methodIcons = {
-    privy: { icon: Mail, label: "Email (Privy)", color: "text-blue-500", bg: "bg-blue-500/10" },
+    privy: { icon: Mail, label: "Email/Google", color: "text-blue-500", bg: "bg-blue-500/10" },
     porto: { icon: Fingerprint, label: "Biometric (Porto)", color: "text-purple-500", bg: "bg-purple-500/10" },
-    ethereum: { icon: Wallet, label: "Ethereum", color: "text-indigo-500", bg: "bg-indigo-500/10" },
     solana: { icon: Wallet, label: "Solana", color: "text-green-500", bg: "bg-green-500/10" },
     ton: { icon: Globe, label: "TON/Telegram", color: "text-cyan-500", bg: "bg-cyan-500/10" },
   };
@@ -557,11 +559,11 @@ export function AdminAnalytics() {
               {users.map((user) => {
                 const regConfig = {
                   privy: { icon: Mail, label: "Email", color: "text-blue-500", bg: "bg-blue-500/10" },
+                  google: { icon: Mail, label: "Google", color: "text-blue-500", bg: "bg-blue-500/10" },
                   porto: { icon: Fingerprint, label: "Porto", color: "text-purple-500", bg: "bg-purple-500/10" },
-                  ethereum: { icon: Wallet, label: "ETH", color: "text-indigo-500", bg: "bg-indigo-500/10" },
                   solana: { icon: Wallet, label: "SOL", color: "text-green-500", bg: "bg-green-500/10" },
                   ton: { icon: Globe, label: "TON", color: "text-cyan-500", bg: "bg-cyan-500/10" },
-                }[user.registration_type];
+                }[user.registration_type] || { icon: Mail, label: "Email", color: "text-blue-500", bg: "bg-blue-500/10" };
                 const RegIcon = regConfig.icon;
 
                 return (
