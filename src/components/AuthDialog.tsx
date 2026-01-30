@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -7,7 +8,7 @@ import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Fingerprint, ChevronDown } from 'lucide-react';
+import { Loader2, Fingerprint, ChevronDown, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
@@ -21,6 +22,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   
   // Porto/Biometric wallet
@@ -172,7 +174,18 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           {/* Simple centered content like homepage */}
-          <div className="flex flex-col items-center justify-center px-6 py-12 space-y-8">
+          <div className="flex flex-col items-center justify-center px-6 py-8 space-y-6">
+            {/* Back Home Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="self-start -ml-2 gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to map
+            </Button>
+
             {/* Header */}
             <h2 className="font-display text-3xl font-bold text-foreground">Get Started</h2>
 
