@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings, Calendar, Building2 } from "lucide-react";
+import { Loader2, Users, Settings, Calendar, Building2, Sparkles } from "lucide-react";
 import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
@@ -281,8 +281,17 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             </p>
           </div>
           
-          {/* User count badge + Auth button */}
+          {/* User count badge + Showtime + Auth button */}
           <div className="flex items-center gap-2">
+            <a
+              href="https://showtime.villedge.tech/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-semibold text-sm rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Showtime
+            </a>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm">
               <Users className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-foreground">{userCount}</span>
