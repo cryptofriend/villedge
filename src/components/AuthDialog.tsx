@@ -8,7 +8,7 @@ import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Fingerprint, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Loader2, Fingerprint, ChevronDown, ArrowLeft, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
@@ -284,6 +284,17 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
                 )}
               </div>
             </div>
+
+            {/* Showtime Sticker Button */}
+            <a
+              href="https://showtime.villedge.tech/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-semibold text-sm rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 animate-pulse hover:animate-none"
+            >
+              <Sparkles className="h-4 w-4" />
+              Showtime
+            </a>
           </div>
         </DialogContent>
       </Dialog>
