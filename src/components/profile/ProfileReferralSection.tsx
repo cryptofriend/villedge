@@ -6,18 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Copy, Plus, Users, Ticket, Check, Lock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Copy, Plus, Users, Ticket, Check, Lock, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+
+// Special user IDs that can create custom codes
+const CUSTOM_CODE_USERS = [
+  'b015441b-3bb4-4150-94e6-d8be048035bb', // Booga
+];
 
 interface ProfileReferralSectionProps {
   isOwnProfile: boolean;
 }
 
 export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionProps) {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const navigate = useNavigate();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [customCodeDialogOpen, setCustomCodeDialogOpen] = useState(false);
+  const [customCode, setCustomCode] = useState('');
+  const [customMaxUses, setCustomMaxUses] = useState('10');
   
   const { data: codes, isLoading: codesLoading } = useInvitationCodes();
   const { data: referrals, isLoading: referralsLoading } = useReferrals();
@@ -25,12 +36,28 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
   const createCode = useCreateInvitationCode();
 
   const isVerified = profile?.is_verified ?? false;
+  const canCreateCustomCodes = user?.id && CUSTOM_CODE_USERS.includes(user.id);
 
   const handleCopyCode = async (code: string) => {
     await navigator.clipboard.writeText(code);
     setCopiedCode(code);
     toast.success('Code copied to clipboard');
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const handleCreateCustomCode = () => {
+    if (!customCode.trim()) {
+      toast.error('Please enter a code');
+      return;
+    }
+    const maxUses = parseInt(customMaxUses) || 10;
+    createCode.mutate({ customCode: customCode.trim(), maxUses }, {
+      onSuccess: () => {
+        setCustomCodeDialogOpen(false);
+        setCustomCode('');
+        setCustomMaxUses('10');
+      }
+    });
   };
 
   if (!isOwnProfile) return null;
@@ -120,15 +147,69 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
                     )}
                   </div>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7"
-                  onClick={() => createCode.mutate()}
-                  disabled={createCode.isPending}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
+                
+                {/* Custom code button for special users */}
+                {canCreateCustomCodes ? (
+                  <Dialog open={customCodeDialogOpen} onOpenChange={setCustomCodeDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7"
+                      >
+                        <Settings className="h-3 w-3 mr-1" />
+                        Custom
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Create Custom Invite Code</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="customCode">Code</Label>
+                          <Input
+                            id="customCode"
+                            placeholder="e.g. VILLEDGE2026"
+                            value={customCode}
+                            onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
+                            className="font-mono"
+                            maxLength={16}
+                          />
+                          <p className="text-xs text-muted-foreground">3-16 alphanumeric characters</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="maxUses">Max Uses</Label>
+                          <Input
+                            id="maxUses"
+                            type="number"
+                            min={1}
+                            max={1000}
+                            value={customMaxUses}
+                            onChange={(e) => setCustomMaxUses(e.target.value)}
+                          />
+                        </div>
+                        <Button
+                          className="w-full"
+                          onClick={handleCreateCustomCode}
+                          disabled={createCode.isPending}
+                        >
+                          {createCode.isPending ? 'Creating...' : 'Create Code'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7"
+                    onClick={() => createCode.mutate({})}
+                    disabled={createCode.isPending}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             )}
           </div>

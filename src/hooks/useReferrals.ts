@@ -89,22 +89,46 @@ export function useCreateInvitationCode() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (options?: { customCode?: string; maxUses?: number }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Generate code using database function
-      const { data: code, error: codeError } = await supabase
-        .rpc('generate_invitation_code');
+      let codeToUse: string;
+      
+      if (options?.customCode) {
+        // Use custom code (for special users like Booga)
+        codeToUse = options.customCode.toUpperCase().trim();
+        
+        // Validate custom code format
+        if (!/^[A-Z0-9]{3,16}$/.test(codeToUse)) {
+          throw new Error('Code must be 3-16 alphanumeric characters');
+        }
+        
+        // Check if code already exists
+        const { data: existing } = await supabase
+          .from('invitation_codes')
+          .select('id')
+          .eq('code', codeToUse)
+          .maybeSingle();
+          
+        if (existing) {
+          throw new Error('This code is already taken');
+        }
+      } else {
+        // Generate code using database function
+        const { data: code, error: codeError } = await supabase
+          .rpc('generate_invitation_code');
 
-      if (codeError) throw codeError;
+        if (codeError) throw codeError;
+        codeToUse = code;
+      }
 
-      // Insert the code with max 2 uses
+      // Insert the code
       const { data, error } = await supabase
         .from('invitation_codes')
         .insert({
-          code: code,
+          code: codeToUse,
           owner_id: user.id,
-          max_uses: 2,
+          max_uses: options?.maxUses ?? 2,
         })
         .select()
         .single();
@@ -118,7 +142,7 @@ export function useCreateInvitationCode() {
     },
     onError: (error) => {
       console.error('Error creating invitation code:', error);
-      toast.error('Failed to create invitation code. Make sure your account is verified.');
+      toast.error(error instanceof Error ? error.message : 'Failed to create invitation code. Make sure your account is verified.');
     },
   });
 }
