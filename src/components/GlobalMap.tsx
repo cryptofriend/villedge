@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings, Calendar, Building2, Sparkles } from "lucide-react";
+import { Loader2, Users, Settings, Calendar, Building2 } from "lucide-react";
 import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserCurrentVillage } from "@/hooks/useUserCurrentVillage";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import showtimeLogo from "@/assets/showtime-logo.png";
 
 const ADMIN_USER_IDS = [
   "9807c494-ba07-4438-9a89-07ac13334e78", // dev
@@ -287,9 +288,9 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               href="https://showtime.villedge.tech/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-semibold text-sm rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F7D94C] text-[#1a1a1a] font-semibold text-sm rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
             >
-              <Sparkles className="h-3.5 w-3.5" />
+              <img src={showtimeLogo} alt="Showtime" className="h-5 w-5" />
               Showtime
             </a>
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm">
