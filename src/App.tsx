@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PortoProvider } from "@/components/PortoProvider";
 import { SolanaProvider } from "@/components/SolanaProvider";
 import { TonProvider } from "@/components/TonProvider";
-import { MagicProvider } from "@/components/MagicProvider";
+import { PrivyProvider } from "@/components/PrivyProvider";
 import Index from "./pages/Index";
 import Village from "./pages/Village";
 import Embed from "./pages/Embed";
@@ -21,7 +21,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <MagicProvider>
+    <PrivyProvider>
       <PortoProvider>
         <SolanaProvider>
           <TonProvider>
@@ -53,7 +53,7 @@ const App = () => (
           </TonProvider>
         </SolanaProvider>
       </PortoProvider>
-    </MagicProvider>
+    </PrivyProvider>
   </QueryClientProvider>
 );
 

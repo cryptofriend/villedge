@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, Shield, Fingerprint, Sparkles, ChevronDown, Diamond } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { MagicLoginButton } from '@/components/auth/MagicLoginButton';
+import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { lovable } from '@/integrations/lovable';
 
@@ -320,8 +320,8 @@ export default function Auth() {
 
                 {showOtherMethods && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {/* Magic Link Button - Email with Wallet */}
-                    <MagicLoginButton
+                    {/* Privy Email Button */}
+                    <PrivyLoginButton
                       disabled={anyLoading}
                       className="w-full h-12 text-sm font-medium border-2 border-border bg-background hover:bg-muted text-foreground rounded-xl transition-all duration-200"
                       onStart={() => setAuthType('magic')}
