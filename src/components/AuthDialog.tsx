@@ -9,7 +9,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Loader2, Fingerprint, ChevronDown, Diamond } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { MagicLoginButton } from '@/components/auth/MagicLoginButton';
+import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { lovable } from '@/integrations/lovable';
@@ -210,8 +210,8 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
 
                 {showOtherMethods && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {/* Magic Link Button - Email with Wallet */}
-                    <MagicLoginButton
+                    {/* Privy Email Button */}
+                    <PrivyLoginButton
                       disabled={anyLoading}
                       className="w-full h-12 text-sm font-medium border-2 border-border bg-background hover:bg-muted text-foreground rounded-xl transition-all duration-200"
                       onStart={() => setAuthType('magic')}
