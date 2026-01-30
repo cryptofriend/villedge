@@ -288,7 +288,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               href="https://showtime.villedge.tech/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F7D94C] text-[#1a1a1a] font-semibold text-sm rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 backdrop-blur-sm text-foreground font-semibold text-sm rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
             >
               <img src={showtimeLogo} alt="Showtime" className="h-5 w-5" />
               Showtime
