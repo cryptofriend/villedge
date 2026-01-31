@@ -1,32 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BarChart3, Bot } from "lucide-react";
 import { AdminAnalytics as AdminAnalyticsComponent } from "@/components/admin/AdminAnalytics";
 
-const ADMIN_USER_IDS = [
-  "9807c494-ba07-4438-9a89-07ac13334e78", // dev
-  "b015441b-3bb4-4150-94e6-d8be048035bb", // booga
-];
-
 export default function AdminAnalyticsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminRole();
   const navigate = useNavigate();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  const loading = authLoading || adminLoading;
 
   useEffect(() => {
     if (!loading) {
-      if (!user || !ADMIN_USER_IDS.includes(user.id)) {
+      if (!user || !isAdmin) {
         navigate("/");
-      } else {
-        setIsAuthorized(true);
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, isAdmin, navigate]);
 
-  if (loading || !isAuthorized) {
+  if (loading || !isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
