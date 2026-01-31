@@ -1,28 +1,26 @@
-import { MapPin, CalendarDays, Sparkles, MessageSquare, Calendar, User, Coins, Lock } from "lucide-react";
+import { MapPin, CalendarDays, Sparkles, MessageSquare, Calendar, User, Coins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
 
 type ActiveView = "map" | "residents" | "scenius" | "bulletin" | "events" | "treasury";
 
 interface MobileBottomNavProps {
   activeView: ActiveView;
   onViewChange: (view: ActiveView) => void;
-  isVerified?: boolean;
 }
 
-const navItems: { id: ActiveView; icon: typeof MapPin; label: string; requiresVerification: boolean }[] = [
-  { id: "map", icon: MapPin, label: "Map", requiresVerification: false },
-  { id: "residents", icon: CalendarDays, label: "Residents", requiresVerification: true },
-  { id: "scenius", icon: Sparkles, label: "Scenius", requiresVerification: true },
-  { id: "bulletin", icon: MessageSquare, label: "Bulletin", requiresVerification: true },
-  { id: "treasury", icon: Coins, label: "Treasury", requiresVerification: true },
-  { id: "events", icon: Calendar, label: "Events", requiresVerification: true },
+const navItems: { id: ActiveView; icon: typeof MapPin; label: string }[] = [
+  { id: "map", icon: MapPin, label: "Map" },
+  { id: "residents", icon: CalendarDays, label: "Residents" },
+  { id: "scenius", icon: Sparkles, label: "Scenius" },
+  { id: "bulletin", icon: MessageSquare, label: "Bulletin" },
+  { id: "treasury", icon: Coins, label: "Treasury" },
+  { id: "events", icon: Calendar, label: "Events" },
 ];
 
-export const MobileBottomNav = ({ activeView, onViewChange, isVerified = false }: MobileBottomNavProps) => {
+export const MobileBottomNav = ({ activeView, onViewChange }: MobileBottomNavProps) => {
   const navigate = useNavigate();
   const { user, profile, isAuthenticated, loading } = useAuth();
 
@@ -36,47 +34,30 @@ export const MobileBottomNav = ({ activeView, onViewChange, isVerified = false }
     return "U";
   };
 
-  const handleNavClick = (item: typeof navItems[0]) => {
-    if (item.requiresVerification && !isVerified) {
-      toast.error("Get an invitation code from a verified member to unlock full access", {
-        action: { label: "DM @boogaav", onClick: () => window.open("https://x.com/boogaav", "_blank") }
-      });
-      return;
-    }
-    onViewChange(item.id);
-  };
-
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border shadow-lg sm:hidden">
       <div className="flex justify-around items-center h-16 px-2 pb-safe">
         {navItems.map((item) => {
-          const { id, icon: Icon, label, requiresVerification } = item;
-          const isLocked = requiresVerification && !isVerified;
+          const { id, icon: Icon, label } = item;
           
           return (
             <button
               key={id}
-              onClick={() => handleNavClick(item)}
+              onClick={() => onViewChange(id)}
               className={cn(
                 "flex flex-col items-center justify-center gap-0.5 py-2 px-2 rounded-lg transition-all min-w-[50px]",
-                isLocked
-                  ? "text-muted-foreground/50 cursor-not-allowed"
-                  : activeView === id
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                activeView === id
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isLocked ? (
-                <Lock className="h-5 w-5" />
-              ) : (
-                <Icon className={cn(
-                  "h-5 w-5 transition-transform",
-                  activeView === id && "scale-110"
-                )} />
-              )}
+              <Icon className={cn(
+                "h-5 w-5 transition-transform",
+                activeView === id && "scale-110"
+              )} />
               <span className={cn(
                 "text-[10px] font-medium",
-                activeView === id && !isLocked && "font-semibold"
+                activeView === id && "font-semibold"
               )}>
                 {label}
               </span>

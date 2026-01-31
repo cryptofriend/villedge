@@ -16,7 +16,7 @@ import { AuthButton } from "./AuthButton";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { VillageSocialIcons } from "./VillageSocialIcons";
 import { EditVillageDialog } from "./villages/EditVillageDialog";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar, Coins, Lock } from "lucide-react";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar, Coins } from "lucide-react";
 import { TreasuryList } from "./treasury/TreasuryList";
 import { ExpandablePanel } from "./ExpandablePanel";
 import { toast } from "sonner";
@@ -59,7 +59,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const { spots, loading: spotsLoading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots(activeVillage?.id);
   const { isHost, canCreate } = usePermissions();
   const { profile, isAuthenticated } = useAuth();
-  const isVerified = profile?.is_verified ?? false;
+  
   
   // State
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
@@ -870,28 +870,17 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                 <Tooltip key={id}>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => isVerified ? handleViewChange(id) : toast.error("Get an invitation code from a verified member to unlock full access", { action: { label: "DM @boogaav", onClick: () => window.open("https://x.com/boogaav", "_blank") } })}
+                      onClick={() => handleViewChange(id)}
                       className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                        !isVerified
-                          ? "text-muted-foreground/50 cursor-not-allowed"
-                          : activeView === id
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
+                        activeView === id
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {!isVerified ? (
-                        <Lock className="h-3.5 w-3.5" />
-                      ) : (
-                        <Icon className="h-3.5 w-3.5" />
-                      )}
+                      <Icon className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">{label}</span>
                     </button>
                   </TooltipTrigger>
-                  {!isVerified && (
-                    <TooltipContent>
-                      <p>Get verified to unlock</p>
-                    </TooltipContent>
-                  )}
                 </Tooltip>
               ))}
               </div>
@@ -1111,7 +1100,6 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         <MobileBottomNav
           activeView={activeView}
           onViewChange={handleViewChange}
-          isVerified={isVerified}
         />
       )}
     </div>
