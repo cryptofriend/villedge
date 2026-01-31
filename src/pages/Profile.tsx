@@ -12,8 +12,6 @@ import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSectio
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
 import { ProfileConnectionRequests } from "@/components/profile/ProfileConnectionRequests";
-import { ProfileReferralSection } from "@/components/profile/ProfileReferralSection";
-import { ProfileVerificationSection } from "@/components/profile/ProfileVerificationSection";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -312,16 +310,6 @@ const Profile = () => {
         {/* Incoming connection requests (only for own profile) */}
         {isOwnProfile && <ProfileConnectionRequests />}
 
-        {/* Verification Section (only for own profile) */}
-        <ProfileVerificationSection 
-          isVerified={profileData.is_verified ?? false} 
-          isOwnProfile={isOwnProfile} 
-        />
-
-        {/* Referral Section (only for own profile, only if verified) */}
-        {(profileData.is_verified ?? false) && (
-          <ProfileReferralSection isOwnProfile={isOwnProfile} />
-        )}
 
         {/* 2. Working On / Scenius Section */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
