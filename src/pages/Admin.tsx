@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +18,6 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
 import { BotNotificationSection } from "@/components/admin/BotNotificationSection";
-
-const ADMIN_USER_IDS = [
-  "9807c494-ba07-4438-9a89-07ac13334e78", // dev
-  "b015441b-3bb4-4150-94e6-d8be048035bb", // booga
-];
 
 const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -52,9 +48,9 @@ interface NotificationRoute {
 }
 
 export default function Admin() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminRole();
   const navigate = useNavigate();
-  const [isAuthorized, setIsAuthorized] = useState(false);
   
   // Settings state
   const [chatId, setChatId] = useState("");
@@ -71,20 +67,20 @@ export default function Admin() {
   // Notification routes state
   const [notificationRoutes, setNotificationRoutes] = useState<NotificationRoute[]>([]);
 
+  const loading = authLoading || adminLoading;
+
   useEffect(() => {
     if (!loading) {
-      if (!user || !ADMIN_USER_IDS.includes(user.id)) {
+      if (!user || !isAdmin) {
         navigate("/");
-      } else {
-        setIsAuthorized(true);
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, isAdmin, navigate]);
 
   // Fetch all data
   useEffect(() => {
     const fetchData = async () => {
-      if (!isAuthorized) return;
+      if (!isAdmin || loading) return;
       
       try {
         // Fetch settings
@@ -155,7 +151,7 @@ export default function Admin() {
     };
     
     fetchData();
-  }, [isAuthorized]);
+  }, [isAdmin, loading]);
 
   const handleSaveChatId = async () => {
     if (!chatId.trim()) {
@@ -223,7 +219,7 @@ export default function Admin() {
     }
   };
 
-  if (loading || !isAuthorized) {
+  if (loading || !isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
