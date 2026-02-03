@@ -262,12 +262,12 @@ const handler = async (req: Request): Promise<Response> => {
     // This can help when Telegram expects an internal id, but will still fail if the bot lacks access.
     chatId = await tryResolveChatIdViaBotApi(effectiveBotToken, chatId);
 
-    // Village-specific mini-app links
-    const villageMiniAppMap: Record<string, { app: string; events: string; bulletin: string }> = {
+    // Village-specific links (web pages or mini-apps)
+    const villageLinksMap: Record<string, { app: string; events: string; bulletin: string }> = {
       'protoville': {
-        app: 'https://t.me/protovillebot/protoville',
-        events: 'https://t.me/protovillebot/protoville?startapp=events',
-        bulletin: 'https://t.me/protovillebot/protoville?startapp=bulletin',
+        app: 'https://villedge.lovable.app/protoville',
+        events: 'https://villedge.lovable.app/protoville?tab=events',
+        bulletin: 'https://villedge.lovable.app/protoville?tab=bulletin',
       },
       'proof-of-retreat': {
         app: 'https://t.me/proofofretreatbot/app',
@@ -275,7 +275,7 @@ const handler = async (req: Request): Promise<Response> => {
         bulletin: 'https://t.me/proofofretreatbot/bulletin',
       },
     };
-    const miniAppLinks = villageMiniAppMap[villageId || ''] || {
+    const miniAppLinks = villageLinksMap[villageId || ''] || {
       app: `https://villedge.lovable.app/${villageId || ''}`,
       events: `https://villedge.lovable.app/${villageId || ''}?tab=events`,
       bulletin: `https://villedge.lovable.app/${villageId || ''}?tab=bulletin`,
