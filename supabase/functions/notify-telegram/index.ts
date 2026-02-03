@@ -157,12 +157,13 @@ const handler = async (req: Request): Promise<Response> => {
     const routableTypes = ['spots', 'bulletin', 'donations', 'residents', 'events'];
     
     // Map notification type to route type in database
+    // Note: database stores singular form (e.g., 'spot' not 'spots')
     const typeToRouteType: Record<string, string> = {
-      'spot': 'spots',
+      'spot': 'spot',
       'bulletin': 'bulletin',
-      'donation': 'donations',
-      'resident': 'residents',
-      'event': 'events',
+      'donation': 'donation',
+      'resident': 'resident',
+      'event': 'event',
     };
     
     const routeType = typeToRouteType[type];
