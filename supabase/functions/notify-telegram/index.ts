@@ -265,9 +265,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Village-specific links (web pages or mini-apps)
     const villageLinksMap: Record<string, { app: string; events: string; bulletin: string }> = {
       'protoville': {
-        app: 'https://villedge.lovable.app/protoville',
-        events: 'https://villedge.lovable.app/protoville?tab=events',
-        bulletin: 'https://villedge.lovable.app/protoville?tab=bulletin',
+        app: 'https://villedge.tech/protoville',
+        events: 'https://villedge.tech/protoville?tab=events',
+        bulletin: 'https://villedge.tech/protoville?tab=bulletin',
       },
       'proof-of-retreat': {
         app: 'https://t.me/proofofretreatbot/app',
@@ -276,9 +276,9 @@ const handler = async (req: Request): Promise<Response> => {
       },
     };
     const miniAppLinks = villageLinksMap[villageId || ''] || {
-      app: `https://villedge.lovable.app/${villageId || ''}`,
-      events: `https://villedge.lovable.app/${villageId || ''}?tab=events`,
-      bulletin: `https://villedge.lovable.app/${villageId || ''}?tab=bulletin`,
+      app: `https://villedge.tech/${villageId || ''}`,
+      events: `https://villedge.tech/${villageId || ''}?tab=events`,
+      bulletin: `https://villedge.tech/${villageId || ''}?tab=bulletin`,
     };
 
     let telegramMessage = "";
