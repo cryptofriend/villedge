@@ -270,9 +270,9 @@ const handler = async (req: Request): Promise<Response> => {
         bulletin: 'https://villedge.tech/protoville?tab=bulletin',
       },
       'proof-of-retreat': {
-        app: 'https://t.me/proofofretreatbot/app',
-        events: 'https://t.me/proofofretreatbot/events',
-        bulletin: 'https://t.me/proofofretreatbot/bulletin',
+        app: 'https://villedge.tech/proof-of-retreat',
+        events: 'https://villedge.tech/proof-of-retreat?tab=events',
+        bulletin: 'https://villedge.tech/proof-of-retreat?tab=bulletin',
       },
     };
     const miniAppLinks = villageLinksMap[villageId || ''] || {
