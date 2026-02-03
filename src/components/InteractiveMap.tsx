@@ -99,7 +99,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const [allComments, setAllComments] = useState<Comment[]>([]);
   
   // Scenius for the active village
-  const { projects, loading: projectsLoading } = useSceniusProjects(activeVillage?.id);
+  const { projects, residentProjects, loading: projectsLoading } = useSceniusProjects(activeVillage?.id);
   
   const CLUSTER_ZOOM_THRESHOLD = 9;
 
@@ -931,11 +931,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                 Scenius
               </h3>
               <p className="text-xs text-muted-foreground">
-                {projects.length} project{projects.length !== 1 ? "s" : ""} being built
+                {projects.length + residentProjects.length} project{(projects.length + residentProjects.length) !== 1 ? "s" : ""} being built
               </p>
             </div>
             <div className="flex-1 min-h-0 overflow-hidden p-4">
-              <SceniusList projects={projects} loading={projectsLoading} villageId={activeVillage?.id} />
+              <SceniusList projects={projects} residentProjects={residentProjects} loading={projectsLoading} villageId={activeVillage?.id} />
             </div>
           </ExpandablePanel>
         </div>

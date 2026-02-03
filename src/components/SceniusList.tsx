@@ -1,13 +1,13 @@
-import { SceniusProject } from "@/hooks/useSceniusProjects";
+import { SceniusProject, ResidentProject } from "@/hooks/useSceniusProjects";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Github, ExternalLink, Loader2 } from "lucide-react";
-import { useStays } from "@/hooks/useStays";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getBestAvatar } from "@/lib/avatar";
 
 interface SceniusListProps {
   projects: SceniusProject[];
+  residentProjects?: ResidentProject[];
   loading: boolean;
   villageId?: string;
 }
@@ -19,16 +19,10 @@ const statusColors = {
   paused: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
-export const SceniusList = ({ projects, loading, villageId }: SceniusListProps) => {
-  const { stays, loading: staysLoading } = useStays(villageId);
-  
-  // Get residents who have projects
-  const residentProjects = stays.filter(stay => stay.project_description);
-
-  const isLoading = loading || staysLoading;
+export const SceniusList = ({ projects, residentProjects = [], loading, villageId }: SceniusListProps) => {
   const hasContent = projects.length > 0 || residentProjects.length > 0;
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -50,41 +44,52 @@ export const SceniusList = ({ projects, loading, villageId }: SceniusListProps) 
   return (
     <ScrollArea className="h-full">
       <div className="space-y-3 p-1">
-        {/* Resident Projects - simple line items */}
-        {residentProjects.map((stay) => {
-          const avatarUrl = getBestAvatar(stay.nickname, stay.social_profile, 40);
+        {/* Resident Projects from user profiles */}
+        {residentProjects.map((project) => {
+          const avatarUrl = getBestAvatar(project.nickname, project.social_profile, 40);
           
           return (
             <div
-              key={stay.id}
+              key={project.id}
               className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted/80 transition-colors"
             >
               <Avatar className="w-9 h-9 flex-shrink-0">
-                <AvatarImage src={avatarUrl} alt={stay.nickname} />
+                <AvatarImage src={avatarUrl} alt={project.nickname} />
                 <AvatarFallback className="text-xs">
-                  {stay.nickname.slice(0, 2).toUpperCase()}
+                  {project.nickname.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-foreground">{stay.nickname}</span>
+                  <span className="font-medium text-foreground">{project.nickname}</span>
                   <span className="text-muted-foreground">—</span>
-                  <span className="text-sm text-muted-foreground truncate">
-                    {stay.project_description}
+                  <span className="text-sm text-foreground truncate">
+                    {project.title || new URL(project.url).hostname}
                   </span>
                 </div>
+                {project.description && (
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {project.description}
+                  </p>
+                )}
               </div>
-              {stay.project_url && (
-                <a
-                  href={stay.project_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 flex items-center gap-1 px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 transition-colors text-xs text-primary"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  <span className="hidden sm:inline">View</span>
-                </a>
+              {project.favicon_url && (
+                <img 
+                  src={project.favicon_url} 
+                  alt="" 
+                  className="w-4 h-4 flex-shrink-0"
+                  onError={(e) => e.currentTarget.style.display = 'none'}
+                />
               )}
+              <a
+                href={project.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 transition-colors text-xs text-primary"
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span className="hidden sm:inline">View</span>
+              </a>
             </div>
           );
         })}
