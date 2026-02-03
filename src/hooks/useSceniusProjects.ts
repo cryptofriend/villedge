@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { UserProject } from "./useUserProjects";
 
 export type SceniusStatus = "idea" | "active" | "completed" | "paused";
 
@@ -31,12 +32,21 @@ export interface SceniusInput {
   status?: SceniusStatus;
 }
 
+export interface ResidentProject extends UserProject {
+  nickname: string;
+  social_profile: string | null;
+}
+
 export const useSceniusProjects = (villageId?: string) => {
   const [projects, setProjects] = useState<SceniusProject[]>([]);
+  const [residentProjects, setResidentProjects] = useState<ResidentProject[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProjects = async () => {
     try {
+      setLoading(true);
+      
+      // Fetch scenius projects
       let query = supabase
         .from("scenius")
         .select("*")
@@ -56,6 +66,49 @@ export const useSceniusProjects = (villageId?: string) => {
         status: p.status as SceniusStatus,
       }));
       setProjects(typedProjects);
+
+      // Fetch resident projects from user_projects via stays
+      if (villageId) {
+        const { data: staysData, error: staysError } = await supabase
+          .from("stays")
+          .select("user_id, nickname, social_profile")
+          .eq("village_id", villageId)
+          .not("user_id", "is", null);
+
+        if (staysError) throw staysError;
+
+        if (staysData && staysData.length > 0) {
+          const userIds = staysData
+            .map((s) => s.user_id)
+            .filter((id): id is string => id !== null);
+
+          if (userIds.length > 0) {
+            const { data: userProjectsData, error: upError } = await supabase
+              .from("user_projects")
+              .select("*")
+              .in("user_id", userIds)
+              .order("created_at", { ascending: false });
+
+            if (upError) throw upError;
+
+            // Map projects to include resident info
+            const residentProjectsWithInfo: ResidentProject[] = (userProjectsData || []).map((proj) => {
+              const stay = staysData.find((s) => s.user_id === proj.user_id);
+              return {
+                ...proj,
+                nickname: stay?.nickname || "Anonymous",
+                social_profile: stay?.social_profile || null,
+              };
+            });
+
+            setResidentProjects(residentProjectsWithInfo);
+          } else {
+            setResidentProjects([]);
+          }
+        } else {
+          setResidentProjects([]);
+        }
+      }
     } catch (err) {
       console.error("Error fetching scenius projects:", err);
       toast.error("Failed to load projects");
@@ -133,5 +186,5 @@ export const useSceniusProjects = (villageId?: string) => {
     }
   };
 
-  return { projects, loading, addProject, updateProject, deleteProject, refetch: fetchProjects };
+  return { projects, residentProjects, loading, addProject, updateProject, deleteProject, refetch: fetchProjects };
 };
