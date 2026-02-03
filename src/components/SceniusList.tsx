@@ -158,7 +158,7 @@ const UserProjectGroup = ({ group }: { group: GroupedResidentProjects }) => {
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="px-2 pb-2 space-y-1.5 border-t border-border pt-2">
+          <div className="px-2 pb-2 space-y-1.5 border-t border-border pt-2 overflow-hidden">
             {group.projects.map((project) => (
               <ProjectRow key={project.id} project={project} />
             ))}
