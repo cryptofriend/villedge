@@ -52,9 +52,9 @@ const groupProjectsByUser = (projects: ResidentProject[]): GroupedResidentProjec
 
 // Single project row component
 const ProjectRow = ({ project }: { project: ResidentProject }) => (
-  <div className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors min-w-0 w-full overflow-hidden">
-    <div className="flex-1 min-w-0 overflow-hidden">
-      <div className="flex items-center gap-2 min-w-0">
+  <div className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors w-full">
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2">
         {project.favicon_url && (
           <img 
             src={project.favicon_url} 
@@ -63,12 +63,12 @@ const ProjectRow = ({ project }: { project: ResidentProject }) => (
             onError={(e) => e.currentTarget.style.display = 'none'}
           />
         )}
-        <span className="text-sm font-medium text-foreground truncate min-w-0">
+        <span className="text-sm font-medium text-foreground truncate block w-full">
           {project.title || new URL(project.url).hostname}
         </span>
       </div>
       {project.description && (
-        <p className="text-xs text-muted-foreground truncate mt-0.5 pl-6 w-full">
+        <p className="text-xs text-muted-foreground truncate mt-0.5 pl-6">
           {project.description}
         </p>
       )}
@@ -193,8 +193,8 @@ export const SceniusList = ({ projects, residentProjects = [], loading, villageI
   }
 
   return (
-    <ScrollArea className="h-full w-full">
-      <div className="space-y-2 p-1 pr-3 w-full max-w-full overflow-hidden">
+    <ScrollArea className="h-full w-full overflow-x-hidden">
+      <div className="space-y-2 p-1 pr-3 w-full overflow-hidden">
         {/* Resident Projects grouped by user */}
         {groupedResidentProjects.map((group) => (
           <UserProjectGroup key={group.userId} group={group} />
