@@ -106,6 +106,7 @@ export const useSpots = (villageId?: string) => {
           name: newSpot.name,
           description: newSpot.description,
           category: newSpot.category,
+          villageId: villageId || null,
         },
       }).catch((err) => console.error("Failed to send Telegram notification:", err));
 
