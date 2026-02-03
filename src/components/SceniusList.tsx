@@ -52,9 +52,9 @@ const groupProjectsByUser = (projects: ResidentProject[]): GroupedResidentProjec
 
 // Single project row component
 const ProjectRow = ({ project }: { project: ResidentProject }) => (
-  <div className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors">
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-2">
+  <div className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors min-w-0">
+    <div className="flex-1 min-w-0 overflow-hidden">
+      <div className="flex items-center gap-2 min-w-0">
         {project.favicon_url && (
           <img 
             src={project.favicon_url} 
@@ -63,12 +63,12 @@ const ProjectRow = ({ project }: { project: ResidentProject }) => (
             onError={(e) => e.currentTarget.style.display = 'none'}
           />
         )}
-        <span className="text-sm font-medium text-foreground truncate">
+        <span className="text-sm font-medium text-foreground truncate block max-w-full">
           {project.title || new URL(project.url).hostname}
         </span>
       </div>
       {project.description && (
-        <p className="text-xs text-muted-foreground truncate mt-0.5 pl-6">
+        <p className="text-xs text-muted-foreground truncate mt-0.5 pl-6 max-w-full">
           {project.description}
         </p>
       )}
@@ -77,10 +77,10 @@ const ProjectRow = ({ project }: { project: ResidentProject }) => (
       href={project.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors text-primary"
+      className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors text-primary"
       onClick={(e) => e.stopPropagation()}
     >
-      <ExternalLink className="h-3.5 w-3.5" />
+      <ExternalLink className="h-3 w-3" />
     </a>
   </div>
 );
@@ -95,43 +95,34 @@ const UserProjectGroup = ({ group }: { group: GroupedResidentProjects }) => {
     // Single project - show inline without collapsible
     const project = group.projects[0];
     return (
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted/80 transition-colors">
-        <Avatar className="w-9 h-9 flex-shrink-0">
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted/80 transition-colors min-w-0 overflow-hidden">
+        <Avatar className="w-8 h-8 flex-shrink-0">
           <AvatarImage src={avatarUrl} alt={group.nickname} />
           <AvatarFallback className="text-xs">
             {group.nickname.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-foreground text-sm">{group.nickname}</span>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-medium text-foreground text-sm truncate max-w-[80px] sm:max-w-none">{group.nickname}</span>
             <span className="text-muted-foreground hidden sm:inline">—</span>
-            <span className="text-sm text-foreground truncate">
+            <span className="text-xs sm:text-sm text-foreground truncate flex-1 min-w-0">
               {project.title || new URL(project.url).hostname}
             </span>
           </div>
           {project.description && (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <p className="text-xs text-muted-foreground truncate mt-0.5 max-w-full">
               {project.description}
             </p>
           )}
         </div>
-        {project.favicon_url && (
-          <img 
-            src={project.favicon_url} 
-            alt="" 
-            className="w-4 h-4 flex-shrink-0 hidden sm:block"
-            onError={(e) => e.currentTarget.style.display = 'none'}
-          />
-        )}
         <a
           href={project.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 flex items-center gap-1 px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 transition-colors text-xs text-primary"
+          className="shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors text-primary"
         >
           <ExternalLink className="h-3 w-3" />
-          <span className="hidden sm:inline">View</span>
         </a>
       </div>
     );
@@ -142,18 +133,18 @@ const UserProjectGroup = ({ group }: { group: GroupedResidentProjects }) => {
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="rounded-lg bg-muted/50 border border-border overflow-hidden">
         <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center gap-3 p-3 hover:bg-muted/80 transition-colors text-left">
-            <Avatar className="w-9 h-9 flex-shrink-0">
+          <button className="w-full flex items-center gap-2 p-3 hover:bg-muted/80 transition-colors text-left min-w-0">
+            <Avatar className="w-8 h-8 flex-shrink-0">
               <AvatarImage src={avatarUrl} alt={group.nickname} />
               <AvatarFallback className="text-xs">
                 {group.nickname.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground text-sm">{group.nickname}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {group.projects.length} projects
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-medium text-foreground text-sm truncate">{group.nickname}</span>
+                <Badge variant="secondary" className="text-xs shrink-0">
+                  {group.projects.length}
                 </Badge>
               </div>
             </div>
@@ -167,7 +158,7 @@ const UserProjectGroup = ({ group }: { group: GroupedResidentProjects }) => {
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="px-3 pb-3 space-y-2 border-t border-border pt-2">
+          <div className="px-2 pb-2 space-y-1.5 border-t border-border pt-2">
             {group.projects.map((project) => (
               <ProjectRow key={project.id} project={project} />
             ))}
@@ -202,8 +193,8 @@ export const SceniusList = ({ projects, residentProjects = [], loading, villageI
   }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="space-y-3 p-1">
+    <ScrollArea className="h-full w-full">
+      <div className="space-y-2 p-1 pr-2 overflow-hidden">
         {/* Resident Projects grouped by user */}
         {groupedResidentProjects.map((group) => (
           <UserProjectGroup key={group.userId} group={group} />
