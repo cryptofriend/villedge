@@ -88,6 +88,50 @@ async function getChatId(): Promise<string | null> {
   return Deno.env.get("TELEGRAM_CHAT_ID") || null;
 }
 
+// Look up notification route from database for village-specific routing
+interface NotificationRoute {
+  chatId: string;
+  threadId: number | null;
+  botTokenSecretName: string | null;
+}
+
+async function getNotificationRoute(villageId: string, notificationType: string): Promise<NotificationRoute | null> {
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    
+    const { data, error } = await supabase
+      .from("notification_routes")
+      .select("chat_id, thread_id")
+      .eq("village_id", villageId)
+      .eq("notification_type", notificationType)
+      .eq("is_enabled", true)
+      .maybeSingle();
+    
+    if (error || !data) {
+      console.log(`No notification route found for ${villageId}/${notificationType}`);
+      return null;
+    }
+    
+    // Determine bot token based on village
+    const villageBotTokenMap: Record<string, string> = {
+      'protoville': 'PROTOVILLE_BOT_TOKEN',
+      'proof-of-retreat': 'TELEGRAM_BOT_TOKEN',
+    };
+    
+    return {
+      chatId: data.chat_id,
+      threadId: data.thread_id,
+      botTokenSecretName: villageBotTokenMap[villageId] || null,
+    };
+  } catch (e) {
+    console.log("Could not fetch notification route:", e);
+    return null;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -108,25 +152,48 @@ const handler = async (req: Request): Promise<Response> => {
       botTokenSecretName
     }: NotificationRequest = requestBody;
     
-    // Determine which bot token to use:
-    // 1. If botTokenSecretName is provided, look it up from env
-    // 2. Else if customBotToken is provided directly, use it
-    // 3. Else fallback to default TELEGRAM_BOT_TOKEN
-    let effectiveBotToken = defaultBotToken;
+    // Look up village-specific notification route for certain types
+    let routeConfig: NotificationRoute | null = null;
+    const routableTypes = ['spots', 'bulletin', 'donations', 'residents', 'events'];
     
-    if (botTokenSecretName) {
+    // Map notification type to route type in database
+    const typeToRouteType: Record<string, string> = {
+      'spot': 'spots',
+      'bulletin': 'bulletin',
+      'donation': 'donations',
+      'resident': 'residents',
+      'event': 'events',
+    };
+    
+    const routeType = typeToRouteType[type];
+    if (villageId && routeType) {
+      routeConfig = await getNotificationRoute(villageId, routeType);
+      if (routeConfig) {
+        console.log(`Found notification route for ${villageId}/${routeType}: chat=${routeConfig.chatId}, thread=${routeConfig.threadId}`);
+      }
+    }
+    
+    // Determine which bot token to use:
+    // 1. If route config has a bot token, use it
+    // 2. Else if botTokenSecretName is provided, look it up from env
+    // 3. Else if customBotToken is provided directly, use it
+    // 4. Else fallback to default TELEGRAM_BOT_TOKEN
+    let effectiveBotToken = defaultBotToken;
+    let effectiveBotTokenSecretName = routeConfig?.botTokenSecretName || botTokenSecretName;
+    
+    if (effectiveBotTokenSecretName) {
       // Whitelist allowed secret names to prevent arbitrary env access
       const allowedSecrets = ['TELEGRAM_BOT_TOKEN', 'PROTOVILLE_BOT_TOKEN'];
-      if (allowedSecrets.includes(botTokenSecretName)) {
-        const tokenFromSecret = Deno.env.get(botTokenSecretName);
+      if (allowedSecrets.includes(effectiveBotTokenSecretName)) {
+        const tokenFromSecret = Deno.env.get(effectiveBotTokenSecretName);
         if (tokenFromSecret) {
           effectiveBotToken = tokenFromSecret;
-          console.log(`Using bot token from secret: ${botTokenSecretName}`);
+          console.log(`Using bot token from secret: ${effectiveBotTokenSecretName}`);
         } else {
-          console.log(`Secret ${botTokenSecretName} not found, falling back to default`);
+          console.log(`Secret ${effectiveBotTokenSecretName} not found, falling back to default`);
         }
       } else {
-        console.log(`Secret name ${botTokenSecretName} not in whitelist, using default`);
+        console.log(`Secret name ${effectiveBotTokenSecretName} not in whitelist, using default`);
       }
     } else if (customBotToken) {
       effectiveBotToken = customBotToken;
@@ -136,15 +203,16 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram bot token not configured");
     }
     
-    // Use test/bulletin-specific chat ID if provided, otherwise use default
-    let chatId = testChatId || bulletinChatId || defaultChatId;
+    // Use route config chat ID if available, else test/bulletin-specific, else default
+    let chatId = routeConfig?.chatId || testChatId || bulletinChatId || defaultChatId;
     
     if (!chatId) {
       throw new Error("Telegram chat ID not configured");
     }
 
     // Parse Telegram URL formats
-    let parsedThreadId: number | undefined = testThreadId || bulletinThreadId || undefined;
+    // Use route config thread ID if available, else test/bulletin-specific
+    let parsedThreadId: number | undefined = routeConfig?.threadId ?? testThreadId ?? bulletinThreadId ?? undefined;
     
     if (chatId.includes('t.me/')) {
       // Support both Telegram link styles:
@@ -193,6 +261,25 @@ const handler = async (req: Request): Promise<Response> => {
     // This can help when Telegram expects an internal id, but will still fail if the bot lacks access.
     chatId = await tryResolveChatIdViaBotApi(effectiveBotToken, chatId);
 
+    // Village-specific mini-app links
+    const villageMiniAppMap: Record<string, { app: string; events: string; bulletin: string }> = {
+      'protoville': {
+        app: 'https://t.me/protovillebot/protoville',
+        events: 'https://t.me/protovillebot/protoville?startapp=events',
+        bulletin: 'https://t.me/protovillebot/protoville?startapp=bulletin',
+      },
+      'proof-of-retreat': {
+        app: 'https://t.me/proofofretreatbot/app',
+        events: 'https://t.me/proofofretreatbot/events',
+        bulletin: 'https://t.me/proofofretreatbot/bulletin',
+      },
+    };
+    const miniAppLinks = villageMiniAppMap[villageId || ''] || {
+      app: `https://villedge.lovable.app/${villageId || ''}`,
+      events: `https://villedge.lovable.app/${villageId || ''}?tab=events`,
+      bulletin: `https://villedge.lovable.app/${villageId || ''}?tab=bulletin`,
+    };
+
     let telegramMessage = "";
 
     if (type === "test") {
@@ -203,7 +290,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (category) telegramMessage += `Category: ${escapeHtml(category)}\n`;
       if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
       // Mini-app deep link for map spots
-      telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/app">View on Map</a>`;
+      telegramMessage += `\n\n🔗 <a href="${miniAppLinks.app}">View on Map</a>`;
     } else if (type === "event") {
       telegramMessage = `🗓️ <b>New Event Added</b>\n\n`;
       telegramMessage += `<b>${escapeHtml(name || "Unnamed")}</b>\n`;
@@ -215,7 +302,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (location) telegramMessage += `📌 ${escapeHtml(location)}\n`;
       if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
       // Mini-app deep link for events
-      telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/events">View Events</a>`;
+      telegramMessage += `\n\n🔗 <a href="${miniAppLinks.events}">View Events</a>`;
     } else if (type === "donation") {
       telegramMessage = `💰 <b>Treasury Donation Received</b>\n\n`;
       
@@ -260,7 +347,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Bulletin notification - send the message with mini-app link
       telegramMessage = `📢 <b>New Bulletin Post</b>\n\n"${escapeHtml(bulletinMessage || name || "")}"`;
       // Mini-app deep link for bulletin
-      telegramMessage += `\n\n🔗 <a href="https://t.me/proofofretreatbot/bulletin">View Bulletin</a>`;
+      telegramMessage += `\n\n🔗 <a href="${miniAppLinks.bulletin}">View Bulletin</a>`;
     } else if (type === "resident") {
       // Resident/stay notification
       telegramMessage = `👋 <b>New Resident Joining!</b>\n\n`;
@@ -274,13 +361,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (socialProfile) {
         telegramMessage += `\n\n🔗 <a href="${escapeHtml(socialProfile)}">Profile</a>`;
       }
-      // Use village-specific mini-app link
-      const villageMiniAppMap: Record<string, string> = {
-        'protoville': 'https://t.me/protovillebot/protoville',
-        'proof-of-retreat': 'https://t.me/proofofretreatbot/app',
-      };
-      const miniAppLink = villageMiniAppMap[villageId || ''] || `https://villedge.lovable.app/${villageId}?tab=residents`;
-      telegramMessage += `\n\n👥 <a href="${miniAppLink}">View Residents</a>`;
+      telegramMessage += `\n\n👥 <a href="${miniAppLinks.app}">View Residents</a>`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
