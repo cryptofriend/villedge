@@ -62,6 +62,19 @@ export const useEvents = (villageId: string) => {
         .single();
 
       if (error) throw error;
+
+      // Send Telegram notification for the new event (fire and forget)
+      supabase.functions.invoke('notify-telegram', {
+        body: {
+          type: 'event',
+          name: resolvedData.title,
+          description: resolvedData.description,
+          startTime: resolvedData.start_time,
+          location: resolvedData.location,
+          villageId: villageId,
+        }
+      }).catch(err => console.error('Failed to send event notification:', err));
+
       return data;
     },
     onSuccess: () => {
