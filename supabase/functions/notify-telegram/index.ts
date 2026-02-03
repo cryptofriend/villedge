@@ -262,6 +262,14 @@ const handler = async (req: Request): Promise<Response> => {
     // This can help when Telegram expects an internal id, but will still fail if the bot lacks access.
     chatId = await tryResolveChatIdViaBotApi(effectiveBotToken, chatId);
 
+    // Village-specific timezone mapping based on location
+    const villageTimezoneMap: Record<string, string> = {
+      'protoville': 'Asia/Ho_Chi_Minh',
+      'proof-of-retreat': 'Asia/Ho_Chi_Minh',
+      // Add more villages as needed, default to UTC if not found
+    };
+    const villageTimezone = villageTimezoneMap[villageId || ''] || 'UTC';
+
     // Village-specific links (web pages or mini-apps)
     const villageLinksMap: Record<string, { app: string; events: string; bulletin: string }> = {
       'protoville': {
@@ -297,8 +305,22 @@ const handler = async (req: Request): Promise<Response> => {
       telegramMessage += `<b>${escapeHtml(name || "Unnamed")}</b>\n`;
       if (startTime) {
         const date = new Date(startTime);
-        telegramMessage += `📅 ${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}\n`;
-        telegramMessage += `🕐 ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}\n`;
+        // Format date and time in the village's local timezone
+        const dateFormatter = new Intl.DateTimeFormat("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          timeZone: villageTimezone,
+        });
+        const timeFormatter = new Intl.DateTimeFormat("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: villageTimezone,
+        });
+        telegramMessage += `📅 ${dateFormatter.format(date)}\n`;
+        telegramMessage += `🕐 ${timeFormatter.format(date)}\n`;
       }
       if (location) telegramMessage += `📌 ${escapeHtml(location)}\n`;
       if (description) telegramMessage += `\n${escapeHtml(description.slice(0, 200))}${description.length > 200 ? "..." : ""}`;
