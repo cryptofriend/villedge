@@ -130,8 +130,8 @@ const UserProjectGroup = ({ group }: { group: GroupedResidentProjects }) => {
   
   // Multiple projects - show collapsible
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="rounded-lg bg-muted/50 border border-border overflow-hidden">
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full max-w-full">
+      <div className="rounded-lg bg-muted/50 border border-border overflow-hidden w-full">
         <CollapsibleTrigger asChild>
           <button className="w-full flex items-center gap-2 p-3 hover:bg-muted/80 transition-colors text-left min-w-0">
             <Avatar className="w-8 h-8 flex-shrink-0">
@@ -194,7 +194,7 @@ export const SceniusList = ({ projects, residentProjects = [], loading, villageI
 
   return (
     <ScrollArea className="h-full w-full">
-      <div className="space-y-2 p-1 pr-2 overflow-hidden">
+      <div className="space-y-2 p-1 pr-3 w-full max-w-full overflow-hidden">
         {/* Resident Projects grouped by user */}
         {groupedResidentProjects.map((group) => (
           <UserProjectGroup key={group.userId} group={group} />
