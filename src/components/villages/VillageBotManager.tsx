@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { 
   Loader2, Save, Send, Edit2, X, 
   Calendar, Wallet, MessageSquare, Users, Activity, CheckCircle2,
-  Info, ExternalLink, Copy, Search, Bot
+  Info, ExternalLink, Copy, Search, Bot, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +35,7 @@ interface VillageBotManagerProps {
   villageId: string;
   villageName: string;
   logoUrl?: string;
+  botTokenSecretName?: string | null;
 }
 
 const notificationTypes: {
@@ -75,7 +76,7 @@ const notificationTypes: {
   },
 ];
 
-export function VillageBotManager({ villageId, villageName, logoUrl }: VillageBotManagerProps) {
+export function VillageBotManager({ villageId, villageName, logoUrl, botTokenSecretName }: VillageBotManagerProps) {
   const [loading, setLoading] = useState(true);
   const [routes, setRoutes] = useState<NotificationRoute[]>([]);
   const [editingType, setEditingType] = useState<NotificationType | null>(null);
@@ -89,6 +90,8 @@ export function VillageBotManager({ villageId, villageName, logoUrl }: VillageBo
     chats: Array<{ id: string; title?: string; type?: string }>;
     hint?: string;
   } | null>(null);
+
+  const hasBotConfigured = !!botTokenSecretName;
 
   // Fetch notification routes for this village
   useEffect(() => {
@@ -210,7 +213,7 @@ export function VillageBotManager({ villageId, villageName, logoUrl }: VillageBo
     try {
       if (type === "daily_events" || type === "weekly_events") {
         const { error } = await supabase.functions.invoke("notify-daily-events", {
-          body: { mode: "week", routeType: type },
+          body: { mode: "week", routeType: type, villageId },
         });
         if (error) throw error;
         toast.success("Test notification sent");
@@ -220,6 +223,7 @@ export function VillageBotManager({ villageId, villageName, logoUrl }: VillageBo
             type: "test",
             testChatId: route.chat_id,
             testThreadId: route.thread_id,
+            villageId, // Pass villageId to use village's bot token
           },
         });
         if (error) throw error;
@@ -237,7 +241,7 @@ export function VillageBotManager({ villageId, villageName, logoUrl }: VillageBo
     setDetecting(true);
     try {
       const { data, error } = await supabase.functions.invoke("telegram-debug-chat-ids", {
-        body: { limit: 50 },
+        body: { limit: 50, villageId }, // Pass villageId to use village's bot
       });
 
       if (error) throw error;
@@ -274,10 +278,37 @@ export function VillageBotManager({ villageId, villageName, logoUrl }: VillageBo
             </p>
           </div>
         </div>
-        <Badge variant={activeCount > 0 ? "default" : "secondary"}>
-          {activeCount}/{notificationTypes.length} Active
-        </Badge>
+        <div className="flex items-center gap-2">
+          {hasBotConfigured ? (
+            <Badge variant="default" className="gap-1">
+              <CheckCircle2 className="h-3 w-3" />
+              Bot Configured
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="gap-1">
+              <AlertCircle className="h-3 w-3" />
+              No Bot
+            </Badge>
+          )}
+          <Badge variant={activeCount > 0 ? "default" : "secondary"}>
+            {activeCount}/{notificationTypes.length} Active
+          </Badge>
+        </div>
       </div>
+
+      {/* No Bot Warning */}
+      {!hasBotConfigured && (
+        <Alert className="bg-red-500/10 border-red-500/30">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-sm">
+            <p className="font-medium text-red-700 mb-1">No bot configured for this village</p>
+            <p className="text-xs text-muted-foreground">
+              Please contact an admin to set up a Telegram bot token for {villageName}. 
+              Once configured, you'll be able to manage notification routes here.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Setup Instructions */}
       {activeCount === 0 && (

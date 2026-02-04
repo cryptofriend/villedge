@@ -545,6 +545,7 @@ const EditVillage = () => {
                   villageId={village.id} 
                   villageName={village.name}
                   logoUrl={village.logo_url || undefined}
+                  botTokenSecretName={(village as any).bot_token_secret_name}
                 />
               </TabsContent>
 
