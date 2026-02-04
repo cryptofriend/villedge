@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { CalendarIcon, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   
   const { questions, loading: questionsLoading } = useApplicationQuestions(villageId);
   const { projects, addProject } = useUserProjects(user?.id || null);
@@ -200,7 +202,13 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
         resetForm();
         setOpen(false);
         toast.success("Application submitted! The host will review your request.");
-        window.location.reload();
+        
+        // Redirect to profile page to show application status
+        if (profile?.username) {
+          navigate(`/profile/${profile.username}`);
+        } else if (user?.id) {
+          navigate(`/profile/${user.id}`);
+        }
       }
     } finally {
       setIsSubmitting(false);
