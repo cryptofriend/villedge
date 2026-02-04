@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, GripVertical, Loader2, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, Loader2, X, Calendar, Info } from "lucide-react";
 import { useApplicationQuestions, ApplicationQuestion, ApplicationQuestionInput } from "@/hooks/useApplicationQuestions";
 
 interface ApplicationFormManagerProps {
@@ -82,11 +82,34 @@ export const ApplicationFormManager = ({ villageId }: ApplicationFormManagerProp
 
   return (
     <div className="space-y-6">
+      {/* Default Fields Info */}
+      <Card className="bg-muted/50 border-dashed">
+        <CardContent className="py-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Default Application Fields</p>
+              <p className="text-xs text-muted-foreground">
+                These fields are always included in every application:
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Badge variant="secondary" className="gap-1.5">
+                  <Calendar className="h-3 w-3" />
+                  Stay Dates (Start & End)
+                </Badge>
+                <Badge variant="secondary">Nickname</Badge>
+                <Badge variant="secondary">Villa Selection</Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="font-medium">Application Questions</h4>
+          <h4 className="font-medium">Custom Questions</h4>
           <p className="text-sm text-muted-foreground">
-            Add custom questions for residents to answer when applying
+            Add additional questions for residents to answer when applying
           </p>
         </div>
         {!isAdding && (
@@ -96,7 +119,6 @@ export const ApplicationFormManager = ({ villageId }: ApplicationFormManagerProp
           </Button>
         )}
       </div>
-
       {/* Existing Questions */}
       {questions.length > 0 ? (
         <div className="space-y-3">
