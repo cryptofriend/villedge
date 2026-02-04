@@ -1,19 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type AllowedSecretName = "TELEGRAM_BOT_TOKEN" | "PROTOVILLE_BOT_TOKEN";
-
-const ALLOWED_SECRET_NAMES: AllowedSecretName[] = [
-  "TELEGRAM_BOT_TOKEN",
-  "PROTOVILLE_BOT_TOKEN",
-];
-
 interface DebugRequest {
   botTokenSecretName?: string;
+  villageId?: string;
   limit?: number;
 }
 
@@ -29,13 +24,50 @@ function safeJson(res: Response) {
   return res.json().catch(() => ({}));
 }
 
-function pickBotToken(secretName?: string): string {
+// Fetch the bot token secret name from the villages table
+async function getVillageBotTokenSecretName(villageId: string): Promise<string | null> {
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    
+    const { data, error } = await supabase
+      .from("villages")
+      .select("bot_token_secret_name")
+      .eq("id", villageId)
+      .maybeSingle();
+    
+    if (error || !data?.bot_token_secret_name) {
+      console.log(`No bot token secret name found for village ${villageId}`);
+      return null;
+    }
+    
+    return data.bot_token_secret_name;
+  } catch (e) {
+    console.log("Could not fetch village bot token:", e);
+    return null;
+  }
+}
+
+async function pickBotToken(secretName?: string, villageId?: string): Promise<string> {
   const fallback = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
-  const requested = (secretName || "").trim().toUpperCase();
+  let requested = (secretName || "").trim().toUpperCase();
+
+  // If villageId provided and no explicit secret name, look up from village config
+  if (!requested && villageId) {
+    const villageSecret = await getVillageBotTokenSecretName(villageId);
+    if (villageSecret) {
+      requested = villageSecret;
+    }
+  }
 
   if (!requested) return fallback;
 
-  if (!ALLOWED_SECRET_NAMES.includes(requested as AllowedSecretName)) {
+  // Validate secret name format (alphanumeric + underscores, starts with letter)
+  const isValidSecretName = /^[A-Z][A-Z0-9_]*$/.test(requested);
+  if (!isValidSecretName) {
+    console.log(`Invalid secret name format: ${requested}`);
     return fallback;
   }
 
@@ -71,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const body = (await req.json().catch(() => ({}))) as DebugRequest;
-    const botToken = pickBotToken(body.botTokenSecretName);
+    const botToken = await pickBotToken(body.botTokenSecretName, body.villageId);
 
     if (!botToken) {
       throw new Error("Telegram bot token not configured");
