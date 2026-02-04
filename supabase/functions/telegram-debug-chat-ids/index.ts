@@ -24,8 +24,8 @@ function safeJson(res: Response) {
   return res.json().catch(() => ({}));
 }
 
-// Fetch the bot token secret name from the villages table
-async function getVillageBotTokenSecretName(villageId: string): Promise<string | null> {
+// Fetch the bot token from the villages table (direct or via secret name)
+async function getVillageBotToken(villageId: string): Promise<string | null> {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -34,16 +34,26 @@ async function getVillageBotTokenSecretName(villageId: string): Promise<string |
     
     const { data, error } = await supabase
       .from("villages")
-      .select("bot_token_secret_name")
+      .select("bot_token, bot_token_secret_name")
       .eq("id", villageId)
       .maybeSingle();
     
-    if (error || !data?.bot_token_secret_name) {
-      console.log(`No bot token secret name found for village ${villageId}`);
+    if (error) {
+      console.log(`Error fetching village bot config for ${villageId}:`, error);
       return null;
     }
     
-    return data.bot_token_secret_name;
+    // Priority: direct bot_token > bot_token_secret_name
+    if (data?.bot_token) {
+      return data.bot_token;
+    }
+    
+    if (data?.bot_token_secret_name) {
+      const token = Deno.env.get(data.bot_token_secret_name);
+      if (token) return token;
+    }
+    
+    return null;
   } catch (e) {
     console.log("Could not fetch village bot token:", e);
     return null;
@@ -52,26 +62,24 @@ async function getVillageBotTokenSecretName(villageId: string): Promise<string |
 
 async function pickBotToken(secretName?: string, villageId?: string): Promise<string> {
   const fallback = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
-  let requested = (secretName || "").trim().toUpperCase();
 
-  // If villageId provided and no explicit secret name, look up from village config
-  if (!requested && villageId) {
-    const villageSecret = await getVillageBotTokenSecretName(villageId);
-    if (villageSecret) {
-      requested = villageSecret;
+  // If villageId provided, try to get token from village config first
+  if (villageId) {
+    const villageToken = await getVillageBotToken(villageId);
+    if (villageToken) return villageToken;
+  }
+
+  // If explicit secret name provided, look it up
+  const requested = (secretName || "").trim().toUpperCase();
+  if (requested) {
+    const isValidSecretName = /^[A-Z][A-Z0-9_]*$/.test(requested);
+    if (isValidSecretName) {
+      const token = Deno.env.get(requested);
+      if (token) return token;
     }
   }
 
-  if (!requested) return fallback;
-
-  // Validate secret name format (alphanumeric + underscores, starts with letter)
-  const isValidSecretName = /^[A-Z][A-Z0-9_]*$/.test(requested);
-  if (!isValidSecretName) {
-    console.log(`Invalid secret name format: ${requested}`);
-    return fallback;
-  }
-
-  return Deno.env.get(requested) || fallback;
+  return fallback;
 }
 
 function dedupeChats(chats: TelegramChatInfo[]): TelegramChatInfo[] {
