@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Loader2, Settings, Users, MapPin, Image, ClipboardList } from "lucide-react";
+import { ArrowLeft, Loader2, Settings, Users, MapPin, Image, ClipboardList, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useVillages, Village } from "@/hooks/useVillages";
@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { CoHostManager } from "@/components/villages/CoHostManager";
 import { ApplicationFormManager } from "@/components/villages/ApplicationFormManager";
+import { VillageBotManager } from "@/components/villages/VillageBotManager";
 
 const EditVillage = () => {
   const { villageSlug } = useParams<{ villageSlug: string }>();
@@ -236,7 +237,7 @@ const EditVillage = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsList className="grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="details" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   <span className="hidden sm:inline">Details</span>
@@ -248,6 +249,10 @@ const EditVillage = () => {
                 <TabsTrigger value="application" className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4" />
                   <span className="hidden sm:inline">Application</span>
+                </TabsTrigger>
+                <TabsTrigger value="bot" className="flex items-center gap-2">
+                  <Bot className="h-4 w-4" />
+                  <span className="hidden sm:inline">TG Bot</span>
                 </TabsTrigger>
                 <TabsTrigger value="hosts" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -524,6 +529,14 @@ const EditVillage = () => {
 
               <TabsContent value="application">
                 <ApplicationFormManager villageId={village.id} />
+              </TabsContent>
+
+              <TabsContent value="bot">
+                <VillageBotManager 
+                  villageId={village.id} 
+                  villageName={village.name}
+                  logoUrl={village.logo_url || undefined}
+                />
               </TabsContent>
 
               <TabsContent value="hosts">
