@@ -11,11 +11,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { StayInput } from "@/hooks/useStays";
 import { useAuth } from "@/hooks/useAuth";
 import { useApplicationQuestions, ApplicationQuestion } from "@/hooks/useApplicationQuestions";
 import { useUserProjects } from "@/hooks/useUserProjects";
+import { useProfileSocialLinks, getSocialPlatform } from "@/hooks/useProfileSocialLinks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -30,7 +30,8 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
   const { user, profile } = useAuth();
   
   const { questions, loading: questionsLoading } = useApplicationQuestions(villageId);
-  const { projects } = useUserProjects(user?.id || null);
+  const { projects, addProject } = useUserProjects(user?.id || null);
+  const { socialLinks, addLink } = useProfileSocialLinks(user?.id || null);
   
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
@@ -60,6 +61,21 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
       }
     }
     
+    // Social media links - autofill from profile
+    if (lowerText.includes("social") || lowerText.includes("twitter") || 
+        lowerText.includes("linkedin") || lowerText.includes("instagram") ||
+        lowerText.includes("소셜") || lowerText.includes("sns")) {
+      if (socialLinks.length > 0) {
+        return socialLinks.map((link) => link.url).join("\n");
+      }
+    }
+    
+    // Telegram
+    if (lowerText.includes("telegram") || lowerText.includes("텔레그램")) {
+      const telegramLink = socialLinks.find((link) => link.platform === "telegram");
+      if (telegramLink) return telegramLink.url;
+    }
+    
     return "";
   };
 
@@ -74,7 +90,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
       }
     });
     setAnswers(initialAnswers);
-  }, [questions, profile, user, projects]);
+  }, [questions, profile, user, projects, socialLinks]);
 
   const resetForm = () => {
     setStartDate(undefined);
@@ -178,6 +194,9 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
           }
         }
 
+        // Sync projects and social links back to profile
+        await syncToProfile(questions, answers);
+
         resetForm();
         setOpen(false);
         toast.success("Application submitted! The host will review your request.");
@@ -185,6 +204,57 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Sync "What are you building" and social links back to user's profile
+  const syncToProfile = async (
+    questions: ApplicationQuestion[],
+    answers: Record<string, string | string[]>
+  ) => {
+    if (!user?.id) return;
+
+    const existingProjectUrls = new Set(projects.map((p) => p.url.toLowerCase()));
+    const existingSocialUrls = new Set(socialLinks.map((l) => l.url.toLowerCase()));
+
+    for (const question of questions) {
+      const answer = answers[question.id];
+      if (!answer || (typeof answer === "string" && !answer.trim())) continue;
+
+      const lowerText = question.question_text.toLowerCase();
+      const answerText = typeof answer === "string" ? answer : "";
+
+      // Sync "What are you building" projects
+      if ((lowerText.includes("building") || lowerText.includes("working on")) &&
+          (lowerText.includes("what") || lowerText.includes("어떤"))) {
+        // Extract URLs from the answer
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const urls = answerText.match(urlRegex) || [];
+        
+        for (const url of urls) {
+          if (!existingProjectUrls.has(url.toLowerCase())) {
+            await addProject(url);
+            existingProjectUrls.add(url.toLowerCase());
+          }
+        }
+      }
+
+      // Sync social media links
+      if (lowerText.includes("social") || lowerText.includes("twitter") || 
+          lowerText.includes("linkedin") || lowerText.includes("instagram") ||
+          lowerText.includes("소셜") || lowerText.includes("sns") ||
+          lowerText.includes("telegram") || lowerText.includes("텔레그램")) {
+        // Extract URLs from the answer
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const urls = answerText.match(urlRegex) || [];
+        
+        for (const url of urls) {
+          if (!existingSocialUrls.has(url.toLowerCase()) && getSocialPlatform(url)) {
+            await addLink(url);
+            existingSocialUrls.add(url.toLowerCase());
+          }
+        }
+      }
     }
   };
 
