@@ -280,13 +280,13 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
           Apply to Join
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[85vh] flex flex-col overflow-hidden">
-        <DialogHeader className="shrink-0">
+      <DialogContent className="max-w-md max-h-[85vh] p-0 gap-0 flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 p-6 pb-4">
           <DialogTitle className="font-display text-xl">Apply to Join</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
-          <form onSubmit={handleSubmit} className="space-y-5 pb-4 pr-2">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Date Range */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -381,7 +381,7 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
               {isSubmitting ? "Submitting..." : "Submit Application"}
             </Button>
           </form>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
