@@ -15,7 +15,6 @@ import { createFloatingCommentHTML } from "./FloatingCommentBubble";
 import { AuthButton } from "./AuthButton";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { VillageSocialIcons } from "./VillageSocialIcons";
-import { EditVillageDialog } from "./villages/EditVillageDialog";
 import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar, Coins } from "lucide-react";
 import { TreasuryList } from "./treasury/TreasuryList";
 import { ExpandablePanel } from "./ExpandablePanel";
@@ -786,12 +785,15 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                           {activeVillage.name}
                         </h1>
                         {isHost(activeVillage.id) && (
-                          <EditVillageDialog 
-                            village={activeVillage} 
-                            onVillageUpdated={() => {
-                              refetchVillages();
-                            }} 
-                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => navigate(`/${activeVillage.id}/edit`)}
+                            title="Edit village"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
                       <VillageSocialIcons village={activeVillage} />
@@ -808,12 +810,15 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                               {activeVillage.name}
                             </h1>
                             {isHost(activeVillage.id) && (
-                              <EditVillageDialog 
-                                village={activeVillage} 
-                                onVillageUpdated={() => {
-                                  refetchVillages();
-                                }} 
-                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                onClick={() => navigate(`/${activeVillage.id}/edit`)}
+                                title="Edit village"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
                             )}
                           </div>
                           <span className="font-body text-sm text-muted-foreground">
