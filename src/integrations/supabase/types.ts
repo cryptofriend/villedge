@@ -662,6 +662,38 @@ export type Database = {
           },
         ]
       }
+      stay_notifications: {
+        Row: {
+          id: string
+          stay_id: string
+          subscribed_at: string
+          telegram_chat_id: string
+          telegram_username: string | null
+        }
+        Insert: {
+          id?: string
+          stay_id: string
+          subscribed_at?: string
+          telegram_chat_id: string
+          telegram_username?: string | null
+        }
+        Update: {
+          id?: string
+          stay_id?: string
+          subscribed_at?: string
+          telegram_chat_id?: string
+          telegram_username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stay_notifications_stay_id_fkey"
+            columns: ["stay_id"]
+            isOneToOne: true
+            referencedRelation: "stays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stays: {
         Row: {
           asks: string | null

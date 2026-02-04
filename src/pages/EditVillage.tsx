@@ -537,7 +537,7 @@ const EditVillage = () => {
               </TabsContent>
 
               <TabsContent value="applications">
-                <ApplicationsManager villageId={village.id} />
+                <ApplicationsManager villageId={village.id} villageName={village.name} />
               </TabsContent>
 
               <TabsContent value="bot">

@@ -31,7 +31,7 @@ async function tryResolveChatIdViaBotApi(botToken: string, chatId: string): Prom
 }
 
 interface NotificationRequest {
-  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident";
+  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status";
   name?: string;
   description?: string;
   location?: string;
@@ -61,6 +61,11 @@ interface NotificationRequest {
   // Test-specific fields
   testChatId?: string;
   testThreadId?: number;
+  // Application status notification fields
+  stayId?: string;
+  newStatus?: string;
+  villageName?: string;
+  applicantChatId?: string;
 }
 
 // Get chat ID from settings table, fallback to env variable
@@ -172,7 +177,8 @@ const handler = async (req: Request): Promise<Response> => {
       testChatId, testThreadId, 
       residentName, stayDates, intention, socialProfile, 
       botToken: customBotToken,
-      botTokenSecretName
+      botTokenSecretName,
+      stayId, newStatus, villageName, applicantChatId
     }: NotificationRequest = requestBody;
     
     // Look up village-specific notification route for certain types
@@ -236,8 +242,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Telegram bot token not configured");
     }
     
-    // Use route config chat ID if available, else test/bulletin-specific, else default
-    let chatId = routeConfig?.chatId || testChatId || bulletinChatId || defaultChatId;
+    // Use route config chat ID if available, else test/bulletin-specific, else applicant-specific, else default
+    let chatId = type === "application_status" && applicantChatId 
+      ? applicantChatId 
+      : (routeConfig?.chatId || testChatId || bulletinChatId || defaultChatId);
     
     if (!chatId) {
       throw new Error("Telegram chat ID not configured");
@@ -417,6 +425,22 @@ const handler = async (req: Request): Promise<Response> => {
         telegramMessage += `\n\n🔗 <a href="${escapeHtml(socialProfile)}">Profile</a>`;
       }
       telegramMessage += `\n\n👥 <a href="${miniAppLinks.app}">View Residents</a>`;
+    } else if (type === "application_status") {
+      // Application status update notification to the applicant
+      const statusEmoji = newStatus === "confirmed" ? "✅" : newStatus === "rejected" ? "❌" : "⏳";
+      const statusLabel = newStatus === "confirmed" ? "Confirmed" : newStatus === "rejected" ? "Rejected" : "Updated";
+      
+      telegramMessage = `${statusEmoji} <b>Application Status Update</b>\n\n`;
+      telegramMessage += `Your application to <b>${escapeHtml(villageName || "the village")}</b> has been <b>${statusLabel}</b>!\n\n`;
+      
+      if (newStatus === "confirmed") {
+        telegramMessage += `🎉 Congratulations! We look forward to seeing you.\n\n`;
+        telegramMessage += `🔗 <a href="${miniAppLinks.app}">View Village Details</a>`;
+      } else if (newStatus === "rejected") {
+        telegramMessage += `We appreciate your interest. Feel free to apply to other villages!`;
+      } else {
+        telegramMessage += `🔗 <a href="${miniAppLinks.app}">View Details</a>`;
+      }
     }
 
     const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
