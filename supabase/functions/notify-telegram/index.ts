@@ -31,7 +31,7 @@ async function tryResolveChatIdViaBotApi(botToken: string, chatId: string): Prom
 }
 
 interface NotificationRequest {
-  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status";
+  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status" | "new_application";
   name?: string;
   description?: string;
   location?: string;
@@ -193,6 +193,7 @@ const handler = async (req: Request): Promise<Response> => {
       'donation': 'donation',
       'resident': 'resident',
       'event': 'event',
+      'new_application': 'new_application',
     };
     
     const routeType = typeToRouteType[type];
@@ -425,6 +426,24 @@ const handler = async (req: Request): Promise<Response> => {
         telegramMessage += `\n\n🔗 <a href="${escapeHtml(socialProfile)}">Profile</a>`;
       }
       telegramMessage += `\n\n👥 <a href="${miniAppLinks.app}">View Residents</a>`;
+    } else if (type === "new_application") {
+      // New application notification for hosts
+      telegramMessage = `📋 <b>New Application Received!</b>\n\n`;
+      telegramMessage += `<b>${escapeHtml(residentName || name || "Someone")}</b> has applied to join`;
+      if (stayDates) {
+        telegramMessage += `\n📅 ${escapeHtml(stayDates)}`;
+      }
+      if (intention) {
+        telegramMessage += `\n\n💭 "${escapeHtml(intention.slice(0, 150))}${intention.length > 150 ? "..." : ""}"`;
+      }
+      if (socialProfile) {
+        telegramMessage += `\n\n🔗 <a href="${escapeHtml(socialProfile)}">Profile</a>`;
+      }
+      // Link to applications dashboard
+      const applicationsUrl = villageId 
+        ? `https://villedge.lovable.app/${villageId}/edit?tab=applications`
+        : miniAppLinks.app;
+      telegramMessage += `\n\n📝 <a href="${applicationsUrl}">Review Applications</a>`;
     } else if (type === "application_status") {
       // Application status update notification to the applicant
       const statusEmoji = newStatus === "confirmed" ? "✅" : newStatus === "rejected" ? "❌" : "⏳";

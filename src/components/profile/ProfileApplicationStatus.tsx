@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Clock, CheckCircle2, XCircle, FileText, MapPin, Calendar, ExternalLink } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, FileText, MapPin, Calendar, ExternalLink, Bell, BellOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
+const TelegramIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+  </svg>
+);
+
 interface Application {
   id: string;
   village_id: string;
   village_name: string;
   village_logo?: string;
+  village_bot_username?: string;
   start_date: string;
   end_date: string;
   status: string | null;
   created_at: string;
+  has_notification: boolean;
 }
 
 interface ProfileApplicationStatusProps {
@@ -51,15 +59,39 @@ export const ProfileApplicationStatus = ({ userId }: ProfileApplicationStatusPro
           return;
         }
 
-        // Fetch village info
+        // Fetch village info including bot token secret name
         const villageIds = [...new Set(stays.map((s) => s.village_id))];
         const { data: villages } = await supabase
           .from("villages")
-          .select("id, name, logo_url")
+          .select("id, name, logo_url, bot_token_secret_name")
           .in("id", villageIds);
 
+        // Fetch notification subscriptions for these stays
+        const stayIds = stays.map((s) => s.id);
+        const { data: notifications } = await supabase
+          .from("stay_notifications")
+          .select("stay_id")
+          .in("stay_id", stayIds);
+
+        const notifiedStays = new Set(notifications?.map((n) => n.stay_id) || []);
+
+        // Derive bot username from secret name (e.g., "PROTOVILLE_BOT_TOKEN" -> "protoville_bot")
+        const getBotUsername = (secretName: string | null): string | undefined => {
+          if (!secretName) return undefined;
+          // Common pattern: VILLAGENAME_BOT_TOKEN -> villagename_bot
+          const match = secretName.match(/^(.+)_BOT_TOKEN$/i);
+          if (match) {
+            return `${match[1].toLowerCase()}_bot`;
+          }
+          return undefined;
+        };
+
         const villageMap = new Map(
-          villages?.map((v) => [v.id, { name: v.name, logo: v.logo_url }]) || []
+          villages?.map((v) => [v.id, { 
+            name: v.name, 
+            logo: v.logo_url,
+            botUsername: getBotUsername(v.bot_token_secret_name)
+          }]) || []
         );
 
         const apps: Application[] = stays.map((stay) => ({
@@ -67,10 +99,12 @@ export const ProfileApplicationStatus = ({ userId }: ProfileApplicationStatusPro
           village_id: stay.village_id,
           village_name: villageMap.get(stay.village_id)?.name || stay.village_id,
           village_logo: villageMap.get(stay.village_id)?.logo || undefined,
+          village_bot_username: villageMap.get(stay.village_id)?.botUsername,
           start_date: stay.start_date,
           end_date: stay.end_date,
           status: stay.status,
           created_at: stay.created_at,
+          has_notification: notifiedStays.has(stay.id),
         }));
 
         setApplications(apps);
@@ -177,19 +211,46 @@ export const ProfileApplicationStatus = ({ userId }: ProfileApplicationStatusPro
                   {getStatusBadge(app.status)}
                 </div>
 
-                <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center justify-between mt-2 gap-2">
                   <span className="text-xs text-muted-foreground">
                     Applied {format(new Date(app.created_at), "MMM d, yyyy")}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => navigate(`/${app.village_id}`)}
-                  >
-                    View Village
-                    <ExternalLink className="h-3 w-3 ml-1" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {/* Notification status/button */}
+                    {app.village_bot_username && app.status === "planning" && (
+                      app.has_notification ? (
+                        <span className="flex items-center gap-1 text-xs text-green-600 px-2">
+                          <Bell className="h-3 w-3" />
+                          Alerts on
+                        </span>
+                      ) : (
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-[#0088cc] hover:text-[#0077b5] hover:bg-[#0088cc]/10"
+                        >
+                          <a 
+                            href={`https://t.me/${app.village_bot_username}?start=stay_${app.id}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            <TelegramIcon className="h-3 w-3 mr-1" />
+                            Get Alerts
+                          </a>
+                        </Button>
+                      )
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => navigate(`/${app.village_id}`)}
+                    >
+                      View Village
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
