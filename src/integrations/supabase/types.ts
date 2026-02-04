@@ -623,6 +623,45 @@ export type Database = {
           },
         ]
       }
+      stay_application_answers: {
+        Row: {
+          answer: string | null
+          created_at: string
+          id: string
+          question_id: string
+          stay_id: string
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          id?: string
+          question_id: string
+          stay_id: string
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          stay_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stay_application_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "village_application_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stay_application_answers_stay_id_fkey"
+            columns: ["stay_id"]
+            isOneToOne: false
+            referencedRelation: "stays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stays: {
         Row: {
           asks: string | null
@@ -822,6 +861,50 @@ export type Database = {
           wallet_type?: Database["public"]["Enums"]["wallet_type"]
         }
         Relationships: []
+      }
+      village_application_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          options: string[] | null
+          order_index: number
+          question_text: string
+          question_type: string
+          updated_at: string
+          village_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          options?: string[] | null
+          order_index?: number
+          question_text: string
+          question_type?: string
+          updated_at?: string
+          village_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          options?: string[] | null
+          order_index?: number
+          question_text?: string
+          question_type?: string
+          updated_at?: string
+          village_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "village_application_questions_village_id_fkey"
+            columns: ["village_id"]
+            isOneToOne: false
+            referencedRelation: "villages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       village_hosts: {
         Row: {
