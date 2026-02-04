@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.magic-auth]
 verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false

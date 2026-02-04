@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { notifyApplicantOfStatusChange } from "@/hooks/useStayStatusNotification";
 
 interface ApplicationAnswer {
   question_text: string;
@@ -46,9 +47,10 @@ interface Application {
 
 interface ApplicationsManagerProps {
   villageId: string;
+  villageName?: string;
 }
 
-export const ApplicationsManager = ({ villageId }: ApplicationsManagerProps) => {
+export const ApplicationsManager = ({ villageId, villageName }: ApplicationsManagerProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -157,6 +159,20 @@ export const ApplicationsManager = ({ villageId }: ApplicationsManagerProps) => 
       );
 
       toast.success(`Application ${newStatus === "confirmed" ? "approved" : newStatus === "rejected" ? "rejected" : "set to pending"}`);
+
+      // Send notification to applicant (don't block on this)
+      if (newStatus === "confirmed" || newStatus === "rejected") {
+        notifyApplicantOfStatusChange({
+          stayId: appId,
+          newStatus,
+          villageId,
+          villageName: villageName || "the village",
+        }).then((result) => {
+          if (result.success) {
+            console.log("Applicant notified of status change");
+          }
+        });
+      }
     } catch (err) {
       console.error("Error updating status:", err);
       toast.error("Failed to update application status");
