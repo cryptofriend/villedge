@@ -100,8 +100,8 @@ interface NotificationRoute {
   botTokenSecretName: string | null;
 }
 
-// Fetch the bot token secret name from the villages table
-async function getVillageBotTokenSecretName(villageId: string): Promise<string | null> {
+// Fetch the bot token from the villages table (direct or via secret name)
+async function getVillageBotToken(villageId: string): Promise<string | null> {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -110,16 +110,31 @@ async function getVillageBotTokenSecretName(villageId: string): Promise<string |
     
     const { data, error } = await supabase
       .from("villages")
-      .select("bot_token_secret_name")
+      .select("bot_token, bot_token_secret_name")
       .eq("id", villageId)
       .maybeSingle();
     
-    if (error || !data?.bot_token_secret_name) {
-      console.log(`No bot token secret name found for village ${villageId}`);
+    if (error) {
+      console.log(`Error fetching village bot config for ${villageId}:`, error);
       return null;
     }
     
-    return data.bot_token_secret_name;
+    // Priority: direct bot_token > bot_token_secret_name
+    if (data?.bot_token) {
+      console.log(`Using direct bot token for village ${villageId}`);
+      return data.bot_token;
+    }
+    
+    if (data?.bot_token_secret_name) {
+      const token = Deno.env.get(data.bot_token_secret_name);
+      if (token) {
+        console.log(`Using bot token from secret ${data.bot_token_secret_name} for village ${villageId}`);
+        return token;
+      }
+      console.log(`Secret ${data.bot_token_secret_name} not found for village ${villageId}`);
+    }
+    
+    return null;
   } catch (e) {
     console.log("Could not fetch village bot token:", e);
     return null;
@@ -146,13 +161,13 @@ async function getNotificationRoute(villageId: string, notificationType: string)
       return null;
     }
     
-    // Get bot token from village configuration
-    const botTokenSecretName = await getVillageBotTokenSecretName(villageId);
+    // Get bot token from village configuration (uses new function that checks both columns)
+    const botToken = await getVillageBotToken(villageId);
     
     return {
       chatId: data.chat_id,
       threadId: data.thread_id,
-      botTokenSecretName,
+      botTokenSecretName: null, // Not used anymore, token is fetched directly
     };
   } catch (e) {
     console.log("Could not fetch notification route:", e);
@@ -205,35 +220,29 @@ const handler = async (req: Request): Promise<Response> => {
     }
     
     // Determine which bot token to use:
-    // 1. If route config has a bot token (from village config), use it
-    // 2. Else if villageId is provided, look up from village config
-    // 3. Else if botTokenSecretName is provided, look it up from env
-    // 4. Else if customBotToken is provided directly, use it
-    // 5. Else fallback to default TELEGRAM_BOT_TOKEN
+    // 1. If villageId is provided, look up from village config (bot_token or bot_token_secret_name)
+    // 2. Else if botTokenSecretName is provided, look it up from env
+    // 3. Else if customBotToken is provided directly, use it
+    // 4. Else fallback to default TELEGRAM_BOT_TOKEN
     let effectiveBotToken = defaultBotToken;
-    let effectiveBotTokenSecretName: string | undefined = routeConfig?.botTokenSecretName || botTokenSecretName || undefined;
     
-    // If no route config but villageId provided, look up village's bot token
-    if (!effectiveBotTokenSecretName && villageId) {
-      const villageBotToken = await getVillageBotTokenSecretName(villageId);
+    // Try to get village-specific bot token first
+    if (villageId) {
+      const villageBotToken = await getVillageBotToken(villageId);
       if (villageBotToken) {
-        effectiveBotTokenSecretName = villageBotToken;
+        effectiveBotToken = villageBotToken;
       }
-    }
-    
-    if (effectiveBotTokenSecretName) {
+    } else if (botTokenSecretName) {
       // Validate secret name format (alphanumeric + underscores, starts with letter)
-      const isValidSecretName = /^[A-Z][A-Z0-9_]*$/.test(effectiveBotTokenSecretName);
+      const isValidSecretName = /^[A-Z][A-Z0-9_]*$/.test(botTokenSecretName);
       if (isValidSecretName) {
-        const tokenFromSecret = Deno.env.get(effectiveBotTokenSecretName);
+        const tokenFromSecret = Deno.env.get(botTokenSecretName);
         if (tokenFromSecret) {
           effectiveBotToken = tokenFromSecret;
-          console.log(`Using bot token from secret: ${effectiveBotTokenSecretName}`);
+          console.log(`Using bot token from secret: ${botTokenSecretName}`);
         } else {
-          console.log(`Secret ${effectiveBotTokenSecretName} not found, falling back to default`);
+          console.log(`Secret ${botTokenSecretName} not found, falling back to default`);
         }
-      } else {
-        console.log(`Secret name ${effectiveBotTokenSecretName} has invalid format, using default`);
       }
     } else if (customBotToken) {
       effectiveBotToken = customBotToken;

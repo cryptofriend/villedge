@@ -546,6 +546,8 @@ const EditVillage = () => {
                   villageName={village.name}
                   logoUrl={village.logo_url || undefined}
                   botTokenSecretName={(village as any).bot_token_secret_name}
+                  botToken={(village as any).bot_token}
+                  onBotTokenUpdate={refetchVillages}
                 />
               </TabsContent>
 

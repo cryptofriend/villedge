@@ -55,26 +55,35 @@ async function getBotTokenForStay(supabase: any, stayId: string): Promise<string
     return null;
   }
 
-  // Get the bot token secret name for this village
+  // Get the bot token (direct or via secret name) for this village
   const { data: village, error: villageError } = await supabase
     .from("villages")
-    .select("bot_token_secret_name, name")
+    .select("bot_token, bot_token_secret_name, name")
     .eq("id", stay.village_id)
     .maybeSingle();
 
-  if (villageError || !village?.bot_token_secret_name) {
-    console.log("Village has no bot configured:", stay.village_id);
+  if (villageError) {
+    console.log("Error fetching village:", villageError);
     return null;
   }
 
-  // Get the actual token from environment
-  const token = Deno.env.get(village.bot_token_secret_name);
-  if (!token) {
+  // Priority: direct bot_token > bot_token_secret_name
+  if (village?.bot_token) {
+    console.log("Using direct bot token for village:", stay.village_id);
+    return village.bot_token;
+  }
+
+  if (village?.bot_token_secret_name) {
+    const token = Deno.env.get(village.bot_token_secret_name);
+    if (token) {
+      console.log("Using bot token from secret:", village.bot_token_secret_name);
+      return token;
+    }
     console.log("Bot token secret not found:", village.bot_token_secret_name);
-    return null;
   }
 
-  return token;
+  console.log("Village has no bot configured:", stay.village_id);
+  return null;
 }
 
 const handler = async (req: Request): Promise<Response> => {

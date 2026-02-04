@@ -36,6 +36,8 @@ interface VillageBotManagerProps {
   villageName: string;
   logoUrl?: string;
   botTokenSecretName?: string | null;
+  botToken?: string | null;
+  onBotTokenUpdate?: () => void;
 }
 
 const notificationTypes: {
@@ -82,7 +84,7 @@ const notificationTypes: {
   },
 ];
 
-export function VillageBotManager({ villageId, villageName, logoUrl, botTokenSecretName }: VillageBotManagerProps) {
+export function VillageBotManager({ villageId, villageName, logoUrl, botTokenSecretName, botToken, onBotTokenUpdate }: VillageBotManagerProps) {
   const [loading, setLoading] = useState(true);
   const [routes, setRoutes] = useState<NotificationRoute[]>([]);
   const [editingType, setEditingType] = useState<NotificationType | null>(null);
@@ -96,8 +98,15 @@ export function VillageBotManager({ villageId, villageName, logoUrl, botTokenSec
     chats: Array<{ id: string; title?: string; type?: string }>;
     hint?: string;
   } | null>(null);
+  
+  // Bot token configuration state
+  const [showBotConfig, setShowBotConfig] = useState(false);
+  const [newBotToken, setNewBotToken] = useState("");
+  const [savingBotToken, setSavingBotToken] = useState(false);
+  const [verifyingToken, setVerifyingToken] = useState(false);
+  const [tokenVerified, setTokenVerified] = useState<{ username: string } | null>(null);
 
-  const hasBotConfigured = !!botTokenSecretName;
+  const hasBotConfigured = !!botTokenSecretName || !!botToken;
 
   // Fetch notification routes for this village
   useEffect(() => {
@@ -244,6 +253,10 @@ export function VillageBotManager({ villageId, villageName, logoUrl, botTokenSec
   };
 
   const handleDetect = async () => {
+    if (!hasBotConfigured) {
+      toast.error("Please configure a bot token first");
+      return;
+    }
     setDetecting(true);
     try {
       const { data, error } = await supabase.functions.invoke("telegram-debug-chat-ids", {
@@ -258,6 +271,78 @@ export function VillageBotManager({ villageId, villageName, logoUrl, botTokenSec
       toast.error(err.message || "Failed to detect");
     } finally {
       setDetecting(false);
+    }
+  };
+
+  const verifyBotToken = async (token: string) => {
+    setVerifyingToken(true);
+    setTokenVerified(null);
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const json = await res.json();
+      if (json?.ok && json?.result?.username) {
+        setTokenVerified({ username: json.result.username });
+        return true;
+      } else {
+        toast.error(json?.description || "Invalid bot token");
+        return false;
+      }
+    } catch (err: any) {
+      toast.error("Failed to verify token");
+      return false;
+    } finally {
+      setVerifyingToken(false);
+    }
+  };
+
+  const handleSaveBotToken = async () => {
+    if (!newBotToken.trim()) {
+      toast.error("Please enter a bot token");
+      return;
+    }
+
+    // Verify token first
+    const isValid = await verifyBotToken(newBotToken.trim());
+    if (!isValid) return;
+
+    setSavingBotToken(true);
+    try {
+      const { error } = await supabase
+        .from("villages")
+        .update({ bot_token: newBotToken.trim() })
+        .eq("id", villageId);
+
+      if (error) throw error;
+
+      toast.success("Bot token saved successfully");
+      setShowBotConfig(false);
+      setNewBotToken("");
+      onBotTokenUpdate?.();
+    } catch (err: any) {
+      console.error("Error saving bot token:", err);
+      toast.error(err.message || "Failed to save bot token");
+    } finally {
+      setSavingBotToken(false);
+    }
+  };
+
+  const handleRemoveBotToken = async () => {
+    setSavingBotToken(true);
+    try {
+      const { error } = await supabase
+        .from("villages")
+        .update({ bot_token: null })
+        .eq("id", villageId);
+
+      if (error) throw error;
+
+      toast.success("Bot token removed");
+      onBotTokenUpdate?.();
+    } catch (err: any) {
+      console.error("Error removing bot token:", err);
+      toast.error(err.message || "Failed to remove bot token");
+    } finally {
+      setSavingBotToken(false);
     }
   };
 
@@ -302,126 +387,231 @@ export function VillageBotManager({ villageId, villageName, logoUrl, botTokenSec
         </div>
       </div>
 
-      {/* No Bot Warning */}
-      {!hasBotConfigured && (
-        <Alert className="bg-red-500/10 border-red-500/30">
-          <AlertCircle className="h-4 w-4 text-red-600" />
+      {/* Bot Token Configuration */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                Bot Configuration
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {hasBotConfigured 
+                  ? "Your Telegram bot is configured and ready to send notifications"
+                  : "Configure your Telegram bot to enable notifications"
+                }
+              </CardDescription>
+            </div>
+            {hasBotConfigured ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-green-600 border-green-300">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Active
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowBotConfig(!showBotConfig)}
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => setShowBotConfig(!showBotConfig)}
+              >
+                Configure Bot
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        {showBotConfig && (
+          <CardContent className="pt-0 space-y-4">
+            <Alert className="bg-blue-500/10 border-blue-500/30">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-xs">
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>
+                    Create a bot via{" "}
+                    <a
+                      href="https://t.me/BotFather"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#0088cc] hover:underline"
+                    >
+                      @BotFather
+                    </a>
+                  </li>
+                  <li>Copy the bot token and paste it below</li>
+                  <li>Add your bot to your Telegram group as admin</li>
+                </ol>
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Bot Token</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  value={newBotToken}
+                  onChange={(e) => {
+                    setNewBotToken(e.target.value);
+                    setTokenVerified(null);
+                  }}
+                  placeholder="123456789:ABCdefGHI..."
+                  className="h-9 text-sm font-mono"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => verifyBotToken(newBotToken)}
+                  disabled={!newBotToken.trim() || verifyingToken}
+                  className="shrink-0"
+                >
+                  {verifyingToken ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : tokenVerified ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  ) : (
+                    "Verify"
+                  )}
+                </Button>
+              </div>
+              {tokenVerified && (
+                <p className="text-xs text-green-600">
+                  ✓ Valid token for @{tokenVerified.username}
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-between">
+              {hasBotConfigured && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleRemoveBotToken}
+                  disabled={savingBotToken}
+                >
+                  Remove Bot
+                </Button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowBotConfig(false);
+                    setNewBotToken("");
+                    setTokenVerified(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveBotToken}
+                  disabled={!newBotToken.trim() || savingBotToken}
+                >
+                  {savingBotToken ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-1" />
+                  )}
+                  Save Token
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Setup Instructions - only show if bot not configured */}
+      {!hasBotConfigured && activeCount === 0 && (
+        <Alert className="bg-amber-500/10 border-amber-500/30">
+          <Info className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-sm">
-            <p className="font-medium text-red-700 mb-1">No bot configured for this village</p>
+            <p className="font-medium text-amber-700 mb-2">Get started with Telegram notifications</p>
             <p className="text-xs text-muted-foreground">
-              Please contact an admin to set up a Telegram bot token for {villageName}. 
-              Once configured, you'll be able to manage notification routes here.
+              Click "Configure Bot" above to set up your Telegram bot and start receiving notifications.
             </p>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Setup Instructions */}
-      {activeCount === 0 && (
-        <Alert className="bg-amber-500/10 border-amber-500/30">
-          <Info className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-sm">
-            <p className="font-medium text-amber-700 mb-2">Get started with Telegram notifications</p>
-            <ol className="list-decimal list-inside space-y-1.5 text-xs text-muted-foreground">
-              <li>
-                Create a bot via{" "}
-                <a
-                  href="https://t.me/BotFather"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#0088cc] hover:underline inline-flex items-center gap-0.5"
-                >
-                  @BotFather <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-              </li>
-              <li>Add the bot token as a secret in your backend settings</li>
-              <li>Add the bot to your Telegram group/channel as admin</li>
-              <li>
-                Use the Detect button below or{" "}
-                <a
-                  href="https://t.me/RawDataBot"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#0088cc] hover:underline inline-flex items-center gap-0.5"
-                >
-                  @RawDataBot <ExternalLink className="h-2.5 w-2.5" />
-                </a>{" "}
-                to get Chat IDs
-              </li>
-            </ol>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Detect Chat IDs */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm font-medium">Detect Chat IDs</CardTitle>
-              <CardDescription className="text-xs">
-                Find groups/channels where your bot was recently active
-              </CardDescription>
+      {/* Detect Chat IDs - only show if bot is configured */}
+      {hasBotConfigured && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-medium">Detect Chat IDs</CardTitle>
+                <CardDescription className="text-xs">
+                  Find groups/channels where your bot was recently active
+                </CardDescription>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDetect}
+                disabled={detecting}
+              >
+                {detecting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+                <span className="ml-2">Detect</span>
+              </Button>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDetect}
-              disabled={detecting}
-            >
-              {detecting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-              <span className="ml-2">Detect</span>
-            </Button>
-          </div>
-        </CardHeader>
-        {detectedChats && (
-          <CardContent className="pt-0">
-            <div className="space-y-2 text-xs">
-              {detectedChats.bot?.username && (
-                <p className="text-muted-foreground">
-                  Bot: <code className="bg-muted px-1 rounded">@{detectedChats.bot.username}</code>
-                </p>
-              )}
-              {detectedChats.hint && (
-                <p className="text-muted-foreground">{detectedChats.hint}</p>
-              )}
-              {detectedChats.chats.length > 0 ? (
-                <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                  {detectedChats.chats.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center justify-between p-2 rounded bg-muted/50"
-                    >
-                      <span className="truncate">{c.title || c.type || "Chat"}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-2"
-                        onClick={() => {
-                          navigator.clipboard.writeText(c.id);
-                          toast.success("Chat ID copied");
-                        }}
+          </CardHeader>
+          {detectedChats && (
+            <CardContent className="pt-0">
+              <div className="space-y-2 text-xs">
+                {detectedChats.bot?.username && (
+                  <p className="text-muted-foreground">
+                    Bot: <code className="bg-muted px-1 rounded">@{detectedChats.bot.username}</code>
+                  </p>
+                )}
+                {detectedChats.hint && (
+                  <p className="text-muted-foreground">{detectedChats.hint}</p>
+                )}
+                {detectedChats.chats.length > 0 ? (
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    {detectedChats.chats.map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between p-2 rounded bg-muted/50"
                       >
-                        <Copy className="h-3 w-3 mr-1" />
-                        <code className="text-[10px]">{c.id}</code>
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">
-                  No chats detected. Make sure the bot is added to a group and someone sent a
-                  message.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        )}
-      </Card>
+                        <span className="truncate">{c.title || c.type || "Chat"}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2"
+                          onClick={() => {
+                            navigator.clipboard.writeText(c.id);
+                            toast.success("Chat ID copied");
+                          }}
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          <code className="text-[10px]">{c.id}</code>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No chats detected. Make sure the bot is added to a group and someone sent a
+                    message.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* Notification Routes */}
       <div className="space-y-3">

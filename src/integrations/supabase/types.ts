@@ -976,6 +976,7 @@ export type Database = {
       villages: {
         Row: {
           apply_url: string | null
+          bot_token: string | null
           bot_token_secret_name: string | null
           center: Json
           created_at: string
@@ -1001,6 +1002,7 @@ export type Database = {
         }
         Insert: {
           apply_url?: string | null
+          bot_token?: string | null
           bot_token_secret_name?: string | null
           center: Json
           created_at?: string
@@ -1026,6 +1028,7 @@ export type Database = {
         }
         Update: {
           apply_url?: string | null
+          bot_token?: string | null
           bot_token_secret_name?: string | null
           center?: Json
           created_at?: string
