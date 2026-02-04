@@ -25,9 +25,10 @@ import { ExternalLink } from "lucide-react";
 interface StayCalendarProps {
   villageId: string;
   applyUrl?: string | null;
+  botUsername?: string;
 }
 
-export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
+export const StayCalendar = ({ villageId, applyUrl, botUsername }: StayCalendarProps) => {
   const { stays, loading, addStay, updateStayByOwner, deleteStayAsHost, updateStayAsHost } = useStays(villageId);
   const { user } = useAuth();
   const { isHost } = usePermissions();
@@ -125,7 +126,7 @@ export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
             </Button>
           )}
           
-          <AddStayForm villageId={villageId} onAddStay={addStay} />
+          <AddStayForm villageId={villageId} onAddStay={addStay} botUsername={botUsername} />
         </div>
       </div>
 

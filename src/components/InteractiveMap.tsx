@@ -36,6 +36,18 @@ const DEFAULT_CENTER: [number, number] = [108.1885, 10.9355];
 
 type CategoryType = "map" | "residents" | "scenius" | "bulletin" | "events" | "treasury";
 
+// Derive bot username from village's bot_token_secret_name
+const getBotUsernameFromVillage = (village: Village): string | undefined => {
+  const secretName = (village as any).bot_token_secret_name;
+  if (!secretName) return undefined;
+  // Pattern: VILLAGENAME_BOT_TOKEN -> villagename_bot
+  const match = secretName.match(/^(.+)_BOT_TOKEN$/i);
+  if (match) {
+    return `${match[1].toLowerCase()}_bot`;
+  }
+  return undefined;
+};
+
 interface InteractiveMapProps {
   mapboxToken: string;
   initialVillageId?: string;
@@ -921,7 +933,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
       {activeView === "residents" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
           <ExpandablePanel>
-            <StayCalendar villageId={activeVillage.id} applyUrl={(activeVillage as any).apply_url} />
+            <StayCalendar villageId={activeVillage.id} applyUrl={(activeVillage as any).apply_url} botUsername={getBotUsernameFromVillage(activeVillage)} />
           </ExpandablePanel>
         </div>
       )}

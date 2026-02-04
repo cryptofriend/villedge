@@ -119,11 +119,48 @@ export const useStays = (villageId?: string) => {
 
       if (error) throw error;
       
-      // Trigger resident notification (non-blocking)
+      // Trigger notifications (non-blocking)
       (async () => {
         try {
-          // Check if there's a notification route enabled for residents in this village
-          const { data: route } = await supabase
+          // Determine which bot token to use based on village
+          const villageBotTokenMap: Record<string, string> = {
+            'protoville': 'PROTOVILLE_BOT_TOKEN',
+            'proof-of-retreat': 'TELEGRAM_BOT_TOKEN',
+          };
+          const botTokenSecretName = villageBotTokenMap[stay.village_id] || 'TELEGRAM_BOT_TOKEN';
+          const stayDates = `${stay.start_date} → ${stay.end_date}`;
+          
+          // Check for NEW_APPLICATION notification route (for hosts)
+          const { data: newAppRoute } = await supabase
+            .from("notification_routes")
+            .select("chat_id, thread_id, is_enabled")
+            .eq("village_id", stay.village_id)
+            .eq("notification_type", "new_application")
+            .eq("is_enabled", true)
+            .maybeSingle();
+          
+          if (newAppRoute) {
+            // Notify host about new application
+            const { error: notifyError } = await supabase.functions.invoke("notify-telegram", {
+              body: {
+                type: "new_application",
+                residentName: stay.nickname,
+                stayDates,
+                intention: stay.intention,
+                socialProfile: stay.social_profile,
+                villageId: stay.village_id,
+                testChatId: newAppRoute.chat_id,
+                testThreadId: newAppRoute.thread_id,
+                botTokenSecretName
+              }
+            });
+            if (notifyError) {
+              console.warn("Host notification failed (non-blocking):", notifyError);
+            }
+          }
+          
+          // Check for resident notification route (legacy)
+          const { data: residentRoute } = await supabase
             .from("notification_routes")
             .select("chat_id, thread_id, is_enabled")
             .eq("village_id", stay.village_id)
@@ -131,16 +168,7 @@ export const useStays = (villageId?: string) => {
             .eq("is_enabled", true)
             .maybeSingle();
           
-          if (route) {
-            const stayDates = `${stay.start_date} → ${stay.end_date}`;
-            
-            // Determine which bot token to use based on village
-            const villageBotTokenMap: Record<string, string> = {
-              'protoville': 'PROTOVILLE_BOT_TOKEN',
-              'proof-of-retreat': 'TELEGRAM_BOT_TOKEN',
-            };
-            const botTokenSecretName = villageBotTokenMap[stay.village_id] || 'TELEGRAM_BOT_TOKEN';
-            
+          if (residentRoute) {
             const { error: notifyError } = await supabase.functions.invoke("notify-telegram", {
               body: {
                 type: "resident",
@@ -149,8 +177,8 @@ export const useStays = (villageId?: string) => {
                 intention: stay.intention,
                 socialProfile: stay.social_profile,
                 villageId: stay.village_id,
-                testChatId: route.chat_id,
-                testThreadId: route.thread_id,
+                testChatId: residentRoute.chat_id,
+                testThreadId: residentRoute.thread_id,
                 botTokenSecretName
               }
             });
@@ -159,7 +187,7 @@ export const useStays = (villageId?: string) => {
             }
           }
         } catch (notifyErr) {
-          console.warn("Error sending resident notification (non-blocking):", notifyErr);
+          console.warn("Error sending notification (non-blocking):", notifyErr);
         }
       })();
       
