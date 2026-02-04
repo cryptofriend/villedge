@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { StayInput } from "@/hooks/useStays";
 import { useAuth } from "@/hooks/useAuth";
 import { useApplicationQuestions, ApplicationQuestion } from "@/hooks/useApplicationQuestions";
+import { useUserProjects } from "@/hooks/useUserProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -29,26 +30,62 @@ export const AddStayForm = ({ villageId, onAddStay }: AddStayFormProps) => {
   const { user, profile } = useAuth();
   
   const { questions, loading: questionsLoading } = useApplicationQuestions(villageId);
+  const { projects } = useUserProjects(user?.id || null);
   
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
 
-  // Reset answers when questions change
+  // Helper to get autofill value for a question
+  const getAutofillValue = (questionText: string): string => {
+    const lowerText = questionText.toLowerCase();
+    
+    // Name or Pseudonym
+    if (lowerText.includes("name") && (lowerText.includes("pseudonym") || lowerText.includes("별명"))) {
+      return profile?.username || "";
+    }
+    
+    // Email
+    if (lowerText.includes("email") || lowerText.includes("이메일")) {
+      return user?.email || "";
+    }
+    
+    // What are you building / working on - use Scenius projects
+    if ((lowerText.includes("building") || lowerText.includes("working on")) && 
+        (lowerText.includes("what") || lowerText.includes("어떤"))) {
+      if (projects.length > 0) {
+        return projects
+          .map((p) => `${p.title || p.url}${p.description ? `: ${p.description}` : ""}`)
+          .join("\n\n");
+      }
+    }
+    
+    return "";
+  };
+
+  // Reset answers when questions change - with autofill
   useEffect(() => {
     const initialAnswers: Record<string, string | string[]> = {};
     questions.forEach((q) => {
-      initialAnswers[q.id] = q.question_type === "checkbox" ? [] : "";
+      if (q.question_type === "checkbox") {
+        initialAnswers[q.id] = [];
+      } else {
+        initialAnswers[q.id] = getAutofillValue(q.question_text);
+      }
     });
     setAnswers(initialAnswers);
-  }, [questions]);
+  }, [questions, profile, user, projects]);
 
   const resetForm = () => {
     setStartDate(undefined);
     setEndDate(undefined);
     const initialAnswers: Record<string, string | string[]> = {};
     questions.forEach((q) => {
-      initialAnswers[q.id] = q.question_type === "checkbox" ? [] : "";
+      if (q.question_type === "checkbox") {
+        initialAnswers[q.id] = [];
+      } else {
+        initialAnswers[q.id] = getAutofillValue(q.question_text);
+      }
     });
     setAnswers(initialAnswers);
   };
