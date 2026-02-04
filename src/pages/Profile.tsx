@@ -12,6 +12,7 @@ import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSectio
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
 import { ProfileConnectionRequests } from "@/components/profile/ProfileConnectionRequests";
+import { ProfileApplicationStatus } from "@/components/profile/ProfileApplicationStatus";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -309,6 +310,11 @@ const Profile = () => {
 
         {/* Incoming connection requests (only for own profile) */}
         {isOwnProfile && <ProfileConnectionRequests />}
+
+        {/* Application Status (only for own profile) */}
+        {isOwnProfile && profileUserId && (
+          <ProfileApplicationStatus userId={profileUserId} />
+        )}
 
 
         {/* 2. Working On / Scenius Section */}
