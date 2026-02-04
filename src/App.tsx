@@ -9,6 +9,7 @@ import { TonProvider } from "@/components/TonProvider";
 import { PrivyProvider } from "@/components/PrivyProvider";
 import Index from "./pages/Index";
 import Village from "./pages/Village";
+import EditVillage from "./pages/EditVillage";
 import Embed from "./pages/Embed";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -39,6 +40,7 @@ const App = () => (
                   <Route path="/profile/:username" element={<Profile />} />
                   {/* Village routes with category deep links */}
                   <Route path="/:villageSlug" element={<Village />} />
+                  <Route path="/:villageSlug/edit" element={<EditVillage />} />
                   <Route path="/:villageSlug/map" element={<Village />} />
                   <Route path="/:villageSlug/residents" element={<Village />} />
                   <Route path="/:villageSlug/scenius" element={<Village />} />
