@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ExternalLink } from "lucide-react";
 
 interface StayCalendarProps {
   villageId: string;
@@ -109,6 +110,20 @@ export const StayCalendar = ({ villageId, applyUrl }: StayCalendarProps) => {
               <span className="hidden sm:inline">Timeline</span>
             </Button>
           </div>
+          
+          {applyUrl && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5"
+            >
+              <a href={applyUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Apply</span>
+              </a>
+            </Button>
+          )}
           
           <AddStayForm villageId={villageId} onAddStay={addStay} />
         </div>
