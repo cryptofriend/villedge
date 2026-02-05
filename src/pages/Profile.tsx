@@ -209,6 +209,9 @@ const Profile = () => {
         if (newProfile.username) {
           navigate(`/profile/${newProfile.username}`, { replace: true });
         }
+      } else {
+        // User skipped without creating profile - navigate home
+        navigate("/", { replace: true });
       }
     }
   };
