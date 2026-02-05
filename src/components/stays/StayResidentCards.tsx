@@ -3,23 +3,17 @@ import { format, parseISO, differenceInDays, isWithinInterval } from "date-fns";
 import { Stay } from "@/hooks/useStays";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Twitter, Instagram, Github, Linkedin, ExternalLink, Briefcase, Search, Loader2 } from "lucide-react";
 import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfileVisibility } from "@/hooks/useProfileVisibility";
 
 interface StayResidentCardsProps {
   stays: Stay[];
   loading: boolean;
   applyUrl?: string | null;
   isHost?: boolean;
-}
-
-interface VisibilityMap {
-  [userId: string]: boolean;
 }
 
 // Detect social network from URL
@@ -43,8 +37,6 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 
 export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResidentCardsProps) => {
   const { user } = useAuth();
-  const { checkBatchVisibility } = useProfileVisibility();
-  const [visibilityMap, setVisibilityMap] = useState<VisibilityMap>({});
 
   // Group stays by nickname and get the latest/most relevant stay
   const residents = useMemo(() => {
@@ -60,7 +52,8 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
         nickname,
         stays: personStays,
         primaryStay: personStays[0],
-        isAnon: personStays[0]?.is_anon ?? false,
+        // Use backend-computed is_visible flag
+        isVisible: personStays[0]?.is_visible ?? false,
         userId: personStays[0]?.user_id,
       }))
       .sort((a, b) => {
@@ -70,32 +63,14 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
       });
   }, [stays]);
 
-  // Check visibility for all users with anon mode
-  useEffect(() => {
-    const checkVisibility = async () => {
-      const usersToCheck = residents
-        .filter(r => r.userId)
-        .map(r => ({
-          userId: r.userId!,
-          isAnon: r.isAnon ?? true, // Default to anon if not set
-        }));
-
-      if (usersToCheck.length > 0) {
-        const visibility = await checkBatchVisibility(usersToCheck);
-        setVisibilityMap(visibility);
-      }
-    };
-
-    checkVisibility();
-  }, [residents, checkBatchVisibility]);
-
-  // Helper to check if a resident should be blurred - all profiles are anonymous by default
-  const shouldBlurResident = (resident: { isAnon?: boolean; userId?: string | null }): boolean => {
-    // All profiles are anonymous by default
-    if (isHost) return false;
-    if (user && resident.userId === user.id) return false;
-    if (resident.userId && visibilityMap[resident.userId]) return false;
-    return true;
+  // Helper to check if a resident should be blurred - uses backend-computed is_visible
+  const shouldBlurResident = (resident: { isVisible?: boolean; userId?: string | null }): boolean => {
+    // Backend already computes visibility based on:
+    // - Owner viewing their own data
+    // - Village hosts can see all data
+    // - Mutual connections
+    // - Approved reveal requests
+    return !resident.isVisible;
   };
 
   // Check if someone is "here now"
@@ -128,9 +103,9 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
   return (
     <ScrollArea className="h-full">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
-        {residents.map(({ nickname, primaryStay, isAnon, userId }) => {
-          // Use connection-based visibility check
-          const shouldBlur = shouldBlurResident({ isAnon, userId });
+        {residents.map(({ nickname, primaryStay, isVisible, userId }) => {
+          // Use backend-computed visibility
+          const shouldBlur = shouldBlurResident({ isVisible, userId });
           const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);
           const social = getSocialNetwork(primaryStay.social_profile || null);
           const startDate = parseISO(primaryStay.start_date);
