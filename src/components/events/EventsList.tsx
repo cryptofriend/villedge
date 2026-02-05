@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { format, parseISO, isAfter } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { CalendarDays, Plus, ExternalLink, MapPin, Loader2, Clock } from "lucide-react";
+import { CalendarDays, Plus, ExternalLink, MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const VIETNAM_TZ = "Asia/Ho_Chi_Minh";
@@ -62,15 +62,6 @@ export const EventsList = ({ villageId }: EventsListProps) => {
     }
   };
 
-  // Live clock state for local time display
-  const [currentTime, setCurrentTime] = useState(() => toZonedTime(new Date(), VIETNAM_TZ));
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(toZonedTime(new Date(), VIETNAM_TZ));
-    }, 60000); // Update every minute
-    return () => clearInterval(interval);
-  }, []);
 
   // Filter events based on actual end time (or start time if no end)
   const nowInVN = toZonedTime(new Date(), VIETNAM_TZ);
@@ -136,12 +127,6 @@ export const EventsList = ({ villageId }: EventsListProps) => {
         </div>
       </form>
 
-      {/* Local time display */}
-      <div className="px-4 py-2 border-b border-border flex items-center gap-2 text-sm text-muted-foreground">
-        <Clock className="h-3.5 w-3.5" />
-        <span>Local time: <span className="font-medium text-foreground">{format(currentTime, "h:mm a")}</span></span>
-        <span className="text-xs opacity-60">(Vietnam)</span>
-      </div>
 
       {/* Events list */}
       <ScrollArea className="flex-1">
