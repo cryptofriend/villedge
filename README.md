@@ -71,3 +71,55 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Local Development Setup
+
+To switch from the default Cloud Supabase backend to a **Local Supabase** instance, follow these steps.
+
+### Prerequisite: Install Docker (Linux)
+You need Docker URL to run the local Supabase services.
+
+```bash
+# 1. Update package index
+sudo apt-get update
+
+# 2. Install Docker
+sudo apt-get install -y docker.io
+
+# 3. Start Docker service
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 4. Give yourself permission to run Docker (avoids using 'sudo' every time)
+sudo usermod -aG docker $USER
+```
+> **Important:** After running step 4, you must **log out and log back in** for the permissions to take effect.
+
+### Step 1: Start Supabase Locally
+Once Docker is running, go to your project folder and start Supabase:
+
+```bash
+npx supabase start
+```
+
+This will print your local credentials (API URL, keys) to the terminal.
+
+### Step 2: Configure Environment
+Create a `.env.local` file to override the default cloud settings.
+
+1.  Copy the template:
+    ```bash
+    cp .env.local.example .env.local
+    ```
+2.  Edit `.env.local` and paste the values from the `npx supabase start` output:
+    ```bash
+    VITE_SUPABASE_URL="http://127.0.0.1:54321"
+    VITE_SUPABASE_PUBLISHABLE_KEY="<paste-your-anon-key-here>"
+    ```
+
+### Step 3: Run the App
+Now run the development server, which will automatically use your local configuration:
+
+```bash
+npm run dev
+```

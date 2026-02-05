@@ -68,9 +68,12 @@ USING (public.is_admin(auth.uid()));
 
 -- Seed existing admin users into the new roles table
 INSERT INTO public.user_roles (user_id, role)
-VALUES 
-  ('9807c494-ba07-4438-9a89-07ac13334e78'::uuid, 'admin'),
-  ('b015441b-3bb4-4150-94e6-d8be048035bb'::uuid, 'admin')
+SELECT id, 'admin'::app_role
+FROM auth.users
+WHERE id IN (
+  '9807c494-ba07-4438-9a89-07ac13334e78'::uuid,
+  'b015441b-3bb4-4150-94e6-d8be048035bb'::uuid
+)
 ON CONFLICT (user_id, role) DO NOTHING;
 
 -- Fix #2: Update settings table policies to use role-based access
@@ -173,19 +176,21 @@ DROP POLICY IF EXISTS "Authenticated users can delete their reactions" ON public
 -- but remove DELETE entirely to prevent abuse (reactions should be immutable)
 
 -- comments: restrict DELETE to village hosts or comment creator context
-DROP POLICY IF EXISTS "Authenticated users can delete comments" ON public.comments;
+-- comments: restrict DELETE to village hosts or comment creator context
+-- TABLE DOES NOT EXIST IN MIGRATIONS (Temporary Fix)
+-- DROP POLICY IF EXISTS "Authenticated users can delete comments" ON public.comments;
 -- Comments don't have user_id, so we restrict DELETE to village hosts only
-CREATE POLICY "Hosts can delete comments"
-ON public.comments FOR DELETE
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM spots s
-    JOIN villages v ON v.id = s.village_id
-    WHERE s.id = comments.spot_id
-    AND (v.created_by = auth.uid() OR public.is_village_host(auth.uid(), v.id))
-  )
-);
+-- CREATE POLICY "Hosts can delete comments"
+-- ON public.comments FOR DELETE
+-- TO authenticated
+-- USING (
+--   EXISTS (
+--     SELECT 1 FROM spots s
+--     JOIN villages v ON v.id = s.village_id
+--     WHERE s.id = comments.spot_id
+--     AND (v.created_by = auth.uid() OR public.is_village_host(auth.uid(), v.id))
+--   )
+-- );
 
 -- proposal_reactions: same approach - remove DELETE to prevent abuse
 DROP POLICY IF EXISTS "Authenticated users can delete proposal reactions" ON public.proposal_reactions;

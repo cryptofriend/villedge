@@ -72,16 +72,17 @@ FOR DELETE TO authenticated
 USING (true);
 
 -- Update comments policies
-DROP POLICY IF EXISTS "Anyone can create comments" ON public.comments;
-DROP POLICY IF EXISTS "Anyone can delete comments" ON public.comments;
+-- TABLE DOES NOT EXIST IN MIGRATIONS (Temporary Fix)
+-- DROP POLICY IF EXISTS "Anyone can create comments" ON public.comments;
+-- DROP POLICY IF EXISTS "Anyone can delete comments" ON public.comments;
 
-CREATE POLICY "Authenticated users can create comments" ON public.comments
-FOR INSERT TO authenticated
-WITH CHECK (true);
+-- CREATE POLICY "Authenticated users can create comments" ON public.comments
+-- FOR INSERT TO authenticated
+-- WITH CHECK (true);
 
-CREATE POLICY "Authenticated users can delete comments" ON public.comments
-FOR DELETE TO authenticated
-USING (true);
+-- CREATE POLICY "Authenticated users can delete comments" ON public.comments
+-- FOR DELETE TO authenticated
+-- USING (true);
 
 -- Update spots policies
 DROP POLICY IF EXISTS "Anyone can create spots" ON public.spots;
