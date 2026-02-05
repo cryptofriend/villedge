@@ -66,6 +66,13 @@ export const useStays = (villageId?: string) => {
     }
 
     try {
+      if (import.meta.env.DEV) {
+        console.debug("[useStays] fetchStays", {
+          villageId,
+          viewerId: user?.id || null,
+        });
+      }
+
       // Use the privacy-enforcing RPC function
       const { data: staysData, error: staysError } = await supabase
         .rpc("get_stays_with_privacy", {
@@ -74,6 +81,13 @@ export const useStays = (villageId?: string) => {
         });
 
       if (staysError) throw staysError;
+
+      if (import.meta.env.DEV) {
+        console.debug("[useStays] stays loaded", {
+          villageId,
+          count: (staysData || []).length,
+        });
+      }
       
       setStays((staysData || []) as Stay[]);
     } catch (err) {

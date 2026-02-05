@@ -91,7 +91,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   const [intentionColumnWidth, setIntentionColumnWidth] = useState(140);
   const [isResizing, setIsResizing] = useState(false);
   const [resizingColumn, setResizingColumn] = useState<'name' | 'intention' | null>(null);
-  const [selectedNickname, setSelectedNickname] = useState<string | null>(null);
+  const [selectedResidentKey, setSelectedResidentKey] = useState<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const dayWidth = isMobile ? 20 : 28;
 
@@ -124,12 +124,19 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
     return eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   }, [dateRange]);
 
-  // Group stays by nickname
-  const staysByNickname = useMemo(() => {
-    const grouped = new Map<string, Stay[]>();
+  // Group stays by a stable key to avoid collapsing multiple "Anonymous" users into one row.
+  // - If user_id is visible (host/owner), group by user_id (merges multiple stays per person)
+  // - Otherwise, group by stay.id (each anonymous stay stays distinct)
+  const staysByResident = useMemo(() => {
+    const grouped = new Map<string, { label: string; stays: Stay[] }>();
     stays.forEach((stay) => {
-      const existing = grouped.get(stay.nickname) || [];
-      grouped.set(stay.nickname, [...existing, stay]);
+      const key = stay.user_id ?? stay.id;
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.stays.push(stay);
+      } else {
+        grouped.set(key, { label: stay.nickname, stays: [stay] });
+      }
     });
     return grouped;
   }, [stays]);
@@ -249,9 +256,14 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
 
   // Get stays for selected nickname
   const selectedStays = useMemo(() => {
-    if (!selectedNickname) return [];
-    return staysByNickname.get(selectedNickname) || [];
-  }, [selectedNickname, staysByNickname]);
+    if (!selectedResidentKey) return [];
+    return staysByResident.get(selectedResidentKey)?.stays || [];
+  }, [selectedResidentKey, staysByResident]);
+
+  const selectedResidentLabel = useMemo(() => {
+    if (!selectedResidentKey) return "";
+    return staysByResident.get(selectedResidentKey)?.label || "";
+  }, [selectedResidentKey, staysByResident]);
 
   if (loading) {
     return (
@@ -276,9 +288,9 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
       {/* Profile Card Dialog */}
       <ResidentProfileCard
         stays={selectedStays}
-        nickname={selectedNickname || ""}
-        open={!!selectedNickname}
-        onOpenChange={(open) => !open && setSelectedNickname(null)}
+        nickname={selectedResidentLabel}
+        open={!!selectedResidentKey}
+        onOpenChange={(open) => !open && setSelectedResidentKey(null)}
       />
 
       {/* Occupancy Chart - At top for mobile */}
@@ -314,7 +326,9 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
               onScroll={handleNameScroll}
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+              {Array.from(staysByResident.entries()).map(([residentKey, group]) => {
+                const nickname = group.label;
+                const personStays = group.stays;
                 const firstStay = personStays[0];
                 const avatarUrl = getBestAvatar(nickname, firstStay?.social_profile || null, 32);
                 const socialNetwork = getSocialNetwork(firstStay?.social_profile || null);
@@ -323,8 +337,8 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                 
                 return (
                   <div
-                    key={nickname}
-                    onClick={() => !shouldBlur && setSelectedNickname(nickname)}
+                    key={residentKey}
+                    onClick={() => !shouldBlur && setSelectedResidentKey(residentKey)}
                     className={cn(
                       "flex items-center gap-1.5 px-1.5 border-b border-border font-medium transition-colors",
                       isMobile ? "h-9 text-xs" : "h-10 text-sm gap-2 px-2",
@@ -389,13 +403,14 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                 onScroll={handleIntentionScroll}
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-              {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+              {Array.from(staysByResident.entries()).map(([residentKey, group]) => {
+                  const personStays = group.stays;
                   const firstStay = personStays[0];
                   const shouldBlur = shouldBlurStay(firstStay);
                   
                   return (
                     <div
-                      key={nickname}
+                      key={residentKey}
                       className={cn(
                         "h-10 flex items-center px-2 border-b border-border text-sm text-muted-foreground",
                         shouldBlur && "blur-sm select-none pointer-events-none opacity-50"
@@ -460,12 +475,14 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
             </div>
 
             {/* Stay Rows */}
-            {Array.from(staysByNickname.entries()).map(([nickname, personStays]) => {
+            {Array.from(staysByResident.entries()).map(([residentKey, group]) => {
+              const nickname = group.label;
+              const personStays = group.stays;
               const firstStay = personStays[0];
               const shouldBlurRow = shouldBlurStay(firstStay);
               
               return (
-              <div key={nickname} className={cn(
+              <div key={residentKey} className={cn(
                 "relative border-b border-border", 
                 isMobile ? "h-9" : "h-10",
                 shouldBlurRow && "blur-sm opacity-50"

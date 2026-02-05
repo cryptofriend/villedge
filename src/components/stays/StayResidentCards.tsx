@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from "react";
+import { useMemo } from "react";
 import { format, parseISO, differenceInDays, isWithinInterval } from "date-fns";
 import { Stay } from "@/hooks/useStays";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -40,21 +40,27 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
 
   // Group stays by nickname and get the latest/most relevant stay
   const residents = useMemo(() => {
-    const grouped = new Map<string, Stay[]>();
+    const grouped = new Map<string, { label: string; stays: Stay[] }>();
     stays.forEach((stay) => {
-      const existing = grouped.get(stay.nickname) || [];
-      grouped.set(stay.nickname, [...existing, stay]);
+      const key = stay.user_id ?? stay.id;
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.stays.push(stay);
+      } else {
+        grouped.set(key, { label: stay.nickname, stays: [stay] });
+      }
     });
     
     // Return array of [nickname, stays[]] sorted by start_date
     return Array.from(grouped.entries())
-      .map(([nickname, personStays]) => ({
-        nickname,
-        stays: personStays,
-        primaryStay: personStays[0],
+      .map(([residentKey, group]) => ({
+        residentKey,
+        nickname: group.label,
+        stays: group.stays,
+        primaryStay: group.stays[0],
         // Use backend-computed is_visible flag
-        isVisible: personStays[0]?.is_visible ?? false,
-        userId: personStays[0]?.user_id,
+        isVisible: group.stays[0]?.is_visible ?? false,
+        userId: group.stays[0]?.user_id,
       }))
       .sort((a, b) => {
         const aDate = parseISO(a.primaryStay.start_date);
@@ -103,7 +109,7 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
   return (
     <ScrollArea className="h-full">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
-        {residents.map(({ nickname, primaryStay, isVisible, userId }) => {
+        {residents.map(({ residentKey, nickname, primaryStay, isVisible, userId }) => {
           // Use backend-computed visibility
           const shouldBlur = shouldBlurResident({ isVisible, userId });
           const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);
@@ -115,7 +121,7 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
           
           return (
             <div
-              key={nickname}
+              key={residentKey}
               className={cn(
                 "rounded-xl border border-border bg-card overflow-hidden flex flex-col",
                 shouldBlur && "blur-sm select-none pointer-events-none opacity-60"
