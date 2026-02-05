@@ -71,8 +71,8 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const { spots, loading: spotsLoading, addSpot, updateSpotCoordinates, deleteSpot, updateSpot } = useSpots(activeVillage?.id);
   const { isHost, canCreate } = usePermissions();
   const { profile, isAuthenticated } = useAuth();
-  
-  
+
+
   // State
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
@@ -81,6 +81,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const selectionMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [selectionCoords, setSelectionCoords] = useState<[number, number] | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const isClusteredRef = useRef(false);
   const spotMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -88,14 +89,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  
+
   // Active view - use URL path-based category, fallback to query param for backward compatibility
   const validTabs: CategoryType[] = ["map", "residents", "scenius", "bulletin", "events", "treasury"];
   const queryTab = searchParams.get("tab") as CategoryType | null;
   const [activeView, setActiveView] = useState<CategoryType>(
     initialCategory || (queryTab && validTabs.includes(queryTab) ? queryTab : "map")
   );
-  
+
   // Handle view changes with URL navigation
   const handleViewChange = useCallback((view: CategoryType) => {
     setActiveView(view);
@@ -106,13 +107,13 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
       navigate(newPath, { replace: true });
     }
   }, [initialVillageId, navigate]);
-  
+
   // Comments for floating bubbles
   const [allComments, setAllComments] = useState<Comment[]>([]);
-  
+
   // Scenius for the active village
   const { projects, residentProjects, loading: projectsLoading } = useSceniusProjects(activeVillage?.id);
-  
+
   const CLUSTER_ZOOM_THRESHOLD = 9;
 
   // Set initial active village when villages load
@@ -213,24 +214,35 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
 
     const initialCenter = activeVillage?.center || DEFAULT_CENTER;
 
-    const m = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: initialCenter,
-      zoom: 15,
-      pitch: 20,
-    });
-
-    map.current = m;
-
-    m.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
-
-    if (m.isStyleLoaded()) {
-      setMapReady(true);
-    } else {
-      m.once("load", () => {
-        setMapReady(true);
+    try {
+      const m = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: initialCenter,
+        zoom: 15,
+        pitch: 20,
       });
+
+      map.current = m;
+
+      m.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
+
+      m.on('error', (e) => {
+        if (e.error && e.error.message.includes('WebGL')) {
+          setMapError(e.error.message);
+        }
+      });
+
+      if (m.isStyleLoaded()) {
+        setMapReady(true);
+      } else {
+        m.once("load", () => {
+          setMapReady(true);
+        });
+      }
+    } catch (e: any) {
+      console.error("InteractiveMap: Mapbox initialization error", e);
+      setMapError(e.message || "Failed to load map");
     }
 
     return () => {
@@ -241,7 +253,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         selectionMarkerRef.current.remove();
         selectionMarkerRef.current = null;
       }
-      m.remove();
+      map.current?.remove();
       map.current = null;
     };
   }, [mapboxToken]);
@@ -249,10 +261,10 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   // Create cluster markers for all villages
   const createClusterMarkers = useCallback(() => {
     if (!map.current || villages.length === 0) return;
-    
+
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
-    
+
     villages.forEach((village) => {
       const el = document.createElement("div");
       el.className = "cluster-marker";
@@ -405,15 +417,15 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   // Local map elements (spot markers, comment bubbles) only show when zoomed into a village
   const updateMarkersVisibility = useCallback(() => {
     if (!map.current) return;
-    
+
     const zoom = map.current.getZoom();
     const shouldCluster = zoom < CLUSTER_ZOOM_THRESHOLD;
     const zoomedIn = !shouldCluster;
-    
+
     if (shouldCluster !== isClusteredRef.current) {
       isClusteredRef.current = shouldCluster;
       setIsZoomedIn(zoomedIn);
-      
+
       if (shouldCluster) {
         // Global view: hide all local markers
         setSelectedSpot(null);
@@ -476,14 +488,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         .from("comments")
         .select("*")
         .order("created_at", { ascending: false });
-      
+
       if (!error && data) {
         setAllComments(data as Comment[]);
       }
     };
-    
+
     fetchComments();
-    
+
     const channel = supabase
       .channel('comments-map')
       .on(
@@ -492,7 +504,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         () => fetchComments()
       )
       .subscribe();
-    
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -538,8 +550,8 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         });
       });
 
-      const marker = new mapboxgl.Marker({ 
-        element: el, 
+      const marker = new mapboxgl.Marker({
+        element: el,
         anchor: 'bottom',
         offset: [isMobile ? 30 : 40, -25]
       })
@@ -572,13 +584,13 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   // Listen to zoom changes
   useEffect(() => {
     if (!map.current || !mapReady) return;
-    
+
     const m = map.current;
     const handleZoom = () => updateMarkersVisibility();
-    
+
     m.on("zoom", handleZoom);
     updateMarkersVisibility();
-    
+
     return () => {
       m.off("zoom", handleZoom);
     };
@@ -676,13 +688,13 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
       setUserLocation(coords);
       updateUserLocationMarker(coords);
       setIsLocating(false);
-      
+
       map.current?.flyTo({
         center: coords,
         zoom: 15,
         duration: 1000,
       });
-      
+
       toast.success("Location found!");
     };
 
@@ -734,7 +746,22 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ touchAction: 'manipulation', overscrollBehavior: 'contain' }}>
       <div ref={mapContainer} className="h-full w-full" />
-      
+
+      {mapError && (
+        <div className="absolute inset-0 z-0 flex items-center justify-center bg-muted/20">
+          <img
+            src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${DEFAULT_CENTER[0]},${DEFAULT_CENTER[1]},15/1280x800?access_token=${mapboxToken}`}
+            alt="Map fallback"
+            className="h-full w-full object-cover grayscale opacity-50"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center p-4 bg-background/80 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <p className="text-xs font-medium text-muted-foreground">Interactive map unavailable (WebGL disabled)</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
           <div className="flex flex-col items-center gap-4">
@@ -785,9 +812,9 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
               )}
               {activeVillage && (
                 <>
-                  <img 
-                    src={activeVillage.logo_url || '/placeholder.svg'} 
-                    alt={activeVillage.name} 
+                  <img
+                    src={activeVillage.logo_url || '/placeholder.svg'}
+                    alt={activeVillage.name}
                     className="h-8 w-8 rounded sm:h-10 sm:w-10 md:h-12 md:w-12 shrink-0"
                   />
                   <div className="min-w-0 flex-1">
@@ -867,40 +894,38 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
               <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm">
                 <button
                   onClick={() => handleViewChange("map")}
-                className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                  activeView === "map"
+                  className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${activeView === "map"
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <MapPin className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Map</span>
-              </button>
-              
-              {/* Restricted tabs for verified users only */}
-              {[
-                { id: "residents" as CategoryType, icon: CalendarDays, label: "Residents" },
-                { id: "scenius" as CategoryType, icon: Sparkles, label: "Scenius" },
-                { id: "bulletin" as CategoryType, icon: MessageSquare, label: "Bulletin" },
-                { id: "treasury" as CategoryType, icon: Coins, label: "Treasury" },
-                { id: "events" as CategoryType, icon: Calendar, label: "Events" },
-              ].map(({ id, icon: Icon, label }) => (
-                <Tooltip key={id}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleViewChange(id)}
-                      className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                        activeView === id
+                    }`}
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Map</span>
+                </button>
+
+                {/* Restricted tabs for verified users only */}
+                {[
+                  { id: "residents" as CategoryType, icon: CalendarDays, label: "Residents" },
+                  { id: "scenius" as CategoryType, icon: Sparkles, label: "Scenius" },
+                  { id: "bulletin" as CategoryType, icon: MessageSquare, label: "Bulletin" },
+                  { id: "treasury" as CategoryType, icon: Coins, label: "Treasury" },
+                  { id: "events" as CategoryType, icon: Calendar, label: "Events" },
+                ].map(({ id, icon: Icon, label }) => (
+                  <Tooltip key={id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleViewChange(id)}
+                        className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${activeView === id
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">{label}</span>
-                    </button>
-                  </TooltipTrigger>
-                </Tooltip>
-              ))}
+                          }`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">{label}</span>
+                      </button>
+                    </TooltipTrigger>
+                  </Tooltip>
+                ))}
               </div>
             )}
             <AuthButton />
@@ -911,7 +936,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
       {/* Selected spot card - only show in map view */}
       {selectedSpot && activeView === "map" && (
         <div className="absolute bottom-20 left-4 z-20 sm:bottom-4 md:bottom-6 md:left-6">
-          <SpotCard 
+          <SpotCard
             spot={{
               id: selectedSpot.id,
               name: selectedSpot.name,
@@ -921,7 +946,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
               coordinates: selectedSpot.coordinates,
               tags: selectedSpot.tags || undefined,
               google_maps_url: selectedSpot.google_maps_url,
-            }} 
+            }}
             onClose={handleCloseSpot}
             onDelete={activeVillage && isHost(activeVillage.id) ? deleteSpot : undefined}
             onUpdate={canCreate ? updateSpot : undefined}
@@ -1007,8 +1032,8 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
           <ExpandablePanel>
             <div className="flex-1 min-h-0 overflow-hidden">
-              <TreasuryList 
-                villageId={activeVillage.id} 
+              <TreasuryList
+                villageId={activeVillage.id}
                 ethWalletAddress={activeVillage.wallet_address}
                 solWalletAddress={activeVillage.solana_wallet_address}
               />
@@ -1022,9 +1047,9 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
           <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
             {isZoomedIn && activeVillage ? (
               <>
-                <img 
-                  src={activeVillage.logo_url || '/placeholder.svg'} 
-                  alt={activeVillage.name} 
+                <img
+                  src={activeVillage.logo_url || '/placeholder.svg'}
+                  alt={activeVillage.name}
                   className="h-10 w-10 rounded"
                 />
                 <div>
@@ -1046,14 +1071,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
               </div>
             )}
           </div>
-          
+
           {isZoomedIn && activeVillage && (
             <div className="mb-3 text-xs">
               <p className="text-muted-foreground">Location</p>
               <p className="font-medium text-foreground">{activeVillage.location}</p>
             </div>
           )}
-          
+
           <div className="grid grid-cols-2 gap-2 text-xs">
             {activeVillage?.participants && (
               <div className="rounded-md bg-secondary/50 p-2">
