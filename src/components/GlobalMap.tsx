@@ -39,7 +39,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const { user } = useAuth();
   const { currentVillage } = useUserCurrentVillage(user?.id, villages);
   const [mapReady, setMapReady] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
   const [villageTypeFilter, setVillageTypeFilter] = useState<VillageType>("popup");
   const [initialCenterSet, setInitialCenterSet] = useState(false);
 
@@ -52,51 +51,30 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
   // Initialize map
   useEffect(() => {
-    console.log("GlobalMap: useEffect triggered");
+    if (map.current || !mapContainer.current || !mapboxToken) return;
 
-    // Check if map is already initialized or container is missing or token is missing
-    if (map.current) {
-      console.log("GlobalMap: map already exists");
-      return;
-    }
-    if (!mapContainer.current) {
-      console.log("GlobalMap: mapContainer ref is null");
-      return;
-    }
-    if (!mapboxToken) {
-      console.log("GlobalMap: mapboxToken is null/empty");
-      setMapError("Map token missing");
-      return;
-    }
+    mapboxgl.accessToken = mapboxToken;
 
-    try {
-      console.log("GlobalMap: initializing mapbox with token length:", mapboxToken.length);
-      mapboxgl.accessToken = mapboxToken;
+    const m = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/light-v11",
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+    });
 
-      const m = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/light-v11",
-        center: DEFAULT_CENTER,
-        zoom: DEFAULT_ZOOM,
-      });
+    // Apply padding to visually center the map within the visible area
+    m.setPadding(MAP_PADDING);
 
-      // Apply padding to visually center the map within the visible area
-      m.setPadding(MAP_PADDING);
+    map.current = m;
 
-      map.current = m;
+    m.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
 
-      m.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
-
-      if (m.isStyleLoaded()) {
+    if (m.isStyleLoaded()) {
+      setMapReady(true);
+    } else {
+      m.once("load", () => {
         setMapReady(true);
-      } else {
-        m.once("load", () => {
-          setMapReady(true);
-        });
-      }
-    } catch (e) {
-      console.error("GlobalMap: Mapbox initialization error", e);
-      setMapError(e instanceof Error ? e.message : "Failed to load map");
+      });
     }
 
     return () => {
@@ -104,17 +82,15 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       setInitialCenterSet(false);
       clusterMarkersRef.current.forEach((marker) => marker.remove());
       clusterMarkersRef.current.clear();
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
+      m.remove();
+      map.current = null;
     };
   }, [mapboxToken]);
 
   // Center map on user's current village or active popup
   useEffect(() => {
     if (!map.current || !mapReady || initialCenterSet) return;
-
+    
     if (currentVillage) {
       map.current.flyTo({
         center: currentVillage.center,
@@ -171,7 +147,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   // Create village markers
   const createVillageMarkers = useCallback(() => {
     if (!map.current || filteredVillages.length === 0) return;
-
+    
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
 
@@ -180,10 +156,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       el.className = "village-marker";
       el.style.zIndex = String(10 + index);
       el.style.position = "relative";
-
+      
       const truncatedLocation = truncateText(village.location, 20);
       const logoSrc = village.logo_url || '/placeholder.svg';
-
+      
       // Structure: pointer arrow at bottom center, pill above it
       el.innerHTML = `
         <div style="
@@ -270,22 +246,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ touchAction: 'manipulation', overscrollBehavior: 'contain' }}>
       <div ref={mapContainer} className="h-full w-full" />
-
-      {mapError && (
-        <div className="absolute inset-0 z-0 flex items-center justify-center bg-muted/20">
-          <img
-            src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${DEFAULT_CENTER[0]},${DEFAULT_CENTER[1]},${DEFAULT_ZOOM}/1280x800?access_token=${mapboxToken}`}
-            alt="Map fallback"
-            className="h-full w-full object-cover grayscale opacity-50"
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center p-4 bg-background/80 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
-              <p className="text-xs font-medium text-muted-foreground">Interactive map unavailable (WebGL disabled)</p>
-            </div>
-          </div>
-        </div>
-      )}
-
+      
       {villagesLoading && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80">
           <div className="flex flex-col items-center gap-4">
@@ -320,7 +281,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               Explore communities around the world
             </p>
           </div>
-
+          
           {/* User count badge + Showtime + Auth button */}
           <div className="flex items-center gap-2">
             <a
@@ -351,12 +312,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             <p className="text-xs text-muted-foreground">Click on a village to explore</p>
           </div>
         </div>
-
+        
         {/* Type Switcher */}
         <div className="mb-2">
-          <ToggleGroup
-            type="single"
-            value={villageTypeFilter}
+          <ToggleGroup 
+            type="single" 
+            value={villageTypeFilter} 
             onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
             className="w-full"
           >
@@ -383,9 +344,9 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
                 onClick={() => navigate(getVillageRoute(village))}
                 className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-left"
               >
-                <img
-                  src={village.logo_url || '/placeholder.svg'}
-                  alt={village.name}
+                <img 
+                  src={village.logo_url || '/placeholder.svg'} 
+                  alt={village.name} 
                   className="h-7 w-7 rounded object-cover flex-shrink-0"
                   onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
                 />
