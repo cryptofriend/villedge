@@ -57,6 +57,7 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
   };
 
   const handleUsernameChange = (value: string) => {
+    // Allow lowercase letters, numbers, and hyphens
     const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     setUsername(sanitized);
     setUsernameError(null);
@@ -138,7 +139,7 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border">
+      <DialogContent className="sm:max-w-md max-w-[90vw] p-0 gap-0 overflow-hidden bg-background border-border z-50">
         {/* Header */}
         <div className="bg-gradient-to-br from-primary/10 via-accent/20 to-primary/5 p-6 pb-4">
           <DialogHeader className="space-y-3">
@@ -170,6 +171,12 @@ export function OnboardingDialog({ open, onOpenChange }: OnboardingDialogProps) 
               </span>
               <Input
                 id="username"
+                type="text"
+                inputMode="text"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={username}
                 onChange={(e) => handleUsernameChange(e.target.value)}
                 placeholder="choose-a-username"
