@@ -1,6 +1,8 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { PrivyProvider as PrivyReactProvider } from '@privy-io/react-auth';
 import { supabase } from '@/integrations/supabase/client';
+import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 
 interface PrivyProviderProps {
   children: ReactNode;
@@ -50,6 +52,10 @@ export const PrivyProvider = ({ children }: PrivyProviderProps) => {
     return <>{children}</>;
   }
 
+  const solanaConnectors = toSolanaWalletConnectors({
+    shouldAutoConnect: false,
+  });
+
   return (
     <PrivyReactProvider
       appId={appId}
@@ -60,6 +66,11 @@ export const PrivyProvider = ({ children }: PrivyProviderProps) => {
           logo: undefined,
         },
         loginMethods: ['email', 'wallet'],
+        externalWallets: {
+          solana: {
+            connectors: solanaConnectors,
+          },
+        },
       }}
     >
       {children}

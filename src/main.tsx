@@ -8,8 +8,13 @@ window.Buffer = Buffer;
 import App from "./App.tsx";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+try {
+  const root = document.getElementById("root");
+  createRoot(root!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+} catch (e) {
+  console.error("Main: Error rendering root:", e);
+}
