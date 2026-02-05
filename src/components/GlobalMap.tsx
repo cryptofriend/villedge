@@ -273,10 +273,15 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       {mapError && (
         <div className="absolute inset-0 z-0 flex items-center justify-center bg-muted/20">
-          <div className="text-center p-6 max-w-sm bg-background/90 rounded-lg shadow-lg border border-border">
-            <p className="font-semibold text-destructive mb-2">Map Unavailable</p>
-            <p className="text-sm text-muted-foreground">{mapError}</p>
-            <p className="text-xs text-muted-foreground mt-2">(WebGL might be disabled or token invalid)</p>
+          <img
+            src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${DEFAULT_CENTER[0]},${DEFAULT_CENTER[1]},${DEFAULT_ZOOM}/1280x800?access_token=${mapboxToken}`}
+            alt="Map fallback"
+            className="h-full w-full object-cover grayscale opacity-50"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center p-4 bg-background/80 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <p className="text-xs font-medium text-muted-foreground">Interactive map unavailable (WebGL disabled)</p>
+            </div>
           </div>
         </div>
       )}
