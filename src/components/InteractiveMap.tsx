@@ -11,6 +11,7 @@ import { StayCalendar } from "./stays/StayCalendar";
 import { SceniusList } from "./SceniusList";
 import { BulletinList } from "./BulletinList";
 import { EventsList } from "./events/EventsList";
+import { LocalTimeDisplay } from "./events/LocalTimeDisplay";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
 import { AuthButton } from "./AuthButton";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -983,10 +984,13 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
           <ExpandablePanel>
             <div className="p-4 border-b border-border">
-              <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                Events
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Events
+                </h3>
+                <LocalTimeDisplay />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Drop a Luma link to add events
               </p>
