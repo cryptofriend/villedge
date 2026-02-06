@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAccount, useDisconnect, useBalance } from 'wagmi';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -10,13 +11,23 @@ import { toast } from 'sonner';
 export function AuthButton() {
   const navigate = useNavigate();
   const { user, profile, isAuthenticated, loading, signOut } = useAuth();
+  const { address: evmAddress } = useAccount();
+  const { disconnect: disconnectEvm } = useDisconnect();
+  const { data: balanceData } = useBalance({ address: evmAddress });
   
   const [profileOpen, setProfileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  // Determine which wallet is connected
+  const activeAddress = evmAddress;
+
   const handleSignOut = async () => {
     setSigningOut(true);
     try {
+      // Disconnect EVM wallet if connected
+      if (evmAddress) {
+        disconnectEvm();
+      }
       await signOut();
       toast.success('Signed out successfully');
       navigate('/');
@@ -46,14 +57,24 @@ export function AuthButton() {
     );
   }
 
-  // Use username by default, fallback to email or 'User'
-  const displayName = profile?.username || user?.email?.split('@')[0] || 'User';
+  // Truncate address for display
+  const truncatedAddress = activeAddress 
+    ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`
+    : profile?.username || 'User';
+  
+  // Use username by default, fallback to truncated address
+  const displayName = profile?.username || truncatedAddress;
   const initials = (displayName || 'U').slice(0, 2).toUpperCase();
   
-  // Check if user has a proper username set
+  // Check if user has a proper username set (not just wallet-generated)
   const hasUsername = profile?.username && 
     !profile.username.startsWith('0x') && 
     !profile.username.startsWith('0:');
+
+  // Format balance (only for EVM wallets)
+  const formattedBalance = balanceData 
+    ? `${(Number(balanceData.value) / 10 ** balanceData.decimals).toFixed(4)} ${balanceData.symbol}`
+    : null;
 
   // Get profile URL - use username if available, fallback to user_id
   const profileUrl = profile?.username 
@@ -83,6 +104,11 @@ export function AuthButton() {
             <span className="text-xs font-medium hidden sm:inline max-w-24 truncate">
               {displayName}
             </span>
+            {formattedBalance && (
+              <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                {formattedBalance}
+              </span>
+            )}
           </div>
         </Button>
 
