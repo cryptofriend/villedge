@@ -10,15 +10,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, MapPin, CalendarIcon, Loader2, Calendar as CalendarFull, Building2, Globe, Link2 } from "lucide-react";
+import { Plus, MapPin, Loader2, Globe, Link2, Calendar, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { format, parseISO } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { VillageType } from "@/hooks/useVillages";
+import { cn } from "@/lib/utils";
 
 interface WebsiteMetadata {
   title?: string;
@@ -28,6 +26,9 @@ interface WebsiteMetadata {
   twitter_url?: string;
   instagram_url?: string;
   telegram_url?: string;
+  start_date?: string;
+  end_date?: string;
+  dates_text?: string;
 }
 
 interface AddVillageFormProps {
@@ -38,14 +39,10 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [locationName, setLocationName] = useState("");
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [villageType, setVillageType] = useState<VillageType>("popup");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isScrapingWebsite, setIsScrapingWebsite] = useState(false);
@@ -71,7 +68,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
         if (place.name) {
           setLocationName(place.name);
         }
-        toast.success("Location extracted successfully!");
+        toast.success("Location found!");
       } else {
         toast.error(data.error || "Could not extract location from URL");
       }
@@ -83,7 +80,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     }
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGoogleMapsUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setGoogleMapsUrl(url);
     
@@ -109,17 +106,6 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
       if (data.success && data.data) {
         const metadata = data.data as WebsiteMetadata;
         setWebsiteMetadata(metadata);
-        
-        // Auto-fill name if empty
-        if (metadata.title && !name) {
-          // Clean up title (remove common suffixes)
-          const cleanTitle = metadata.title
-            .replace(/\s*[-|–—]\s*(Home|Official|Website|Site).*$/i, '')
-            .replace(/\s*\|\s*.*$/, '')
-            .trim();
-          setName(cleanTitle);
-        }
-        
         toast.success("Website info extracted!");
       } else {
         toast.error(data.error || "Could not extract website info");
@@ -143,6 +129,40 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     }
   };
 
+  // Derive village name from metadata
+  const getVillageName = (): string => {
+    if (!websiteMetadata?.title) return "";
+    // Clean up title (remove common suffixes)
+    return websiteMetadata.title
+      .replace(/\s*[-|–—]\s*(Home|Official|Website|Site).*$/i, '')
+      .replace(/\s*\|\s*.*$/, '')
+      .trim();
+  };
+
+  // Derive village type based on dates
+  const getVillageType = (): VillageType => {
+    if (websiteMetadata?.start_date && websiteMetadata?.end_date) {
+      return "popup";
+    }
+    return "permanent";
+  };
+
+  // Format dates for display
+  const getFormattedDates = (): string => {
+    if (websiteMetadata?.start_date && websiteMetadata?.end_date) {
+      try {
+        const start = parseISO(websiteMetadata.start_date);
+        const end = parseISO(websiteMetadata.end_date);
+        return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
+      } catch {
+        return websiteMetadata.dates_text || "Dates found";
+      }
+    }
+    return "Permanent";
+  };
+
+  const canSubmit = coordinates && websiteMetadata?.title;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -156,35 +176,22 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
       return;
     }
 
-    if (!name.trim()) {
-      toast.error("Please enter a village name");
-      return;
-    }
-
     if (!coordinates) {
       toast.error("Please paste a valid Google Maps link");
       return;
     }
 
-    // Only validate dates for popup villages
-    if (villageType === "popup") {
-      if (!startDate || !endDate) {
-        toast.error("Please select start and end dates");
-        return;
-      }
-
-      if (endDate < startDate) {
-        toast.error("End date must be after start date");
-        return;
-      }
+    if (!websiteMetadata?.title) {
+      toast.error("Please paste a village website to extract info");
+      return;
     }
 
     setIsSubmitting(true);
 
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const dates = villageType === "popup" && startDate && endDate
-      ? `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`
-      : "Permanent";
+    const villageName = getVillageName();
+    const villageType = getVillageType();
+    const slug = villageName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const dates = getFormattedDates();
 
     // Format website URL
     let formattedWebsiteUrl = websiteUrl.trim();
@@ -194,11 +201,11 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
 
     const { error } = await supabase.from('villages').insert({
       id: slug,
-      name: name.trim(),
+      name: villageName,
       location: locationName || "Location",
       center: coordinates,
       dates,
-      description: websiteMetadata?.description || `Welcome to ${name.trim()}`,
+      description: websiteMetadata?.description || `Welcome to ${villageName}`,
       created_by: user.id,
       village_type: villageType,
       website_url: formattedWebsiteUrl || null,
@@ -221,17 +228,13 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
       return;
     }
 
-    toast.success(`${name} created successfully!`);
+    toast.success(`${villageName} created successfully!`);
     
     // Reset form
-    setName("");
     setGoogleMapsUrl("");
     setWebsiteUrl("");
     setLocationName("");
     setCoordinates(null);
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setVillageType("popup");
     setWebsiteMetadata(null);
     setOpen(false);
     
@@ -251,6 +254,8 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     setOpen(newOpen);
   };
 
+  const hasSocials = websiteMetadata?.twitter_url || websiteMetadata?.instagram_url || websiteMetadata?.telegram_url;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -260,180 +265,127 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl">Create New Village</DialogTitle>
+          <DialogTitle className="font-display text-xl">Add Village</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Village Type Toggle */}
-          <div className="space-y-2">
-            <Label>Village Type *</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={villageType === "popup" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setVillageType("popup")}
-                className="flex-1 gap-2"
-              >
-                <CalendarFull className="h-4 w-4" />
-                Popup
-              </Button>
-              <Button
-                type="button"
-                variant={villageType === "permanent" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setVillageType("permanent")}
-                className="flex-1 gap-2"
-              >
-                <Building2 className="h-4 w-4" />
-                Permanent
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {villageType === "popup" 
-                ? "Temporary village with specific dates" 
-                : "Ongoing community without fixed dates"}
-            </p>
-          </div>
-
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Website URL field */}
           <div className="space-y-2">
-            <Label htmlFor="websiteUrl">Website (optional)</Label>
+            <Label htmlFor="websiteUrl" className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              Village Website
+            </Label>
             <div className="relative">
               <Input
                 id="websiteUrl"
-                placeholder="https://yourvillage.com"
+                placeholder="Paste website link..."
                 value={websiteUrl}
                 onChange={handleWebsiteUrlChange}
                 onBlur={handleWebsiteUrlBlur}
                 disabled={isScrapingWebsite}
+                className="pr-10"
               />
               {isScrapingWebsite && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               )}
+              {websiteMetadata && !isScrapingWebsite && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Check className="h-4 w-4 text-primary" />
+                </div>
+              )}
             </div>
+            
+            {/* Extracted info preview */}
             {websiteMetadata && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {websiteMetadata.favicon_url && (
-                  <img 
-                    src={websiteMetadata.favicon_url} 
-                    alt="" 
-                    className="h-4 w-4 rounded-sm"
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                  />
-                )}
-                <span className="truncate">
-                  {websiteMetadata.title || "Website info extracted"}
-                </span>
-                {(websiteMetadata.twitter_url || websiteMetadata.instagram_url || websiteMetadata.telegram_url) && (
-                  <span className="flex items-center gap-1">
-                    <Link2 className="h-3 w-3" />
-                    socials found
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  {websiteMetadata.favicon_url && (
+                    <img 
+                      src={websiteMetadata.favicon_url} 
+                      alt="" 
+                      className="h-5 w-5 rounded-sm"
+                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                    />
+                  )}
+                  <span className="font-medium truncate">
+                    {getVillageName() || "Village name"}
                   </span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full",
+                    getVillageType() === "popup" 
+                      ? "bg-primary/10 text-primary" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    <Calendar className="h-3 w-3" />
+                    {getFormattedDates()}
+                  </span>
+                  
+                  {hasSocials && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      <Link2 className="h-3 w-3" />
+                      Socials found
+                    </span>
+                  )}
+                </div>
+                
+                {websiteMetadata.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {websiteMetadata.description}
+                  </p>
                 )}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              We'll auto-extract name, logo, and social links
-            </p>
           </div>
 
+          {/* Google Maps URL field */}
           <div className="space-y-2">
-            <Label htmlFor="name">Village Name *</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Proof of Retreat"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="googleMapsUrl">Location (Google Maps Link) *</Label>
+            <Label htmlFor="googleMapsUrl" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              Location
+            </Label>
             <div className="relative">
               <Input
                 id="googleMapsUrl"
                 placeholder="Paste Google Maps link..."
                 value={googleMapsUrl}
-                onChange={handleUrlChange}
+                onChange={handleGoogleMapsUrlChange}
                 disabled={isResolving}
+                className="pr-10"
               />
               {isResolving && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               )}
+              {coordinates && !isResolving && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Check className="h-4 w-4 text-primary" />
+                </div>
+              )}
             </div>
-            {coordinates ? (
+            {coordinates && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 {locationName || `${coordinates[1].toFixed(4)}, ${coordinates[0].toFixed(4)}`}
               </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Paste a Google Maps link to set the village location
-              </p>
             )}
           </div>
 
-          {/* Conditionally show dates only for popup villages */}
-          {villageType === "popup" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Start Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !startDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, "MMM d, yyyy") : "Pick date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={setStartDate}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label>End Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "MMM d, yyyy") : "Pick date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={setEndDate}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+          {/* Validation message */}
+          {!canSubmit && (websiteUrl || googleMapsUrl) && (
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>
+                {!coordinates && !websiteMetadata?.title 
+                  ? "Paste both links to auto-fill village details"
+                  : !coordinates 
+                    ? "Paste a Google Maps link for location"
+                    : "Paste a website to extract village info"}
+              </span>
             </div>
           )}
 
@@ -441,7 +393,12 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="sage" className="flex-1" disabled={isSubmitting || isResolving}>
+            <Button 
+              type="submit" 
+              variant="sage" 
+              className="flex-1" 
+              disabled={isSubmitting || isResolving || isScrapingWebsite || !canSubmit}
+            >
               {isSubmitting ? "Creating..." : "Create Village"}
             </Button>
           </div>

@@ -65,6 +65,130 @@ function extractSocialLinks(html: string, baseUrl: string): { twitter_url?: stri
   return socials;
 }
 
+interface DateRange {
+  start_date?: string; // ISO date string
+  end_date?: string;   // ISO date string
+  dates_text?: string; // Original text found
+}
+
+function extractDates(html: string, text: string): DateRange {
+  const result: DateRange = {};
+  const currentYear = new Date().getFullYear();
+  
+  // Common date patterns for events/popup villages
+  const datePatterns = [
+    // "March 15 - April 20, 2025" or "Mar 15 - Apr 20, 2025"
+    /(\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2})\s*[-–—to]+\s*(\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}),?\s*(\d{4})/gi,
+    
+    // "15 March - 20 April 2025" or "15 Mar - 20 Apr 2025"
+    /(\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?))\s*[-–—to]+\s*(\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)),?\s*(\d{4})/gi,
+    
+    // "March 15-20, 2025" (same month)
+    /(\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{1,2}))\s*[-–—]\s*(\d{1,2}),?\s*(\d{4})/gi,
+    
+    // "2025-03-15 to 2025-04-20" ISO format
+    /(\d{4}-\d{2}-\d{2})\s*(?:to|[-–—])\s*(\d{4}-\d{2}-\d{2})/gi,
+    
+    // "March 2025" - single month (for permanent or month-long events)
+    /\b((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4})\b/gi,
+  ];
+  
+  const months: Record<string, number> = {
+    'jan': 0, 'january': 0,
+    'feb': 1, 'february': 1,
+    'mar': 2, 'march': 2,
+    'apr': 3, 'april': 3,
+    'may': 4,
+    'jun': 5, 'june': 5,
+    'jul': 6, 'july': 6,
+    'aug': 7, 'august': 7,
+    'sep': 8, 'sept': 8, 'september': 8,
+    'oct': 9, 'october': 9,
+    'nov': 10, 'november': 10,
+    'dec': 11, 'december': 11,
+  };
+  
+  function parseMonthDay(str: string, year: number): Date | null {
+    // Try "Month Day" format
+    const match1 = str.match(/(\w+)\s+(\d{1,2})/i);
+    if (match1) {
+      const monthName = match1[1].toLowerCase();
+      const day = parseInt(match1[2], 10);
+      const monthNum = months[monthName];
+      if (monthNum !== undefined) {
+        return new Date(year, monthNum, day);
+      }
+    }
+    
+    // Try "Day Month" format
+    const match2 = str.match(/(\d{1,2})\s+(\w+)/i);
+    if (match2) {
+      const day = parseInt(match2[1], 10);
+      const monthName = match2[2].toLowerCase();
+      const monthNum = months[monthName];
+      if (monthNum !== undefined) {
+        return new Date(year, monthNum, day);
+      }
+    }
+    
+    return null;
+  }
+  
+  // Search in both HTML and cleaned text
+  const searchText = text || html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  
+  for (const pattern of datePatterns) {
+    const matches = [...searchText.matchAll(pattern)];
+    if (matches.length > 0) {
+      const match = matches[0];
+      console.log('Date pattern match:', match[0]);
+      
+      // Pattern 1 & 2: "Month Day - Month Day, Year"
+      if (match.length >= 4 && match[3] && /^\d{4}$/.test(match[3])) {
+        const year = parseInt(match[3], 10);
+        const startDate = parseMonthDay(match[1], year);
+        const endDate = parseMonthDay(match[2], year);
+        
+        if (startDate && endDate) {
+          result.start_date = startDate.toISOString().split('T')[0];
+          result.end_date = endDate.toISOString().split('T')[0];
+          result.dates_text = match[0];
+          break;
+        }
+      }
+      
+      // Pattern 3: Same month "Month Day-Day, Year"
+      if (match.length >= 5 && match[4] && /^\d{4}$/.test(match[4])) {
+        const monthMatch = match[1].match(/(\w+)/i);
+        if (monthMatch) {
+          const monthName = monthMatch[1].toLowerCase();
+          const monthNum = months[monthName];
+          const year = parseInt(match[4], 10);
+          const startDay = parseInt(match[2], 10);
+          const endDay = parseInt(match[3], 10);
+          
+          if (monthNum !== undefined) {
+            result.start_date = new Date(year, monthNum, startDay).toISOString().split('T')[0];
+            result.end_date = new Date(year, monthNum, endDay).toISOString().split('T')[0];
+            result.dates_text = match[0];
+            break;
+          }
+        }
+      }
+      
+      // Pattern 4: ISO format dates
+      if (match[1] && match[2] && /^\d{4}-\d{2}-\d{2}$/.test(match[1])) {
+        result.start_date = match[1];
+        result.end_date = match[2];
+        result.dates_text = match[0];
+        break;
+      }
+    }
+  }
+  
+  return result;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -104,6 +228,9 @@ Deno.serve(async (req) => {
       }
 
       const html = await pageResponse.text();
+      
+      // Clean text for date extraction
+      const cleanText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
       // Extract metadata
       let title = domain;
@@ -167,6 +294,9 @@ Deno.serve(async (req) => {
 
       // Extract social links
       const socialLinks = extractSocialLinks(html, formattedUrl);
+      
+      // Extract dates
+      const dateInfo = extractDates(html, cleanText);
 
       const result = {
         title,
@@ -174,6 +304,7 @@ Deno.serve(async (req) => {
         favicon_url,
         thumbnail_url,
         ...socialLinks,
+        ...dateInfo,
       };
 
       console.log('Scraped metadata:', result);
