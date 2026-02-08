@@ -7,7 +7,6 @@ import { useAuth, Profile as ProfileType } from "@/hooks/useAuth";
 import { ProfileIdentityHeader } from "@/components/profile/ProfileIdentityHeader";
 import { ProfileActivityHistory } from "@/components/profile/ProfileActivityHistory";
 import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNetwork";
-import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
 import { ProfileSceniusAndVillages } from "@/components/profile/ProfileSceniusAndVillages";
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
