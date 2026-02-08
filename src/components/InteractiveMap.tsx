@@ -9,15 +9,13 @@ import { AddSpotForm } from "./AddSpotForm";
 import { PopupTimeline } from "./PopupTimeline";
 import { StayCalendar } from "./stays/StayCalendar";
 import { SceniusList } from "./SceniusList";
-import { BulletinList } from "./BulletinList";
 import { EventsList } from "./events/EventsList";
 import { LocalTimeDisplay } from "./events/LocalTimeDisplay";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
 import { AuthButton } from "./AuthButton";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { VillageSocialIcons } from "./VillageSocialIcons";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, MessageSquare, Calendar, Coins } from "lucide-react";
-import { TreasuryList } from "./treasury/TreasuryList";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, Calendar } from "lucide-react";
 import { ExpandablePanel } from "./ExpandablePanel";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
@@ -35,7 +33,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 // Default center (first village or fallback)
 const DEFAULT_CENTER: [number, number] = [108.1885, 10.9355];
 
-type CategoryType = "map" | "residents" | "scenius" | "bulletin" | "events" | "treasury";
+type CategoryType = "map" | "residents" | "scenius" | "events";
 
 // Derive bot username from village's bot_token_secret_name
 const getBotUsernameFromVillage = (village: Village): string | undefined => {
@@ -91,7 +89,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Active view - use URL path-based category, fallback to query param for backward compatibility
-  const validTabs: CategoryType[] = ["map", "residents", "scenius", "bulletin", "events", "treasury"];
+  const validTabs: CategoryType[] = ["map", "residents", "scenius", "events"];
   const queryTab = searchParams.get("tab") as CategoryType | null;
   const [activeView, setActiveView] = useState<CategoryType>(
     initialCategory || (queryTab && validTabs.includes(queryTab) ? queryTab : "map")
@@ -907,8 +905,6 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                 {[
                   { id: "residents" as CategoryType, icon: CalendarDays, label: "Residents" },
                   { id: "scenius" as CategoryType, icon: Sparkles, label: "Scenius" },
-                  { id: "bulletin" as CategoryType, icon: MessageSquare, label: "Bulletin" },
-                  { id: "treasury" as CategoryType, icon: Coins, label: "Treasury" },
                   { id: "events" as CategoryType, icon: Calendar, label: "Events" },
                 ].map(({ id, icon: Icon, label }) => (
                   <Tooltip key={id}>
@@ -984,26 +980,6 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         </div>
       )}
 
-      {/* Bulletin view */}
-      {activeView === "bulletin" && isZoomedIn && activeVillage && (
-        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <ExpandablePanel>
-            <div className="p-4 border-b border-border">
-              <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                Bulletin
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Share messages with the village
-              </p>
-            </div>
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <BulletinList villageId={activeVillage.id} />
-            </div>
-          </ExpandablePanel>
-        </div>
-      )}
-
       {/* Events view */}
       {activeView === "events" && isZoomedIn && activeVillage && (
         <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
@@ -1022,21 +998,6 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
             </div>
             <div className="flex-1 min-h-0 overflow-hidden">
               <EventsList villageId={activeVillage.id} />
-            </div>
-          </ExpandablePanel>
-        </div>
-      )}
-
-      {/* Treasury view */}
-      {activeView === "treasury" && isZoomedIn && activeVillage && (
-        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <ExpandablePanel>
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <TreasuryList
-                villageId={activeVillage.id}
-                ethWalletAddress={activeVillage.wallet_address}
-                solWalletAddress={activeVillage.solana_wallet_address}
-              />
             </div>
           </ExpandablePanel>
         </div>

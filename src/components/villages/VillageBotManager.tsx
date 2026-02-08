@@ -20,7 +20,7 @@ const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   </svg>
 );
 
-type NotificationType = 'donation' | 'bulletin' | 'resident' | 'daily_events' | 'weekly_events' | 'new_application';
+type NotificationType = 'resident' | 'daily_events' | 'weekly_events' | 'new_application';
 
 interface NotificationRoute {
   id: string;
@@ -51,18 +51,6 @@ const notificationTypes: {
     label: "New Applications",
     description: "Alerts when someone applies to join",
     icon: <Users className="h-4 w-4" />,
-  },
-  {
-    type: "donation",
-    label: "Donations",
-    description: "Alerts when donations are received",
-    icon: <Wallet className="h-4 w-4" />,
-  },
-  {
-    type: "bulletin",
-    label: "Bulletin Posts",
-    description: "New bulletin board posts",
-    icon: <MessageSquare className="h-4 w-4" />,
   },
   {
     type: "resident",

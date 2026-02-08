@@ -43,8 +43,6 @@ const EditVillage = () => {
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
-  const [walletAddress, setWalletAddress] = useState("");
-  const [solanaWalletAddress, setSolanaWalletAddress] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [telegramUrl, setTelegramUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
@@ -115,8 +113,6 @@ const EditVillage = () => {
       setDescription(village.description);
       setLogoUrl(village.logo_url || "");
       setThumbnailUrl((village as any).thumbnail_url || "");
-      setWalletAddress(village.wallet_address || "");
-      setSolanaWalletAddress(village.solana_wallet_address || "");
       setWebsiteUrl(village.website_url || "");
       setTelegramUrl(village.telegram_url || "");
       setTwitterUrl(village.twitter_url || "");
@@ -245,8 +241,6 @@ const EditVillage = () => {
           description: description.trim(),
           logo_url: logoUrl || null,
           thumbnail_url: thumbnailUrl || null,
-          wallet_address: walletAddress.trim() || null,
-          solana_wallet_address: solanaWalletAddress.trim() || null,
           website_url: websiteUrl.trim() || null,
           telegram_url: telegramUrl || null,
           twitter_url: twitterUrl || null,
@@ -476,36 +470,6 @@ const EditVillage = () => {
                     </div>
                   </div>
 
-                  {/* Treasury Wallets */}
-                  <div className="border-t pt-6">
-                    <h4 className="font-medium text-sm mb-4">Treasury Wallets</h4>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="wallet">Ethereum Wallet</Label>
-                        <Input
-                          id="wallet"
-                          value={walletAddress}
-                          onChange={(e) => setWalletAddress(e.target.value)}
-                          placeholder="0x... or yourname.eth"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          ENS names and hex addresses are supported.
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="solana-wallet">Solana Wallet</Label>
-                        <Input
-                          id="solana-wallet"
-                          value={solanaWalletAddress}
-                          onChange={(e) => setSolanaWalletAddress(e.target.value)}
-                          placeholder="Solana address (e.g., 6J4n...)"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Used for Solana treasury tracking and donations.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Links */}
                   <div className="border-t pt-6">

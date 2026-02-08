@@ -7,7 +7,7 @@ import { useState, useMemo } from "react";
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoiZXVkYWZvcm0iLCJhIjoiY21lczgwdndsMDZlczJqcXo3Y2g3d2diMSJ9.MbyZaNannwrrF44tMnz3aA";
 
-type CategoryType = "map" | "residents" | "scenius" | "bulletin" | "events" | "treasury";
+type CategoryType = "map" | "residents" | "scenius" | "events";
 
 const Village = () => {
   const { villageSlug } = useParams<{ villageSlug: string }>();
@@ -21,7 +21,7 @@ const Village = () => {
   // Extract category from the URL path (e.g., /proof-of-retreat/residents -> residents)
   const initialCategory = useMemo<CategoryType>(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
-    const validCategories: CategoryType[] = ["map", "residents", "scenius", "bulletin", "events", "treasury"];
+    const validCategories: CategoryType[] = ["map", "residents", "scenius", "events"];
     
     // If path has more than one part, check if last part is a valid category
     if (pathParts.length > 1) {
