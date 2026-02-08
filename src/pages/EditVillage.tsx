@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
+import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Loader2, Settings, Users, MapPin, Image, ClipboardList, Bot, FileText } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, Loader2, Settings, Users, MapPin, Image, ClipboardList, Bot, FileText, CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useVillages, Village } from "@/hooks/useVillages";
@@ -49,6 +53,60 @@ const EditVillage = () => {
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
   const [location, setLocation] = useState("");
   const [center, setCenter] = useState<[number, number]>([0, 0]);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+
+  // Parse dates from village.dates string (format: "Mar 1 - Mar 30, 2025" or similar)
+  const parseDatesFromString = (datesStr: string): { start?: Date; end?: Date } => {
+    if (!datesStr || datesStr.toLowerCase() === 'permanent') {
+      return { start: undefined, end: undefined };
+    }
+    
+    const parts = datesStr.split(' - ');
+    if (parts.length === 2) {
+      try {
+        // Try ISO format first
+        const startMatch = parts[0].match(/\d{4}-\d{2}-\d{2}/);
+        const endMatch = parts[1].match(/\d{4}-\d{2}-\d{2}/);
+        if (startMatch && endMatch) {
+          return {
+            start: parseISO(startMatch[0]),
+            end: parseISO(endMatch[0]),
+          };
+        }
+        
+        // Try "Month Day, Year" format
+        const yearMatch = parts[1].match(/\d{4}/);
+        if (yearMatch) {
+          const year = yearMatch[0];
+          const startStr = `${parts[0].trim()}, ${year}`;
+          const endStr = parts[1].trim();
+          const start = new Date(startStr);
+          const end = new Date(endStr);
+          if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+            return { start, end };
+          }
+        }
+      } catch {
+        // Fall through to return undefined
+      }
+    }
+    return { start: undefined, end: undefined };
+  };
+
+  // Format dates for storage
+  const formatDatesString = (): string => {
+    if (village?.village_type === 'permanent') {
+      return 'Permanent';
+    }
+    if (!startDate || !endDate) {
+      return village?.dates || ''; // Keep existing if not both set
+    }
+    // Format as "Mar 1 - Mar 30, 2025"
+    const startFormatted = format(startDate, "MMM d");
+    const endFormatted = format(endDate, "MMM d, yyyy");
+    return `${startFormatted} - ${endFormatted}`;
+  };
 
   // Initialize form when village loads
   useEffect(() => {
@@ -66,6 +124,11 @@ const EditVillage = () => {
       setApplyUrl((village as any).apply_url || "");
       setLocation(village.location);
       setCenter(village.center);
+      
+      // Parse dates
+      const { start, end } = parseDatesFromString(village.dates);
+      setStartDate(start);
+      setEndDate(end);
     }
   }, [village]);
 
@@ -166,6 +229,12 @@ const EditVillage = () => {
       return;
     }
 
+    // Validate dates for popup villages
+    if (village.village_type === 'popup' && startDate && endDate && endDate < startDate) {
+      toast.error("End date must be after start date");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -185,6 +254,7 @@ const EditVillage = () => {
           apply_url: applyUrl.trim() || null,
           location: location.trim(),
           center: center,
+          dates: formatDatesString(),
         } as any)
         .eq("id", village.id);
 
@@ -288,6 +358,73 @@ const EditVillage = () => {
                       rows={3}
                     />
                   </div>
+
+                  {/* Dates Section - Only for popup villages */}
+                  {village.village_type === 'popup' && (
+                    <div className="border-t pt-6">
+                      <h4 className="font-medium text-sm mb-4 flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4" />
+                        Dates
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Start Date</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !startDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {startDate ? format(startDate, "MMM d, yyyy") : "Pick date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={startDate}
+                                onSelect={setStartDate}
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>End Date</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !endDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {endDate ? format(endDate, "MMM d, yyyy") : "Pick date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={endDate}
+                                onSelect={setEndDate}
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Current: {village.dates}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Location Section */}
                   <div className="border-t pt-6">
