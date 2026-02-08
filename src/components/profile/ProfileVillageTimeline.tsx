@@ -285,39 +285,27 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
 
   if (loading) {
     return (
-      <section className="py-6 border-b border-border">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
-          <MapPin className="h-4 w-4" />
-          My Villages
-        </h2>
+      <div>
         <div className="text-sm text-muted-foreground">Loading...</div>
-      </section>
+      </div>
     );
   }
 
   if (villages.length === 0) {
     return (
-      <section className="py-6 border-b border-border">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
-          <MapPin className="h-4 w-4" />
-          My Villages
-        </h2>
+      <div>
         <p className="text-sm text-muted-foreground">
           No village participation yet
         </p>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="py-6 border-b border-border">
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2 mb-4">
-        <MapPin className="h-4 w-4" />
-        My Villages
-        {isOwnProfile && (
-          <span className="text-xs text-muted-foreground font-normal ml-auto">Click to toggle status</span>
-        )}
-      </h2>
+    <div>
+      {isOwnProfile && (
+        <p className="text-xs text-muted-foreground mb-3">Click to toggle status</p>
+      )}
 
       <ScrollArea className="w-full">
         <div className="min-w-[500px] pb-2">
@@ -487,6 +475,6 @@ export const ProfileVillageTimeline = ({ userId }: ProfileVillageTimelineProps) 
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-    </section>
+    </div>
   );
 };

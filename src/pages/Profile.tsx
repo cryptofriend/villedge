@@ -8,7 +8,7 @@ import { ProfileIdentityHeader } from "@/components/profile/ProfileIdentityHeade
 import { ProfileActivityHistory } from "@/components/profile/ProfileActivityHistory";
 import { ProfileConnectedNetwork } from "@/components/profile/ProfileConnectedNetwork";
 import { ProfileVillageTimeline } from "@/components/profile/ProfileVillageTimeline";
-import { ProfileSceniusSection } from "@/components/profile/ProfileSceniusSection";
+import { ProfileSceniusAndVillages } from "@/components/profile/ProfileSceniusAndVillages";
 import { ProfileEventsCalendar } from "@/components/profile/ProfileEventsCalendar";
 import { ProfileConnectionActions } from "@/components/profile/ProfileConnectionActions";
 import { ProfileConnectionRequests } from "@/components/profile/ProfileConnectionRequests";
@@ -320,20 +320,15 @@ const Profile = () => {
         )}
 
 
-        {/* 2. Working On / Scenius Section */}
+        {/* 2. Scenius & My Villages Combined Section */}
         <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
-          <ProfileSceniusSection
+          <ProfileSceniusAndVillages
+            userId={profileData.user_id}
+            isOwnProfile={isOwnProfile}
             projectDescription={profileData.project_description}
             projectUrl={profileData.project_url}
-            isOwnProfile={isOwnProfile}
-            userId={profileData.user_id}
             onUpdate={(updates) => setProfileData(prev => prev ? { ...prev, ...updates } : null)}
           />
-        </div>
-
-        {/* 3. Village Timeline / My Villages */}
-        <div className={cn(shouldBlur && "blur-md select-none pointer-events-none")}>
-          <ProfileVillageTimeline userId={profileUserId || undefined} />
         </div>
 
         {/* 4. Events Calendar */}

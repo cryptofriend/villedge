@@ -59,13 +59,7 @@ export const ProfileSceniusSection = ({
 
   if (isLoading) {
     return (
-      <section className="py-6 border-b border-border">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Scenius
-          </h2>
-        </div>
+      <div>
         <p className="text-xs text-muted-foreground mb-4">
           <a 
             href="https://en.wiktionary.org/wiki/scenius" 
@@ -77,21 +71,12 @@ export const ProfileSceniusSection = ({
           </a>
         </p>
         <div className="animate-pulse h-16 bg-muted/30 rounded-lg" />
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="py-6 border-b border-border">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Scenius
-          </h2>
-        </div>
-      </div>
-      
+    <div>
       <p className="text-xs text-muted-foreground mb-4">
         <a 
           href="https://en.wiktionary.org/wiki/scenius" 
@@ -234,6 +219,6 @@ export const ProfileSceniusSection = ({
           <p className="text-sm text-muted-foreground">No projects shared yet</p>
         )}
       </div>
-    </section>
+    </div>
   );
 };
