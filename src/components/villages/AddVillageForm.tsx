@@ -12,13 +12,23 @@ import {
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, MapPin, CalendarIcon, Loader2, Calendar as CalendarFull, Building2 } from "lucide-react";
+import { Plus, MapPin, CalendarIcon, Loader2, Calendar as CalendarFull, Building2, Globe, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { VillageType } from "@/hooks/useVillages";
+
+interface WebsiteMetadata {
+  title?: string;
+  description?: string;
+  favicon_url?: string;
+  thumbnail_url?: string;
+  twitter_url?: string;
+  instagram_url?: string;
+  telegram_url?: string;
+}
 
 interface AddVillageFormProps {
   onVillageAdded?: () => void;
@@ -30,6 +40,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [locationName, setLocationName] = useState("");
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
   const [startDate, setStartDate] = useState<Date>();
@@ -37,6 +48,8 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
   const [villageType, setVillageType] = useState<VillageType>("popup");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
+  const [isScrapingWebsite, setIsScrapingWebsite] = useState(false);
+  const [websiteMetadata, setWebsiteMetadata] = useState<WebsiteMetadata | null>(null);
 
   const resolveGoogleMapsUrl = async (url: string) => {
     if (!url.trim()) return;
@@ -77,6 +90,56 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     // Auto-resolve when a Google Maps URL is pasted
     if (url.includes('google.com/maps') || url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps')) {
       resolveGoogleMapsUrl(url);
+    }
+  };
+
+  const scrapeWebsiteMetadata = async (url: string) => {
+    if (!url.trim()) return;
+    
+    setIsScrapingWebsite(true);
+    setWebsiteMetadata(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-project-metadata', {
+        body: { url: url.trim() },
+      });
+
+      if (error) throw error;
+
+      if (data.success && data.data) {
+        const metadata = data.data as WebsiteMetadata;
+        setWebsiteMetadata(metadata);
+        
+        // Auto-fill name if empty
+        if (metadata.title && !name) {
+          // Clean up title (remove common suffixes)
+          const cleanTitle = metadata.title
+            .replace(/\s*[-|–—]\s*(Home|Official|Website|Site).*$/i, '')
+            .replace(/\s*\|\s*.*$/, '')
+            .trim();
+          setName(cleanTitle);
+        }
+        
+        toast.success("Website info extracted!");
+      } else {
+        toast.error(data.error || "Could not extract website info");
+      }
+    } catch (err) {
+      console.error("Error scraping website:", err);
+      toast.error("Failed to fetch website info");
+    } finally {
+      setIsScrapingWebsite(false);
+    }
+  };
+
+  const handleWebsiteUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setWebsiteUrl(url);
+  };
+
+  const handleWebsiteUrlBlur = () => {
+    if (websiteUrl.trim() && !isScrapingWebsite) {
+      scrapeWebsiteMetadata(websiteUrl);
     }
   };
 
@@ -123,15 +186,27 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
       ? `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`
       : "Permanent";
 
+    // Format website URL
+    let formattedWebsiteUrl = websiteUrl.trim();
+    if (formattedWebsiteUrl && !formattedWebsiteUrl.startsWith('http')) {
+      formattedWebsiteUrl = `https://${formattedWebsiteUrl}`;
+    }
+
     const { error } = await supabase.from('villages').insert({
       id: slug,
       name: name.trim(),
       location: locationName || "Location",
       center: coordinates,
       dates,
-      description: `Welcome to ${name.trim()}`,
+      description: websiteMetadata?.description || `Welcome to ${name.trim()}`,
       created_by: user.id,
       village_type: villageType,
+      website_url: formattedWebsiteUrl || null,
+      logo_url: websiteMetadata?.favicon_url || null,
+      thumbnail_url: websiteMetadata?.thumbnail_url || null,
+      twitter_url: websiteMetadata?.twitter_url || null,
+      instagram_url: websiteMetadata?.instagram_url || null,
+      telegram_url: websiteMetadata?.telegram_url || null,
     });
 
     setIsSubmitting(false);
@@ -151,11 +226,13 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     // Reset form
     setName("");
     setGoogleMapsUrl("");
+    setWebsiteUrl("");
     setLocationName("");
     setCoordinates(null);
     setStartDate(undefined);
     setEndDate(undefined);
     setVillageType("popup");
+    setWebsiteMetadata(null);
     setOpen(false);
     
     onVillageAdded?.();
@@ -215,6 +292,50 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
               {villageType === "popup" 
                 ? "Temporary village with specific dates" 
                 : "Ongoing community without fixed dates"}
+            </p>
+          </div>
+
+          {/* Website URL field */}
+          <div className="space-y-2">
+            <Label htmlFor="websiteUrl">Website (optional)</Label>
+            <div className="relative">
+              <Input
+                id="websiteUrl"
+                placeholder="https://yourvillage.com"
+                value={websiteUrl}
+                onChange={handleWebsiteUrlChange}
+                onBlur={handleWebsiteUrlBlur}
+                disabled={isScrapingWebsite}
+              />
+              {isScrapingWebsite && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </div>
+            {websiteMetadata && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {websiteMetadata.favicon_url && (
+                  <img 
+                    src={websiteMetadata.favicon_url} 
+                    alt="" 
+                    className="h-4 w-4 rounded-sm"
+                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                  />
+                )}
+                <span className="truncate">
+                  {websiteMetadata.title || "Website info extracted"}
+                </span>
+                {(websiteMetadata.twitter_url || websiteMetadata.instagram_url || websiteMetadata.telegram_url) && (
+                  <span className="flex items-center gap-1">
+                    <Link2 className="h-3 w-3" />
+                    socials found
+                  </span>
+                )}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              We'll auto-extract name, logo, and social links
             </p>
           </div>
 
