@@ -1134,7 +1134,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          asks: string | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          id: string | null
+          is_anon: boolean | null
+          is_verified: boolean | null
+          offerings: string | null
+          project_description: string | null
+          project_url: string | null
+          social_url: string | null
+          updated_at: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          asks?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_anon?: boolean | null
+          is_verified?: boolean | null
+          offerings?: string | null
+          project_description?: string | null
+          project_url?: string | null
+          social_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          asks?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_anon?: boolean | null
+          is_verified?: boolean | null
+          offerings?: string | null
+          project_description?: string | null
+          project_url?: string | null
+          social_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_connection_request: {
