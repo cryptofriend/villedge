@@ -99,10 +99,19 @@ Deno.serve(async (req) => {
     const threadId = route?.thread_id || 71;
 
     if (!events || events.length === 0) {
-      // Send "no events" message
-      const noEventsMessage = isWeekMode 
-        ? `📅 <b>Upcoming Week's Events</b>\n\n<i>No events scheduled for the upcoming week.</i>\n\nHave a great week! ☀️`
-        : `📅 <b>Today's Events</b>\n\n<i>No events scheduled for today.</i>\n\nHave a great day! ☀️`;
+      // Send "no events" message - but still include daily routine for daily digest
+      let noEventsMessage: string;
+      
+      if (isWeekMode) {
+        noEventsMessage = `📅 <b>Upcoming Week's Events</b>\n\n<i>No events scheduled for the upcoming week.</i>\n\nHave a great week! ☀️`;
+      } else {
+        const dailyDateStr = vietnamNow.toLocaleDateString("en-US", { timeZone: "Asia/Ho_Chi_Minh", weekday: "long", month: "long", day: "numeric" });
+        noEventsMessage = `📅 <b>Today's Events - ${escapeHtml(dailyDateStr)}</b>\n\n`;
+        noEventsMessage += `<b>🌅 Daily Routine</b>\n`;
+        noEventsMessage += `☕ 8:00 AM - 12:00 PM — Slow Morning\n`;
+        noEventsMessage += `🎯 12:00 PM - 5:00 PM — Deep Focus\n\n`;
+        noEventsMessage += `<i>No additional events scheduled for today.</i>\n\nHave a great day! ☀️`;
+      }
       
       await sendTelegramMessage(telegramBotToken, chatId, threadId, noEventsMessage);
       
@@ -120,6 +129,17 @@ Deno.serve(async (req) => {
     let message = isWeekMode 
       ? `📅 <b>Upcoming Week's Events - ${escapeHtml(dateStr)}</b>\n\n`
       : `📅 <b>Today's Events - ${escapeHtml(dateStr)}</b>\n\n`;
+
+    // Add daily routine for non-week mode (daily digest)
+    if (!isWeekMode) {
+      message += `<b>🌅 Daily Routine</b>\n`;
+      message += `☕ 8:00 AM - 12:00 PM — Slow Morning\n`;
+      message += `🎯 12:00 PM - 5:00 PM — Deep Focus\n\n`;
+      
+      if (events && events.length > 0) {
+        message += `<b>📌 Scheduled Events</b>\n\n`;
+      }
+    }
 
     // Group events by day for week mode
     if (isWeekMode) {
