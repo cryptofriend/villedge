@@ -434,7 +434,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (socialProfile) {
         telegramMessage += `\n\n🔗 <a href="${escapeHtml(socialProfile)}">Profile</a>`;
       }
-      telegramMessage += `\n\n👥 <a href="${miniAppLinks.app}">View Residents</a>`;
+      telegramMessage += `\n\n👥 <a href="${miniAppLinks.app}/residents">View Residents</a>`;
     } else if (type === "new_application") {
       // New application notification for hosts
       telegramMessage = `📋 <b>New Application Received!</b>\n\n`;
