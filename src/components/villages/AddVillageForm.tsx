@@ -85,7 +85,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     setGoogleMapsUrl(url);
     
     // Auto-resolve when a Google Maps URL is pasted
-    if (url.includes('google.com/maps') || url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps')) {
+    if (url.includes('google.com/maps') || url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps') || url.includes('map.kakao.com') || url.includes('map.kakao.co')) {
       resolveGoogleMapsUrl(url);
     }
   };
@@ -350,7 +350,7 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
             <div className="relative">
               <Input
                 id="googleMapsUrl"
-                placeholder="Paste Google Maps link..."
+                placeholder="Paste Google Maps or Kakao Maps link..."
                 value={googleMapsUrl}
                 onChange={handleGoogleMapsUrlChange}
                 disabled={isResolving}
