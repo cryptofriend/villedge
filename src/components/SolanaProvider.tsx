@@ -6,8 +6,6 @@ import { clusterApiUrl } from '@solana/web3.js';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
-  TorusWalletAdapter,
-  LedgerWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import { WalletConnectWalletAdapter } from '@walletconnect/solana-adapter';
 
@@ -25,8 +23,6 @@ export const SolanaProvider = ({ children }: SolanaProviderProps) => {
     const walletList: Adapter[] = [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
-      new TorusWalletAdapter(),
-      new LedgerWalletAdapter(),
     ];
 
     // Add WalletConnect adapter if project ID is configured
