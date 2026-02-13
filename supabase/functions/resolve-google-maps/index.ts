@@ -58,11 +58,19 @@ Deno.serve(async (req) => {
 
     if (isKakaoMap) {
       // === Kakao Maps URL parsing ===
-      // Kakao map URLs come in several formats:
-      // https://map.kakao.com/?urlX=...&urlY=...  (WGS84 coords as urlX/urlY)
-      // https://map.kakao.com/link/map/Name,lat,lng
-      // https://map.kakao.com/?itemId=...&q=...
-      // Hash-based: #/...  with lat,lng in the fragment
+      // Parse coordinates from the ORIGINAL URL first (before redirect),
+      // because Kakao redirects convert WGS84 to their internal TM128 projection.
+
+      // Format: /link/map/Name,lat,lng (original URL)
+      const origLinkMatch = url.match(/\/link\/map\/([^,]+),(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (origLinkMatch) {
+        placeData.name = decodeURIComponent(origLinkMatch[1]);
+        const lat = parseFloat(origLinkMatch[2]);
+        const lng = parseFloat(origLinkMatch[3]);
+        if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+          placeData.coordinates = [lng, lat];
+        }
+      }
 
       // Try to follow redirects for Kakao short links
       if (url !== finalUrl) {
@@ -78,27 +86,24 @@ Deno.serve(async (req) => {
       }
       placeData.resolvedUrl = finalUrl;
 
-      // Format: /link/map/Name,lat,lng
-      const linkMapMatch = finalUrl.match(/\/link\/map\/([^,]+),(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-      if (linkMapMatch) {
-        placeData.name = decodeURIComponent(linkMapMatch[1]);
-        const lat = parseFloat(linkMapMatch[2]);
-        const lng = parseFloat(linkMapMatch[3]);
-        if (!isNaN(lat) && !isNaN(lng)) {
-          placeData.coordinates = [lng, lat];
-        }
-      }
-
-      // Format: urlX=lng&urlY=lat (WGS84)
+      // Also try /link/map/ on the final URL if not found in original
       if (!placeData.coordinates) {
-        const urlXMatch = finalUrl.match(/urlX=(-?\d+\.?\d*)/);
-        const urlYMatch = finalUrl.match(/urlY=(-?\d+\.?\d*)/);
-        if (urlXMatch && urlYMatch) {
-          const lng = parseFloat(urlXMatch[1]);
-          const lat = parseFloat(urlYMatch[1]);
+        const linkMapMatch = finalUrl.match(/\/link\/map\/([^,]+),(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+        if (linkMapMatch) {
+          if (!placeData.name) placeData.name = decodeURIComponent(linkMapMatch[1]);
+          const lat = parseFloat(linkMapMatch[2]);
+          const lng = parseFloat(linkMapMatch[3]);
           if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
             placeData.coordinates = [lng, lat];
           }
+        }
+      }
+
+      // Try name from redirected URL query param
+      if (!placeData.name) {
+        const nameMatch = finalUrl.match(/[?&]name=([^&]+)/);
+        if (nameMatch) {
+          placeData.name = decodeURIComponent(nameMatch[1]);
         }
       }
 
