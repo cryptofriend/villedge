@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useApplicationQuestions, ApplicationQuestion } from "@/hooks/useApplicationQuestions";
 import { useUserProjects } from "@/hooks/useUserProjects";
 import { useProfileSocialLinks, getSocialPlatform } from "@/hooks/useProfileSocialLinks";
+import { ApplicationSceniusBlock } from "./ApplicationSceniusBlock";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -40,7 +41,7 @@ export const AddStayForm = ({ villageId, onAddStay, botUsername }: AddStayFormPr
   const navigate = useNavigate();
   
   const { questions, loading: questionsLoading } = useApplicationQuestions(villageId);
-  const { projects, addProject } = useUserProjects(user?.id || null);
+  const { projects, addProject, deleteProject } = useUserProjects(user?.id || null);
   const { socialLinks, addLink } = useProfileSocialLinks(user?.id || null);
   
   const [startDate, setStartDate] = useState<Date>();
@@ -152,6 +153,11 @@ const resetForm = () => {
 
     if (!user) {
       toast.error("You must be signed in to apply");
+      return;
+    }
+
+    if (projects.length === 0) {
+      toast.error("Please add at least one project to your Scenius");
       return;
     }
 
@@ -491,6 +497,13 @@ const resetForm = () => {
                 </Popover>
               </div>
             </div>
+
+            {/* Scenius Block */}
+            <ApplicationSceniusBlock
+              projects={projects}
+              onAddProject={addProject}
+              onDeleteProject={deleteProject}
+            />
 
             {/* Custom Questions */}
             {questionsLoading ? (
