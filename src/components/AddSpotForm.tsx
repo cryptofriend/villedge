@@ -90,8 +90,8 @@ export const AddSpotForm = ({
     const url = e.target.value;
     setGoogleMapsUrl(url);
     
-    // Auto-resolve when a Google Maps URL is pasted
-    if (url.includes('google.com/maps') || url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps')) {
+    // Auto-resolve when a Google Maps or Kakao Maps URL is pasted
+    if (url.includes('google.com/maps') || url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps') || url.includes('map.kakao.com') || url.includes('map.kakao.co')) {
       resolveGoogleMapsUrl(url);
     }
   };
@@ -105,7 +105,7 @@ export const AddSpotForm = ({
     }
 
     if (!pendingCoordinates) {
-      toast.error("Please paste a valid Google Maps link");
+      toast.error("Please paste a valid map link");
       return;
     }
 
@@ -157,11 +157,11 @@ export const AddSpotForm = ({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="googleMapsUrl">Google Maps Link *</Label>
+            <Label htmlFor="googleMapsUrl">Map Link *</Label>
             <div className="relative">
               <Input
                 id="googleMapsUrl"
-                placeholder="Paste Google Maps link..."
+                placeholder="Paste Google Maps or Kakao Maps link..."
                 value={googleMapsUrl}
                 onChange={handleUrlChange}
                 disabled={isResolving}
@@ -179,7 +179,7 @@ export const AddSpotForm = ({
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Paste a Google Maps link (including shortened links)
+                Paste a Google Maps or Kakao Maps link
               </p>
             )}
           </div>

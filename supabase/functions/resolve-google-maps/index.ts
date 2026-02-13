@@ -29,7 +29,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Resolving Google Maps URL:', url);
+    console.log('Resolving map URL:', url);
+
+    const isKakaoMap = url.includes('map.kakao.com') || url.includes('map.kakao.co');
 
     // Follow redirects to get the final URL
     let finalUrl = url;
@@ -45,7 +47,6 @@ Deno.serve(async (req) => {
         console.log('Resolved to:', finalUrl);
       } catch (e) {
         console.log('Could not follow redirect, trying fetch:', e);
-        // Try a full fetch if HEAD fails
         const response = await fetch(url, { redirect: 'follow' });
         finalUrl = response.url;
       }
@@ -55,20 +56,125 @@ Deno.serve(async (req) => {
       resolvedUrl: finalUrl,
     };
 
-    // Extract coordinates from the final URL
-    // Priority: !8m2!3d!4d (most precise place marker) > !3d!4d > @lat,lng (view center, least precise)
-    
-    // Format: !8m2!3d{lat}!4d{lng} - This is the actual place marker location
-    const dataMatch = finalUrl.match(/!8m2!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
-    if (dataMatch) {
-      const lat = parseFloat(dataMatch[1]);
-      const lng = parseFloat(dataMatch[2]);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        placeData.coordinates = [lng, lat]; // Mapbox uses [lng, lat]
-      }
-    }
+    if (isKakaoMap) {
+      // === Kakao Maps URL parsing ===
+      // Kakao map URLs come in several formats:
+      // https://map.kakao.com/?urlX=...&urlY=...  (WGS84 coords as urlX/urlY)
+      // https://map.kakao.com/link/map/Name,lat,lng
+      // https://map.kakao.com/?itemId=...&q=...
+      // Hash-based: #/...  with lat,lng in the fragment
 
-    // Format: !3d{lat}!4d{lng} - Also precise place location
+      // Try to follow redirects for Kakao short links
+      if (url !== finalUrl) {
+        console.log('Kakao resolved to:', finalUrl);
+      } else {
+        try {
+          const response = await fetch(url, { redirect: 'follow' });
+          finalUrl = response.url;
+          console.log('Kakao resolved to:', finalUrl);
+        } catch (e) {
+          console.log('Could not follow Kakao redirect:', e);
+        }
+      }
+      placeData.resolvedUrl = finalUrl;
+
+      // Format: /link/map/Name,lat,lng
+      const linkMapMatch = finalUrl.match(/\/link\/map\/([^,]+),(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (linkMapMatch) {
+        placeData.name = decodeURIComponent(linkMapMatch[1]);
+        const lat = parseFloat(linkMapMatch[2]);
+        const lng = parseFloat(linkMapMatch[3]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          placeData.coordinates = [lng, lat];
+        }
+      }
+
+      // Format: urlX=lng&urlY=lat (WGS84)
+      if (!placeData.coordinates) {
+        const urlXMatch = finalUrl.match(/urlX=(-?\d+\.?\d*)/);
+        const urlYMatch = finalUrl.match(/urlY=(-?\d+\.?\d*)/);
+        if (urlXMatch && urlYMatch) {
+          const lng = parseFloat(urlXMatch[1]);
+          const lat = parseFloat(urlYMatch[1]);
+          if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+            placeData.coordinates = [lng, lat];
+          }
+        }
+      }
+
+      // Try fetching the page to extract coords and name from meta/scripts
+      try {
+        const pageResponse = await fetch(finalUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.5',
+          },
+        });
+        const html = await pageResponse.text();
+
+        // Extract title
+        if (!placeData.name) {
+          const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
+          if (ogTitleMatch) {
+            placeData.name = ogTitleMatch[1].replace(/\s*[-|]\s*카카오맵.*$/i, '').trim();
+          }
+        }
+        if (!placeData.name) {
+          const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+          if (titleMatch) {
+            placeData.name = titleMatch[1].replace(/\s*[-|]\s*카카오맵.*$/i, '').trim();
+          }
+        }
+
+        // Extract description
+        const descMatch = html.match(/<meta[^>]*(?:name|property)=["'](?:og:)?description["'][^>]*content=["']([^"']+)["']/i);
+        if (descMatch) {
+          placeData.description = descMatch[1];
+        }
+
+        // Extract image
+        const ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+        if (ogImgMatch) {
+          placeData.imageUrl = ogImgMatch[1];
+        }
+
+        // Try to find coordinates in page content
+        if (!placeData.coordinates) {
+          const coordPatterns = [
+            /longitude['":\s]+(-?\d+\.\d+)[\s\S]*?latitude['":\s]+(-?\d+\.\d+)/i,
+            /lat['":\s]+(-?\d+\.\d+)[\s\S]*?lng['":\s]+(-?\d+\.\d+)/i,
+            /center['":\s]*{\s*lat['":\s]+(-?\d+\.\d+),\s*lng['":\s]+(-?\d+\.\d+)/i,
+          ];
+          for (const pattern of coordPatterns) {
+            const match = html.match(pattern);
+            if (match) {
+              // First pattern has lng first, others have lat first
+              const isLngFirst = pattern.source.startsWith('longitude');
+              const lat = parseFloat(isLngFirst ? match[2] : match[1]);
+              const lng = parseFloat(isLngFirst ? match[1] : match[2]);
+              if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+                placeData.coordinates = [lng, lat];
+                break;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Could not fetch Kakao page details:', e);
+      }
+    } else {
+      // === Google Maps URL parsing ===
+      // Extract coordinates from the final URL
+      const dataMatch = finalUrl.match(/!8m2!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+      if (dataMatch) {
+        const lat = parseFloat(dataMatch[1]);
+        const lng = parseFloat(dataMatch[2]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          placeData.coordinates = [lng, lat];
+        }
+      }
+
     if (!placeData.coordinates) {
       const dMatch = finalUrl.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
       if (dMatch) {
@@ -80,7 +186,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Format: @lat,lng,zoom - This is the view center, use as fallback only
     if (!placeData.coordinates) {
       const atMatch = finalUrl.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
       if (atMatch) {
@@ -92,7 +197,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Format: /search/lat,+lng or /search/lat,lng - coordinates in search path
     if (!placeData.coordinates) {
       const searchMatch = finalUrl.match(/\/search\/(-?\d+\.?\d*),\+?(-?\d+\.?\d*)/);
       if (searchMatch) {
@@ -105,13 +209,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Extract place name from /place/Name/ format
     const placeMatch = finalUrl.match(/\/place\/([^\/]+)/);
     if (placeMatch) {
       placeData.name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
     }
 
-    // Try to fetch the page to get more details
     try {
       const pageResponse = await fetch(finalUrl, {
         headers: {
@@ -122,23 +224,18 @@ Deno.serve(async (req) => {
       });
       const html = await pageResponse.text();
       
-      // Extract meta description
       const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
       if (descMatch) {
         placeData.description = descMatch[1];
       }
       
-      // Try to extract og:image (multiple patterns)
       let imageFound = false;
-      
-      // Pattern 1: og:image meta tag
       const ogImgMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
       if (ogImgMatch && ogImgMatch[1]) {
         placeData.imageUrl = ogImgMatch[1];
         imageFound = true;
       }
       
-      // Pattern 2: twitter:image meta tag
       if (!imageFound) {
         const twitterImgMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i);
         if (twitterImgMatch && twitterImgMatch[1]) {
@@ -147,13 +244,10 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Pattern 3: Look for Google Photos URLs in the page
       if (!imageFound) {
         const googlePhotoMatch = html.match(/https:\/\/lh\d\.googleusercontent\.com\/[^"'\s]+/);
         if (googlePhotoMatch) {
-          // Get a reasonably sized image
           let imgUrl = googlePhotoMatch[0];
-          // Remove size parameters and add a standard size
           imgUrl = imgUrl.replace(/=w\d+-h\d+[^"'\s]*/g, '=w800-h600');
           if (!imgUrl.includes('=w')) {
             imgUrl += '=w800-h600';
@@ -163,18 +257,14 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Try to extract title if we don't have a name
       if (!placeData.name) {
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
         if (titleMatch) {
-          // Clean up the title (remove "- Google Maps" suffix)
           placeData.name = titleMatch[1].replace(/\s*[-–]\s*Google Maps.*$/i, '').trim();
         }
       }
 
-      // Look for coordinates in various script tags
       if (!placeData.coordinates) {
-        // Try to find coordinates in the page content
         const coordPatterns = [
           /\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/,
           /"(-?\d+\.\d+),(-?\d+\.\d+)"/,
@@ -196,6 +286,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.log('Could not fetch page details:', e);
     }
+    } // end Google Maps block
 
     if (!placeData.coordinates) {
       return new Response(
