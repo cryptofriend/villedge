@@ -80,7 +80,7 @@ export const AddSpotForm = ({
       }
     } catch (err) {
       console.error("Error resolving URL:", err);
-      toast.error("Failed to resolve Google Maps URL");
+      toast.error("Failed to resolve map URL");
     } finally {
       setIsResolving(false);
     }
@@ -91,7 +91,7 @@ export const AddSpotForm = ({
     setGoogleMapsUrl(url);
     
     // Auto-resolve when a Google Maps or Kakao Maps URL is pasted
-    if (url.includes('google.com/maps') || url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps') || url.includes('map.kakao.com') || url.includes('map.kakao.co')) {
+    if (url.includes('google.com/maps') || url.includes('maps.app.goo.gl') || url.includes('goo.gl/maps') || url.includes('map.kakao.com') || url.includes('map.kakao.co') || url.includes('place.map.kakao.com')) {
       resolveGoogleMapsUrl(url);
     }
   };

@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     console.log('Resolving map URL:', url);
 
-    const isKakaoMap = url.includes('map.kakao.com') || url.includes('map.kakao.co');
+    const isKakaoMap = url.includes('map.kakao.com') || url.includes('map.kakao.co') || url.includes('place.map.kakao.com');
 
     // Follow redirects to get the final URL
     let finalUrl = url;
@@ -58,6 +58,10 @@ Deno.serve(async (req) => {
 
     if (isKakaoMap) {
       // === Kakao Maps URL parsing ===
+
+      // Check for place.map.kakao.com/{placeId} format
+      const placeIdMatch = url.match(/place\.map\.kakao\.com\/(\d+)/);
+
       // Parse coordinates from the ORIGINAL URL first (before redirect),
       // because Kakao redirects convert WGS84 to their internal TM128 projection.
 
@@ -109,7 +113,8 @@ Deno.serve(async (req) => {
 
       // Try fetching the page to extract coords and name from meta/scripts
       try {
-        const pageResponse = await fetch(finalUrl, {
+        const fetchUrl = finalUrl;
+        const pageResponse = await fetch(fetchUrl, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept': 'text/html,application/xhtml+xml',
@@ -144,12 +149,14 @@ Deno.serve(async (req) => {
           placeData.imageUrl = ogImgMatch[1];
         }
 
-        // Try to find coordinates in page content
+        // Try to find coordinates in page content (JSON data, scripts, etc.)
         if (!placeData.coordinates) {
           const coordPatterns = [
             /longitude['":\s]+(-?\d+\.\d+)[\s\S]*?latitude['":\s]+(-?\d+\.\d+)/i,
             /lat['":\s]+(-?\d+\.\d+)[\s\S]*?lng['":\s]+(-?\d+\.\d+)/i,
             /center['":\s]*{\s*lat['":\s]+(-?\d+\.\d+),\s*lng['":\s]+(-?\d+\.\d+)/i,
+            /"y"\s*:\s*"?(-?\d+\.\d+)"?\s*,\s*"x"\s*:\s*"?(-?\d+\.\d+)"?/i,
+            /"lat"\s*:\s*"?(-?\d+\.\d+)"?\s*,\s*"lng"\s*:\s*"?(-?\d+\.\d+)"?/i,
           ];
           for (const pattern of coordPatterns) {
             const match = html.match(pattern);
@@ -160,9 +167,103 @@ Deno.serve(async (req) => {
               const lng = parseFloat(isLngFirst ? match[1] : match[2]);
               if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
                 placeData.coordinates = [lng, lat];
+                console.log('Found coords in page HTML:', lat, lng);
                 break;
               }
             }
+          }
+        }
+
+        // For place.map.kakao.com pages, try multiple strategies to get coordinates
+        if (!placeData.coordinates && placeIdMatch) {
+          const placeId = placeIdMatch[1];
+          console.log('Trying Kakao place page scrape for ID:', placeId);
+          try {
+            // Fetch the place page itself - it may have useful meta tags
+            const placePageResponse = await fetch(`https://place.map.kakao.com/${placeId}`, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html',
+                'Accept-Language': 'ko-KR,ko;q=0.9',
+              },
+            });
+            const placeHtml = await placePageResponse.text();
+            
+            // Log a portion for debugging
+            const metaSection = placeHtml.match(/<head[\s\S]*?<\/head>/i)?.[0] || '';
+            console.log('Place page meta (first 1500):', metaSection.substring(0, 1500));
+
+            // Try og:url which may contain /link/map/Name,lat,lng
+            const ogUrlMatch = placeHtml.match(/<meta[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i);
+            if (ogUrlMatch) {
+              const ogUrl = ogUrlMatch[1];
+              console.log('og:url found:', ogUrl);
+              const ogLinkMatch = ogUrl.match(/\/link\/map\/([^,]+),(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+              if (ogLinkMatch) {
+                if (!placeData.name) placeData.name = decodeURIComponent(ogLinkMatch[1]);
+                const lat = parseFloat(ogLinkMatch[2]);
+                const lng = parseFloat(ogLinkMatch[3]);
+                if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+                  placeData.coordinates = [lng, lat];
+                  console.log('Got coords from og:url:', lat, lng);
+                }
+              }
+            }
+
+            // Try to extract name from og:title if not yet found
+            if (!placeData.name) {
+              const ogTitle = placeHtml.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
+              if (ogTitle) {
+                placeData.name = ogTitle[1].replace(/\s*[-|]\s*카카오맵.*$/i, '').trim();
+              }
+            }
+
+            // Try og:image
+            if (!placeData.imageUrl) {
+              const ogImg = placeHtml.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+              if (ogImg) placeData.imageUrl = ogImg[1];
+            }
+            
+            // Try og:description
+            if (!placeData.description) {
+              const ogDesc = placeHtml.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
+              if (ogDesc) placeData.description = ogDesc[1];
+            }
+
+            // Try staticmap URL in twitter:image which contains &m=lng,lat
+            if (!placeData.coordinates) {
+              const staticMapMatch = placeHtml.match(/staticmap\.kakao\.com[^"']*[?&]m=(-?\d+\.?\d*)[,%]2[Cc](-?\d+\.?\d*)/);
+              if (staticMapMatch) {
+                const lng = parseFloat(staticMapMatch[1]);
+                const lat = parseFloat(staticMapMatch[2]);
+                if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+                  placeData.coordinates = [lng, lat];
+                  console.log('Got coords from staticmap URL:', lat, lng);
+                }
+              }
+            }
+
+            // Search for any lat/lng patterns in scripts as fallback
+            if (!placeData.coordinates) {
+              const scriptCoordPatterns = [
+                /"lat(?:itude)?"\s*:\s*"?(-?\d+\.\d+)"?\s*,\s*"l(?:ng|on(?:gitude)?)"\s*:\s*"?(-?\d+\.\d+)"?/,
+                /"y"\s*:\s*"(-?\d+\.\d+)"\s*,\s*"x"\s*:\s*"(-?\d+\.\d+)"/,
+              ];
+              for (const pattern of scriptCoordPatterns) {
+                const m = placeHtml.match(pattern);
+                if (m) {
+                  const lat = parseFloat(m[1]);
+                  const lng = parseFloat(m[2]);
+                  if (!isNaN(lat) && !isNaN(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+                    placeData.coordinates = [lng, lat];
+                    console.log('Got coords from page script pattern:', lat, lng);
+                    break;
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.log('Could not fetch Kakao place page:', e);
           }
         }
       } catch (e) {
