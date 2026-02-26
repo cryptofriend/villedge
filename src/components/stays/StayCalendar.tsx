@@ -112,7 +112,7 @@ export const StayCalendar = ({ villageId, applyUrl, botUsername }: StayCalendarP
             </Button>
           </div>
           
-          {applyUrl && (
+          {applyUrl && villageId !== "protoville" && (
             <Button
               asChild
               variant="outline"
@@ -141,6 +141,7 @@ export const StayCalendar = ({ villageId, applyUrl, botUsername }: StayCalendarP
             onEditStay={handleEditStay}
             onDeleteStay={handleDeleteStay}
             isHost={isVillageHost}
+            villageId={villageId}
           />
         )}
       </div>
