@@ -30,7 +30,6 @@ interface StayGanttTimelineProps {
   onEditStay?: (stay: Stay) => void;
   onDeleteStay?: (stay: Stay) => void;
   isHost?: boolean;
-  villageId?: string;
 }
 
 // Generate consistent colors based on nickname
@@ -82,7 +81,7 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
   return { type: 'other', color: 'text-muted-foreground' };
 };
 
-export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, isHost, villageId }: StayGanttTimelineProps) => {
+export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, isHost }: StayGanttTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const nameColumnRef = useRef<HTMLDivElement>(null);
   const intentionColumnRef = useRef<HTMLDivElement>(null);
@@ -142,9 +141,12 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
     return grouped;
   }, [stays]);
 
-  // All residents are now default-public, no blur
-  const shouldBlurStay = (_stay: Stay): boolean => {
-    return false;
+  // Helper to check if a stay should be blurred - uses backend-enforced visibility
+  const shouldBlurStay = (stay: Stay): boolean => {
+    // Backend now handles all visibility logic via is_visible flag
+    // If is_visible is true, the data is already real; if false, it's already anonymized
+    // We still blur for visual indication, but the actual data is already protected
+    return !(stay.is_visible ?? false);
   };
 
   // Month headers
@@ -295,12 +297,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
       <div className={cn("mb-3", isMobile ? "" : "flex")}>
         {!isMobile && <div style={{ width: nameColumnWidth }} className="flex-shrink-0" />}
         <div className="flex-1 overflow-hidden">
-          <OccupancyChart 
-            stays={stays} 
-            dateRange={villageId === "protoville" ? { start: new Date(2025, 3, 2), end: new Date(2025, 3, 8) } : dateRange} 
-            dayWidth={dayWidth} 
-            isMobile={isMobile} 
-          />
+          <OccupancyChart stays={stays} dateRange={dateRange} dayWidth={dayWidth} isMobile={isMobile} />
         </div>
       </div>
 

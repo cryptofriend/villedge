@@ -69,9 +69,14 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
       });
   }, [stays]);
 
-  // All residents are now default-public, no blur
-  const shouldBlurResident = (_resident: { isVisible?: boolean; userId?: string | null }): boolean => {
-    return false;
+  // Helper to check if a resident should be blurred - uses backend-computed is_visible
+  const shouldBlurResident = (resident: { isVisible?: boolean; userId?: string | null }): boolean => {
+    // Backend already computes visibility based on:
+    // - Owner viewing their own data
+    // - Village hosts can see all data
+    // - Mutual connections
+    // - Approved reveal requests
+    return !resident.isVisible;
   };
 
   // Check if someone is "here now"
