@@ -384,13 +384,13 @@ const resetForm = () => {
       <DialogTrigger asChild>
         <Button variant="sage" size="sm" className="gap-2">
           <Plus className="h-4 w-4" />
-          Apply to Join
+          Add yourself
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md max-h-[85vh] p-0 gap-0 flex flex-col overflow-hidden">
         <DialogHeader className="shrink-0 p-6 pb-4">
           <DialogTitle className="font-display text-xl">
-            {submittedStayId ? "Application Submitted!" : "Apply to Join"}
+            {submittedStayId ? "Application Submitted!" : "Add yourself"}
           </DialogTitle>
         </DialogHeader>
         
