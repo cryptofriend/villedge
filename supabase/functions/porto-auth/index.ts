@@ -85,14 +85,7 @@ Deno.serve(async (req) => {
     // Generate avatar based on wallet address
     const avatarUrl = getAvatarUrl(normalizedAddress);
 
-    // Check if wallet is already linked to an existing user via user_wallets
-    const { data: linkedWallet } = await supabase
-      .from('user_wallets')
-      .select('user_id')
-      .eq('wallet_address', normalizedAddress)
-      .maybeSingle();
-
-    // Check if user exists by email
+    // Check if user exists
     const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
     
     if (listError) {
@@ -101,16 +94,11 @@ Deno.serve(async (req) => {
     }
 
     let userId: string;
-    
-    // Priority: linked wallet user > email-based user
-    const linkedUserId = linkedWallet?.user_id;
-    const existingUser = linkedUserId 
-      ? existingUsers.users.find(u => u.id === linkedUserId)
-      : existingUsers.users.find(u => u.email === walletEmail);
+    const existingUser = existingUsers.users.find(u => u.email === walletEmail);
 
     if (existingUser) {
       userId = existingUser.id;
-      console.log("porto-auth: Found existing user:", userId, linkedUserId ? "(via linked wallet)" : "(via email)");
+      console.log("porto-auth: Found existing user:", userId);
       
       // Ensure profile exists and update avatar if not set
       const { data: existingProfile } = await supabase
@@ -235,11 +223,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Use the actual user's email for magic link (may differ from wallet-derived email for merged accounts)
-    const userEmail = existingUser?.email || walletEmail;
+    // Generate magic link for authentication
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: "magiclink",
-      email: userEmail,
+      email: walletEmail,
       options: {
         redirectTo: `${req.headers.get("origin") || "https://villedge.lovable.app"}/`,
       },
