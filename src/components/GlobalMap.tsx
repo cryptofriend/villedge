@@ -26,10 +26,9 @@ const MAP_PADDING = { top: 80, bottom: 220, left: 0, right: 300 };
 
 interface GlobalMapProps {
   mapboxToken: string;
-  defaultVillageType?: VillageType;
 }
 
-export const GlobalMap = ({ mapboxToken, defaultVillageType = "popup" }: GlobalMapProps) => {
+export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const clusterMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -41,7 +40,7 @@ export const GlobalMap = ({ mapboxToken, defaultVillageType = "popup" }: GlobalM
   const { currentVillage } = useUserCurrentVillage(user?.id, villages);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [villageTypeFilter, setVillageTypeFilter] = useState<VillageType>(defaultVillageType);
+  const [villageTypeFilter, setVillageTypeFilter] = useState<VillageType>("popup");
   const [initialCenterSet, setInitialCenterSet] = useState(false);
 
   const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
@@ -358,10 +357,6 @@ export const GlobalMap = ({ mapboxToken, defaultVillageType = "popup" }: GlobalM
             <ToggleGroupItem value="permanent" className="flex-1 gap-1 text-xs py-1.5">
               <Building2 className="h-3 w-3" />
               Permanent
-            </ToggleGroupItem>
-            <ToggleGroupItem value="residency" className="flex-1 gap-1 text-xs py-1.5">
-              <Users className="h-3 w-3" />
-              Residency
             </ToggleGroupItem>
           </ToggleGroup>
         </div>

@@ -8,9 +8,7 @@ import { SolanaProvider } from "@/components/SolanaProvider";
 import { TonProvider } from "@/components/TonProvider";
 import { PrivyProvider } from "@/components/PrivyProvider";
 import { AuthProvider } from "@/hooks/useAuth";
-import Home from "./pages/Home";
-import Villages from "./pages/Villages";
-import Residency from "./pages/Residency";
+import Index from "./pages/Index";
 import Village from "./pages/Village";
 import EditVillage from "./pages/EditVillage";
 import Embed from "./pages/Embed";
@@ -35,9 +33,7 @@ const App = () => (
                 <Sonner />
                 <BrowserRouter>
                   <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/villages" element={<Villages />} />
-                    <Route path="/residency" element={<Residency />} />
+                    <Route path="/" element={<Index />} />
                     <Route path="/embed" element={<Embed />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/auth/telegram-callback" element={<TelegramCallback />} />

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export type VillageType = 'popup' | 'permanent' | 'residency';
+export type VillageType = 'popup' | 'permanent';
 
 export interface Village {
   id: string;
