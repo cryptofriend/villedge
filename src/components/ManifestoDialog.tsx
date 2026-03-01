@@ -1,4 +1,4 @@
-import { ScrollText } from "lucide-react";
+import { ScrollText, PenLine, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -6,8 +6,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useManifestoSignatures } from "@/hooks/useManifestoSignatures";
 
 export const ManifestoDialog = () => {
+  const { count, hasSigned, sign, isSigning, isLoggedIn } = useManifestoSignatures();
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -44,6 +48,34 @@ export const ManifestoDialog = () => {
           <p className="text-foreground font-medium italic">
             The goal is simple: to create places where a better future is not merely discussed, but lived, practiced, and built.
           </p>
+
+          {/* Sign button */}
+          <div className="flex items-center gap-3 pt-4 border-t border-border">
+            <Button
+              onClick={() => sign()}
+              disabled={hasSigned || isSigning || !isLoggedIn}
+              variant={hasSigned ? "secondary" : "default"}
+              className="gap-2"
+            >
+              {hasSigned ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Signed
+                </>
+              ) : (
+                <>
+                  <PenLine className="h-4 w-4" />
+                  Sign
+                </>
+              )}
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {count} {count === 1 ? "signature" : "signatures"}
+            </span>
+            {!isLoggedIn && !hasSigned && (
+              <span className="text-xs text-muted-foreground italic">Log in to sign</span>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
