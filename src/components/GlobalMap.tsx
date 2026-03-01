@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings, Calendar, Building2, ScrollText } from "lucide-react";
+import { Loader2, Users, Settings, Calendar, Building2, ScrollText, User } from "lucide-react";
 import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
@@ -13,6 +13,8 @@ import { useUserCurrentVillage } from "@/hooks/useUserCurrentVillage";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ManifestoDialog } from "@/components/ManifestoDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ADMIN_USER_IDS = [
   "9807c494-ba07-4438-9a89-07ac13334e78", // dev
@@ -44,6 +46,8 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const [initialCenterSet, setInitialCenterSet] = useState(false);
 
   const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
+  const isMobile = useIsMobile();
+  const { profile, isAuthenticated } = useAuth();
 
   // Filter villages by type
   const filteredVillages = useMemo(() => {
@@ -390,6 +394,43 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           isZoomedIn={false}
           onVillageClick={handleTimelineVillageClick}
         />
+      )}
+
+      {/* Mobile bottom bar */}
+      {isMobile && (
+        <div className="absolute bottom-2 left-0 right-0 z-[200] flex items-center justify-center gap-3 px-4 sm:hidden">
+          <ToggleGroup
+            type="single"
+            value={villageTypeFilter}
+            onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
+            className="bg-card/95 backdrop-blur-sm rounded-full border border-border/50 shadow-lg px-1 py-1"
+          >
+            <ToggleGroupItem value="popup" className="gap-1 text-xs rounded-full px-3 py-1.5 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <Calendar className="h-3.5 w-3.5" />
+              Popups
+            </ToggleGroupItem>
+            <ToggleGroupItem value="permanent" className="gap-1 text-xs rounded-full px-3 py-1.5 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <Building2 className="h-3.5 w-3.5" />
+              Permanent
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+          <button
+            onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
+            className="flex items-center justify-center h-9 w-9 rounded-full bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg"
+          >
+            {isAuthenticated && profile?.avatar_url ? (
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={profile.avatar_url} />
+                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                  {(profile.username || "U").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <User className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+        </div>
       )}
     </div>
   );
