@@ -28,7 +28,7 @@ export const ManifestoDialog = () => {
         </DialogHeader>
         <div className="space-y-4 text-sm md:text-base leading-relaxed text-muted-foreground pt-2">
           <p className="text-foreground font-medium text-base md:text-lg">
-            Something is breaking.
+            The Shift is happening.
           </p>
           <p>
             People feel it in their bodies, their attention, their work, their relationships, and their sense of meaning. We are more connected than ever, yet more fragmented. More informed, yet less wise. Surrounded by content, yet starved for depth. Many of us are living between inspiration and exhaustion, between vision and isolation, between the feeling that something important is possible and the inability to find the right place to do it.
