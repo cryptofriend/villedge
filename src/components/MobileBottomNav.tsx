@@ -1,10 +1,10 @@
-import { MapPin, CalendarDays, Sparkles, Calendar, User } from "lucide-react";
+import { MapPin, CalendarDays, Sparkles, Calendar, User, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-type ActiveView = "map" | "residents" | "scenius" | "events";
+type ActiveView = "map" | "about" | "residents" | "scenius" | "events";
 
 interface MobileBottomNavProps {
   activeView: ActiveView;
@@ -13,6 +13,7 @@ interface MobileBottomNavProps {
 
 const navItems: { id: ActiveView; icon: typeof MapPin; label: string }[] = [
   { id: "map", icon: MapPin, label: "Map" },
+  { id: "about", icon: Info, label: "About" },
   { id: "residents", icon: CalendarDays, label: "Residents" },
   { id: "scenius", icon: Sparkles, label: "Scenius" },
   { id: "events", icon: Calendar, label: "Events" },
