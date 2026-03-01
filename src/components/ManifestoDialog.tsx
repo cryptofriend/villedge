@@ -31,7 +31,13 @@ export const ManifestoDialog = () => {
             The Shift is happening.
           </p>
           <p>
-            The shift is already underway. Old assumptions are breaking faster than new ones can take their place. Conflict is rising, trust is thinning, and more people are moving through life with a quiet sense of confusion, displacement, or panic they can barely name. Work feels increasingly abstract and detached from what matters. Information is everywhere, but orientation is scarce. We have more access, more noise, more stimulation, and less clarity about how to live, what to build, and who to become. Many people can feel that something important is changing, but they cannot yet find the right place, people, or rhythm to meet the moment well.
+            The shift is already underway. Old assumptions are breaking faster than new ones can take their place. Conflict is rising, trust is thinning, and more people are moving through life with a quiet sense of confusion, displacement, or panic they can barely name.
+          </p>
+          <p>
+            Work feels increasingly abstract and detached from what matters. Information is everywhere, but orientation is scarce. We have more access, more noise, more stimulation, and less clarity about how to live, what to build, and who to become.
+          </p>
+          <p>
+            Many people can feel that something important is changing, but they cannot yet find the right place, people, or rhythm to meet the moment well.
           </p>
           <p className="text-foreground font-medium">
             We are creating that place.
