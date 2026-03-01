@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -23,6 +23,7 @@ interface AuthDialogProps {
 
 export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   
   // Porto/Biometric wallet
@@ -53,7 +54,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
     setAuthType('google');
     try {
       const { error } = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
+        redirect_uri: window.location.origin + location.pathname,
       });
       if (error) {
         toast.error(error.message || 'Google login failed');
