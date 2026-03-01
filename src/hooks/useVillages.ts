@@ -26,6 +26,7 @@ export interface Village {
   created_at: string;
   updated_at: string;
   village_type: VillageType;
+  about_content: string | null;
 }
 
 export interface VillageInput {
@@ -61,6 +62,7 @@ export const useVillages = () => {
         center: v.center as [number, number],
         created_by: v.created_by || null,
         village_type: v.village_type || 'popup',
+        about_content: v.about_content || null,
       }));
 
       setVillages(mappedVillages);

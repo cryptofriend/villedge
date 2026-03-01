@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Edit3, Loader2, Settings, Users, MapPin, Image, CalendarIcon } from "lucide-react";
+import { Edit3, Loader2, Settings, Users, MapPin, Image, CalendarIcon, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -26,6 +26,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolvingLocation, setIsResolvingLocation] = useState(false);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const [isGeneratingAbout, setIsGeneratingAbout] = useState(false);
   
   const [name, setName] = useState(village.name);
   const [description, setDescription] = useState(village.description);
@@ -501,6 +502,49 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Generate About Content */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium text-sm mb-2">SEO About Content</h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Auto-generate rich About page content from your website. {village.website_url ? '' : 'Add a website URL above first for best results.'}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isGeneratingAbout}
+                  onClick={async () => {
+                    setIsGeneratingAbout(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke('generate-village-about', {
+                        body: { village_id: village.id },
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      toast.success("About content generated! Check the About tab.");
+                      onVillageUpdated?.();
+                    } catch (err) {
+                      console.error("Error generating about:", err);
+                      toast.error(err instanceof Error ? err.message : "Failed to generate content");
+                    } finally {
+                      setIsGeneratingAbout(false);
+                    }
+                  }}
+                >
+                  {isGeneratingAbout ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      {(village as any).about_content ? "Regenerate About Content" : "Generate About Content"}
+                    </>
+                  )}
+                </Button>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

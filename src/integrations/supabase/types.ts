@@ -993,6 +993,7 @@ export type Database = {
       }
       villages: {
         Row: {
+          about_content: string | null
           apply_url: string | null
           bot_token: string | null
           bot_token_secret_name: string | null
@@ -1019,6 +1020,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          about_content?: string | null
           apply_url?: string | null
           bot_token?: string | null
           bot_token_secret_name?: string | null
@@ -1045,6 +1047,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          about_content?: string | null
           apply_url?: string | null
           bot_token?: string | null
           bot_token_secret_name?: string | null
