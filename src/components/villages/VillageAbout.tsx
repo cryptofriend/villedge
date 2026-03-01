@@ -1,12 +1,15 @@
 import { Village } from "@/hooks/useVillages";
 import { VillageSocialIcons } from "@/components/VillageSocialIcons";
 import { MapPin, Calendar, Users, Globe, ExternalLink, Info } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface VillageAboutProps {
   village: Village;
 }
 
 export const VillageAbout = ({ village }: VillageAboutProps) => {
+  const aboutContent = (village as any).about_content as string | null;
+
   // JSON-LD structured data for SEO
   const jsonLd = {
     "@context": "https://schema.org",
@@ -99,12 +102,18 @@ export const VillageAbout = ({ village }: VillageAboutProps) => {
         )}
       </section>
 
-      {/* Description */}
+      {/* AI-generated About Content OR fallback description */}
       <section>
         <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">About</h3>
-        <p className="text-sm leading-relaxed text-foreground/90" itemProp="description">
-          {village.description}
-        </p>
+        {aboutContent ? (
+          <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground/90 prose-p:leading-relaxed prose-h2:text-sm prose-h2:font-semibold prose-h2:mt-4 prose-h2:mb-1.5 prose-h3:text-xs prose-h3:font-semibold prose-h3:mt-3 prose-h3:mb-1" itemProp="description">
+            <ReactMarkdown>{aboutContent}</ReactMarkdown>
+          </div>
+        ) : (
+          <p className="text-sm leading-relaxed text-foreground/90" itemProp="description">
+            {village.description}
+          </p>
+        )}
       </section>
 
       {/* Links & Social */}

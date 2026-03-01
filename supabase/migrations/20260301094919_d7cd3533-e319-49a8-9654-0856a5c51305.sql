@@ -1,0 +1,1 @@
+ALTER TABLE public.villages ADD COLUMN about_content text NULL;
