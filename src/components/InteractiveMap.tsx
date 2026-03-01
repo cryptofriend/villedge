@@ -15,7 +15,8 @@ import { createFloatingCommentHTML } from "./FloatingCommentBubble";
 import { AuthButton } from "./AuthButton";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { VillageSocialIcons } from "./VillageSocialIcons";
-import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, Calendar } from "lucide-react";
+import { VillageAbout } from "./villages/VillageAbout";
+import { MapPin, Loader2, Check, X, Edit3, Plus, Navigation, Users, Sparkles, ArrowLeft, CalendarDays, Calendar, Info } from "lucide-react";
 import { ExpandablePanel } from "./ExpandablePanel";
 import { toast } from "sonner";
 import { useSpots, DbSpot, SpotInput } from "@/hooks/useSpots";
@@ -33,7 +34,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 // Default center (first village or fallback)
 const DEFAULT_CENTER: [number, number] = [108.1885, 10.9355];
 
-type CategoryType = "map" | "residents" | "scenius" | "events";
+type CategoryType = "map" | "about" | "residents" | "scenius" | "events";
 
 // Derive bot username from village's bot_token_secret_name
 const getBotUsernameFromVillage = (village: Village): string | undefined => {
@@ -89,7 +90,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Active view - use URL path-based category, fallback to query param for backward compatibility
-  const validTabs: CategoryType[] = ["map", "residents", "scenius", "events"];
+  const validTabs: CategoryType[] = ["map", "about", "residents", "scenius", "events"];
   const queryTab = searchParams.get("tab") as CategoryType | null;
   const [activeView, setActiveView] = useState<CategoryType>(
     initialCategory || (queryTab && validTabs.includes(queryTab) ? queryTab : "map")
@@ -903,6 +904,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
 
                 {/* Restricted tabs for verified users only */}
                 {[
+                  { id: "about" as CategoryType, icon: Info, label: "About" },
                   { id: "residents" as CategoryType, icon: CalendarDays, label: "Residents" },
                   { id: "scenius" as CategoryType, icon: Sparkles, label: "Scenius" },
                   { id: "events" as CategoryType, icon: Calendar, label: "Events" },
@@ -948,6 +950,15 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
             onUpdate={canCreate ? updateSpot : undefined}
             userLocation={userLocation}
           />
+        </div>
+      )}
+
+      {/* About view */}
+      {activeView === "about" && isZoomedIn && activeVillage && (
+        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
+          <ExpandablePanel>
+            <VillageAbout village={activeVillage} />
+          </ExpandablePanel>
         </div>
       )}
 
