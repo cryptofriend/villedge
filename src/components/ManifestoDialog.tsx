@@ -1,4 +1,5 @@
 import { ScrollText, PenLine, Check } from "lucide-react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,11 +9,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useManifestoSignatures } from "@/hooks/useManifestoSignatures";
+import { AuthDialog } from "@/components/AuthDialog";
 
 export const ManifestoDialog = () => {
   const { count, hasSigned, sign, isSigning, isLoggedIn } = useManifestoSignatures();
+  const [showAuth, setShowAuth] = useState(false);
 
   return (
+    <>
     <Dialog>
       <DialogTrigger asChild>
         <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 backdrop-blur-sm text-foreground font-semibold text-sm rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
@@ -79,11 +83,15 @@ export const ManifestoDialog = () => {
               {count} {count === 1 ? "signature" : "signatures"}
             </span>
             {!isLoggedIn && !hasSigned && (
-              <span className="text-xs text-muted-foreground italic">Log in to sign</span>
+              <Button variant="outline" size="sm" onClick={() => setShowAuth(true)}>
+                Log in to sign
+              </Button>
             )}
           </div>
         </div>
       </DialogContent>
     </Dialog>
+    <AuthDialog open={showAuth} onOpenChange={setShowAuth} />
+    </>
   );
 };
