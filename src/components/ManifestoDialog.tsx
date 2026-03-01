@@ -31,7 +31,7 @@ export const ManifestoDialog = () => {
             The Shift is happening.
           </p>
           <p>
-            People feel it in their bodies, their attention, their work, their relationships, and their sense of meaning. We are more connected than ever, yet more fragmented. More informed, yet less wise. Surrounded by content, yet starved for depth. Many of us are living between inspiration and exhaustion, between vision and isolation, between the feeling that something important is possible and the inability to find the right place to do it.
+            The shift is already underway. Old assumptions are breaking faster than new ones can take their place. Conflict is rising, trust is thinning, and more people are moving through life with a quiet sense of confusion, displacement, or panic they can barely name. Work feels increasingly abstract and detached from what matters. Information is everywhere, but orientation is scarce. We have more access, more noise, more stimulation, and less clarity about how to live, what to build, and who to become. Many people can feel that something important is changing, but they cannot yet find the right place, people, or rhythm to meet the moment well.
           </p>
           <p className="text-foreground font-medium">
             We are creating that place.
