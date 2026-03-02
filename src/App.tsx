@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PortoProvider } from "@/components/PortoProvider";
 import { SolanaProvider } from "@/components/SolanaProvider";
-import { TonProvider } from "@/components/TonProvider";
 import { PrivyProvider } from "@/components/PrivyProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
@@ -27,7 +26,6 @@ const App = () => (
       <PrivyProvider>
         <PortoProvider>
           <SolanaProvider>
-            <TonProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
@@ -54,7 +52,6 @@ const App = () => (
                   </Routes>
                 </BrowserRouter>
               </TooltipProvider>
-            </TonProvider>
           </SolanaProvider>
         </PortoProvider>
       </PrivyProvider>

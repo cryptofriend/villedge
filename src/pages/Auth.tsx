@@ -4,12 +4,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Shield, Fingerprint, Sparkles, ChevronDown } from 'lucide-react';
+import { Loader2, ArrowLeft, Shield, Users, Sparkles, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
+import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { lovable } from '@/integrations/lovable';
 
@@ -18,10 +18,9 @@ export default function Auth() {
   const location = useLocation();
   const { user, loading } = useAuth();
   
-  // Get the redirect path from location state (set by protected routes)
   const from = (location.state as { from?: string })?.from || '/';
   
-  // Porto/Biometric wallet
+  // Ethereum wallet (kept for Solana/ETH wallet login)
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
@@ -30,14 +29,18 @@ export default function Auth() {
   const { publicKey, connected: solanaConnected, connecting: solanaConnecting, disconnect: disconnectSolana } = useWallet();
   const { setVisible: openSolanaModal } = useWalletModal();
   
-  // TON wallet
-  const [tonConnectUI] = useTonConnectUI();
-  const tonWallet = useTonWallet();
-  
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'biometric' | 'solana' | 'ethereum' | 'magic' | 'google' | 'ton' | null>(null);
+  const [authType, setAuthType] = useState<'solana' | 'ethereum' | 'magic' | 'google' | 'telegram' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOtherMethods, setShowOtherMethods] = useState(false);
+  const [telegramBotId, setTelegramBotId] = useState<string | null>(null);
+
+  // Fetch telegram bot ID from public config
+  useEffect(() => {
+    supabase.functions.invoke('public-config').then(({ data }) => {
+      if (data?.telegramBotId) setTelegramBotId(data.telegramBotId);
+    });
+  }, []);
 
   const handleGoogleLogin = async () => {
     setAuthType('google');
@@ -56,13 +59,6 @@ export default function Auth() {
     }
   };
 
-  // Log wallet state for debugging
-  useEffect(() => {
-    console.log('[Auth] Connectors available:', connectors.map(c => ({ id: c.id, name: c.name })));
-    console.log('[Auth] isConnected:', isConnected, 'address:', address);
-    console.log('[Auth] solanaConnected:', solanaConnected, 'publicKey:', publicKey?.toBase58());
-  }, [connectors, isConnected, address, solanaConnected, publicKey]);
-
   // Redirect if already authenticated
   useEffect(() => {
     if (user && !loading) {
@@ -70,10 +66,10 @@ export default function Auth() {
     }
   }, [user, loading, navigate, from]);
 
-  // When Porto/Ethereum wallet connects, authenticate with backend
+  // When Ethereum wallet connects, authenticate with backend
   useEffect(() => {
-    if (isConnected && address && !user && !isAuthenticating && (authType === 'biometric' || authType === 'ethereum')) {
-      authenticateWithBackend(address, authType === 'biometric' ? 'porto' : 'ethereum');
+    if (isConnected && address && !user && !isAuthenticating && authType === 'ethereum') {
+      authenticateWithBackend(address, 'ethereum');
     }
   }, [isConnected, address, user, isAuthenticating, authType]);
 
@@ -84,15 +80,7 @@ export default function Auth() {
     }
   }, [solanaConnected, publicKey, user, isAuthenticating, authType]);
 
-  // When TON wallet connects, authenticate with backend
-  useEffect(() => {
-    if (tonWallet && !user && !isAuthenticating && authType === 'ton') {
-      const tonAddress = tonWallet.account.address;
-      authenticateWithBackend(tonAddress, 'ton');
-    }
-  }, [tonWallet, user, isAuthenticating, authType]);
-
-  const authenticateWithBackend = async (walletAddress: string, type: 'porto' | 'solana' | 'ethereum' | 'ton') => {
+  const authenticateWithBackend = async (walletAddress: string, type: 'solana' | 'ethereum') => {
     setIsAuthenticating(true);
     
     try {
@@ -126,26 +114,11 @@ export default function Auth() {
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
       if (type === 'solana') {
         disconnectSolana();
-      } else if (type === 'ton') {
-        tonConnectUI.disconnect();
       } else {
         disconnect();
       }
     } finally {
       setIsAuthenticating(false);
-      setAuthType(null);
-    }
-  };
-
-  const handleBiometricConnect = () => {
-    setAuthType('biometric');
-    const portoConnector = connectors.find(c => c.id === 'porto' || c.name.toLowerCase().includes('porto'));
-    if (portoConnector) {
-      connect({ connector: portoConnector });
-    } else if (connectors.length > 0) {
-      connect({ connector: connectors[0] });
-    } else {
-      toast.error('No wallet connector available');
       setAuthType(null);
     }
   };
@@ -166,11 +139,6 @@ export default function Auth() {
     }
   };
 
-  const handleTonConnect = () => {
-    setAuthType('ton');
-    tonConnectUI.openModal();
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -179,19 +147,18 @@ export default function Auth() {
     );
   }
 
-  const isBiometricLoading = (isConnecting || isAuthenticating) && authType === 'biometric';
   const isSolanaLoading = (solanaConnecting || isAuthenticating) && authType === 'solana';
   const isEthereumLoading = (isConnecting || isAuthenticating) && authType === 'ethereum';
   const isMagicLoading = isAuthenticating && authType === 'magic';
   const isGoogleLoading = authType === 'google';
-  const isTonLoading = isAuthenticating && authType === 'ton';
-  const anyLoading = isBiometricLoading || isSolanaLoading || isEthereumLoading || isMagicLoading || isGoogleLoading || isTonLoading;
+  const isTelegramLoading = authType === 'telegram';
+  const anyLoading = isSolanaLoading || isEthereumLoading || isMagicLoading || isGoogleLoading || isTelegramLoading;
 
   const features = [
     {
-      icon: Fingerprint,
-      title: "Passkey Login",
-      description: "No passwords needed. Use biometrics or device security."
+      icon: Users,
+      title: "Telegram Login",
+      description: "Sign in instantly with your Telegram account."
     },
     {
       icon: Shield,
@@ -200,19 +167,12 @@ export default function Auth() {
     },
   ];
 
-  const TelegramIcon = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-    </svg>
-  );
-
   return (
     <>
       <OnboardingDialog open={showOnboarding} onOpenChange={setShowOnboarding} />
       <div className="min-h-screen flex bg-background/15 backdrop-blur-sm">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/5 via-sage-100/30 to-primary/10 relative overflow-hidden backdrop-blur-sm">
-        {/* Decorative elements */}
         <div className="absolute top-20 left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-20 w-80 h-80 bg-sage-200/30 rounded-full blur-3xl" />
         
@@ -234,7 +194,6 @@ export default function Auth() {
             </p>
           </div>
 
-          {/* Features */}
           <div className="space-y-4 mt-8">
             {features.map((feature, index) => (
               <div key={index} className="flex items-start gap-4">
@@ -253,7 +212,6 @@ export default function Auth() {
 
       {/* Right Panel - Login */}
       <div className="flex-1 flex flex-col">
-        {/* Back Button */}
         <div className="p-4 sm:p-6">
           <Button
             variant="ghost"
@@ -266,7 +224,6 @@ export default function Auth() {
           </Button>
         </div>
 
-        {/* Login Form */}
         <div className="flex-1 flex items-center justify-center px-6 pb-20">
           <div className="w-full max-w-sm space-y-8">
             {/* Mobile Logo */}
@@ -308,6 +265,24 @@ export default function Auth() {
                 )}
               </Button>
 
+              {/* Telegram Login */}
+              {telegramBotId && (
+                <TelegramLoginWidget
+                  botName={telegramBotId}
+                  disabled={anyLoading}
+                  isLoading={isTelegramLoading}
+                  onStart={() => setAuthType('telegram')}
+                  onSuccess={(isNewUser) => {
+                    if (isNewUser) {
+                      setShowOnboarding(true);
+                    } else {
+                      navigate(from, { replace: true });
+                    }
+                  }}
+                  onError={() => setAuthType(null)}
+                />
+              )}
+
               {/* Other Methods Collapsible */}
               <div className="space-y-3">
                 <button
@@ -335,49 +310,6 @@ export default function Auth() {
                       }}
                       onError={() => setAuthType(null)}
                     />
-
-                    {/* Biometric & TON Login Row */}
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Biometric Login */}
-                      <div className="flex flex-col items-center gap-1">
-                        <Button
-                          onClick={handleBiometricConnect}
-                          variant="outline"
-                          className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
-                          disabled={anyLoading}
-                        >
-                          {isBiometricLoading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <Fingerprint className="h-5 w-5" />
-                              <span>Biometric</span>
-                            </div>
-                          )}
-                        </Button>
-                        <span className="text-[10px] text-muted-foreground/60">Works with Safari and Chrome</span>
-                      </div>
-
-                      {/* TON Login */}
-                      <div className="flex flex-col items-center gap-1">
-                        <Button
-                          onClick={handleTonConnect}
-                          variant="outline"
-                          className="w-full h-12 text-sm font-medium rounded-xl border-2 hover:bg-primary/10 hover:border-primary transition-all duration-200"
-                          disabled={anyLoading}
-                        >
-                          {isTonLoading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <TelegramIcon className="h-5 w-5" />
-                              <span>TON</span>
-                            </div>
-                          )}
-                        </Button>
-                        <span className="text-[10px] text-muted-foreground/60">TON Wallet</span>
-                      </div>
-                    </div>
                   </div>
                 )}
               </div>
