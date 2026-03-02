@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { Clock, CheckCircle2, XCircle, FileText, MapPin, Calendar, ExternalLink, Bell, BellOff } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { Clock, CheckCircle2, XCircle, FileText, MapPin, Calendar, ExternalLink, Bell, BellOff, Pencil, Trash2, CalendarIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 const TelegramIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
@@ -34,7 +39,67 @@ interface ProfileApplicationStatusProps {
 export const ProfileApplicationStatus = ({ userId }: ProfileApplicationStatusProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingApp, setEditingApp] = useState<Application | null>(null);
+  const [editStartDate, setEditStartDate] = useState<Date | undefined>();
+  const [editEndDate, setEditEndDate] = useState<Date | undefined>();
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const openEditDialog = (app: Application) => {
+    setEditingApp(app);
+    setEditStartDate(parseISO(app.start_date));
+    setEditEndDate(parseISO(app.end_date));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingApp || !editStartDate || !editEndDate) return;
+    if (editEndDate < editStartDate) {
+      toast.error("End date must be after start date");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("stays")
+        .update({
+          start_date: format(editStartDate, "yyyy-MM-dd"),
+          end_date: format(editEndDate, "yyyy-MM-dd"),
+        })
+        .eq("id", editingApp.id);
+      if (error) throw error;
+      toast.success("Application dates updated!");
+      setEditingApp(null);
+      // Refresh
+      setApplications((prev) =>
+        prev.map((a) =>
+          a.id === editingApp.id
+            ? { ...a, start_date: format(editStartDate, "yyyy-MM-dd"), end_date: format(editEndDate, "yyyy-MM-dd") }
+            : a
+        )
+      );
+    } catch (err) {
+      console.error("Error updating application:", err);
+      toast.error("Failed to update application");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const { error } = await supabase.from("stays").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Application withdrawn");
+      setApplications((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      console.error("Error deleting application:", err);
+      toast.error("Failed to withdraw application");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -216,6 +281,44 @@ export const ProfileApplicationStatus = ({ userId }: ProfileApplicationStatusPro
                     Applied {format(new Date(app.created_at), "MMM d, yyyy")}
                   </span>
                   <div className="flex items-center gap-1">
+                    {/* Edit button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => openEditDialog(app)}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    {/* Delete button */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-destructive hover:text-destructive"
+                          disabled={deletingId === app.id}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          {deletingId === app.id ? "..." : "Withdraw"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Withdraw application?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove your application to {app.village_name}. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(app.id)}>
+                            Withdraw
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                     {/* Notification status/button */}
                     {app.village_bot_username && app.status === "planning" && (
                       app.has_notification ? (
@@ -257,6 +360,55 @@ export const ProfileApplicationStatus = ({ userId }: ProfileApplicationStatusPro
           ))}
         </div>
       </CardContent>
+
+      {/* Edit Application Dialog */}
+      <Dialog open={!!editingApp} onOpenChange={(open) => !open && setEditingApp(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Application Dates</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Start Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !editStartDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editStartDate ? format(editStartDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker mode="single" selected={editStartDate} onSelect={setEditStartDate} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">End Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !editEndDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editEndDate ? format(editEndDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker mode="single" selected={editEndDate} onSelect={setEditEndDate} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditingApp(null)}>Cancel</Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
