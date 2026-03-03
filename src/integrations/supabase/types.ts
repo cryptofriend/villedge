@@ -253,6 +253,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_villages: {
+        Row: {
+          chat_id: string
+          created_at: string
+          id: string
+          scraped_data: Json
+          status: string
+          username: string | null
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          id?: string
+          scraped_data?: Json
+          status?: string
+          username?: string | null
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          id?: string
+          scraped_data?: Json
+          status?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       profile_social_links: {
         Row: {
           created_at: string
