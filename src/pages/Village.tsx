@@ -30,7 +30,7 @@ const Village = () => {
         return lastPart;
       }
     }
-    return "map";
+    return "about";
   }, [location.pathname]);
   
   // Show loading state while checking auth
