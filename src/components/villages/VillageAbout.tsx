@@ -2,12 +2,18 @@ import { Village } from "@/hooks/useVillages";
 import { VillageSocialIcons } from "@/components/VillageSocialIcons";
 import { MapPin, Calendar, Users, Globe, ExternalLink, Info } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { ProofOfRetreatAbout } from "./ProofOfRetreatAbout";
 
 interface VillageAboutProps {
   village: Village;
 }
 
 export const VillageAbout = ({ village }: VillageAboutProps) => {
+  // Custom landing page for Proof of Retreat
+  if (village.id === "proof-of-retreat") {
+    return <ProofOfRetreatAbout village={village} />;
+  }
+
   const aboutContent = (village as any).about_content as string | null;
 
   // JSON-LD structured data for SEO
