@@ -944,17 +944,11 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
 
       {/* About view */}
       {activeView === "about" && isZoomedIn && activeVillage && (
-        activeVillage.id === "proof-of-retreat" ? (
-          <div className="absolute inset-0 z-20 overflow-y-auto">
+        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
+          <ExpandablePanel>
             <VillageAbout village={activeVillage} />
-          </div>
-        ) : (
-          <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-            <ExpandablePanel>
-              <VillageAbout village={activeVillage} />
-            </ExpandablePanel>
-          </div>
-        )
+          </ExpandablePanel>
+        </div>
       )}
 
       {/* Stays Calendar view */}
