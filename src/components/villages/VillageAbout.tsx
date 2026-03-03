@@ -1,8 +1,8 @@
 import { Village } from "@/hooks/useVillages";
 import { VillageSocialIcons } from "@/components/VillageSocialIcons";
-import { MapPin, Calendar, Users, Globe, ExternalLink, Info } from "lucide-react";
+import { MapPin, Calendar, Users, Globe, ExternalLink, Info, RefreshCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface VillageAboutProps {
   village: Village;
@@ -29,33 +29,85 @@ const extractInstagramUsername = (url: string | null): string | null => {
   }
 };
 
+// Cache: track which usernames have already had their widget rendered
+const renderedTimelines = new Set<string>();
+
 const TwitterEmbed = ({ username }: { username: string }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Load Twitter widget script
-    const script = document.createElement("script");
-    script.src = "https://platform.twitter.com/widgets.js";
-    script.async = true;
-    script.charset = "utf-8";
-    ref.current?.appendChild(script);
+  const loadTimeline = useCallback(() => {
+    if (!ref.current) return;
+    setLoading(true);
 
-    return () => {
-      script.remove();
-    };
+    // Clear previous content
+    const container = ref.current;
+    const linkEl = container.querySelector("a.twitter-timeline");
+    if (!linkEl) {
+      // Re-create the anchor if missing after refresh
+      container.innerHTML = "";
+      const a = document.createElement("a");
+      a.className = "twitter-timeline";
+      a.setAttribute("data-height", "500");
+      a.setAttribute("data-theme", "light");
+      a.setAttribute("data-chrome", "nofooter noborders");
+      a.href = `https://twitter.com/${username}`;
+      a.textContent = `Loading posts by @${username}...`;
+      container.appendChild(a);
+    }
+
+    // Load or re-trigger the Twitter widget
+    const win = window as any;
+    if (win.twttr?.widgets) {
+      win.twttr.widgets.load(container);
+      renderedTimelines.add(username);
+      setTimeout(() => setLoading(false), 1500);
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://platform.twitter.com/widgets.js";
+      script.async = true;
+      script.charset = "utf-8";
+      script.onload = () => {
+        renderedTimelines.add(username);
+        setTimeout(() => setLoading(false), 1500);
+      };
+      document.head.appendChild(script);
+    }
   }, [username]);
 
+  useEffect(() => {
+    // If already cached, just re-trigger widget render
+    loadTimeline();
+  }, [loadTimeline]);
+
   return (
-    <div ref={ref} className="rounded-lg overflow-hidden border border-border">
-      <a
-        className="twitter-timeline"
-        data-height="400"
-        data-theme="dark"
-        data-chrome="noheader nofooter noborders transparent"
-        href={`https://twitter.com/${username}`}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">@{username} on X</span>
+        <button
+          onClick={loadTimeline}
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+          title="Refresh feed"
+        >
+          <RefreshCw className="h-3 w-3" />
+          Refresh
+        </button>
+      </div>
+      <div
+        ref={ref}
+        className="rounded-lg overflow-hidden border border-border bg-background max-w-full"
+        style={{ maxHeight: 500, overflowY: "auto" }}
       >
-        Loading posts by @{username}...
-      </a>
+        <a
+          className="twitter-timeline"
+          data-height="500"
+          data-theme="light"
+          data-chrome="nofooter noborders"
+          href={`https://twitter.com/${username}`}
+        >
+          {loading ? "Loading posts..." : `Posts by @${username}`}
+        </a>
+      </div>
     </div>
   );
 };
