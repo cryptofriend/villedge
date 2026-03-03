@@ -12,8 +12,8 @@ interface MobileBottomNavProps {
 }
 
 const navItems: { id: ActiveView; icon: typeof MapPin; label: string }[] = [
-  { id: "map", icon: MapPin, label: "Map" },
   { id: "about", icon: Info, label: "About" },
+  { id: "map", icon: MapPin, label: "Map" },
   { id: "residents", icon: CalendarDays, label: "Residents" },
   { id: "scenius", icon: Sparkles, label: "Scenius" },
   { id: "events", icon: Calendar, label: "Events" },

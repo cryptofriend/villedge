@@ -93,7 +93,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
   const validTabs: CategoryType[] = ["map", "about", "residents", "scenius", "events"];
   const queryTab = searchParams.get("tab") as CategoryType | null;
   const [activeView, setActiveView] = useState<CategoryType>(
-    initialCategory || (queryTab && validTabs.includes(queryTab) ? queryTab : "map")
+    initialCategory || (queryTab && validTabs.includes(queryTab) ? queryTab : "about")
   );
 
   // Handle view changes with URL navigation
@@ -102,7 +102,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
     if (initialVillageId) {
       // Navigate to the new category URL
       const basePath = `/${initialVillageId}`;
-      const newPath = view === "map" ? basePath : `${basePath}/${view}`;
+      const newPath = view === "about" ? basePath : `${basePath}/${view}`;
       navigate(newPath, { replace: true });
     }
   }, [initialVillageId, navigate]);
@@ -891,20 +891,9 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
             {/* View toggle tabs - only when zoomed in */}
             {isZoomedIn && (
               <div className="flex rounded-lg bg-card/90 p-0.5 sm:p-1 shadow-sm backdrop-blur-sm">
-                <button
-                  onClick={() => handleViewChange("map")}
-                  className={`px-2.5 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${activeView === "map"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  <MapPin className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Map</span>
-                </button>
-
-                {/* Restricted tabs for verified users only */}
                 {[
                   { id: "about" as CategoryType, icon: Info, label: "About" },
+                  { id: "map" as CategoryType, icon: MapPin, label: "Map" },
                   { id: "residents" as CategoryType, icon: CalendarDays, label: "Residents" },
                   { id: "scenius" as CategoryType, icon: Sparkles, label: "Scenius" },
                   { id: "events" as CategoryType, icon: Calendar, label: "Events" },
