@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SITE_URL = "https://villedge.lovable.app";
+const SITE_URL = "https://villedge.tech";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 

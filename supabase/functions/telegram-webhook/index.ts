@@ -29,7 +29,7 @@ interface TelegramUpdate {
   };
 }
 
-const SITE_URL = "https://villedge.lovable.app";
+const SITE_URL = "https://villedge.tech";
 
 async function sendTelegramMessage(botToken: string, chatId: number, text: string): Promise<void> {
   await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
