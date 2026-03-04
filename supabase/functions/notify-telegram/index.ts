@@ -411,8 +411,8 @@ const handler = async (req: Request): Promise<Response> => {
       
       // Add top-up link
       const topUpUrl = villageId 
-        ? `https://villedge.lovable.app/${villageId}?tab=treasury`
-        : `https://villedge.lovable.app`;
+        ? `https://villedge.tech/${villageId}?tab=treasury`
+        : `https://villedge.tech`;
       telegramMessage += `\n💳 <a href="${topUpUrl}">Top Up Treasury</a>`;
       
       telegramMessage += `\n\n🙏 Thank you for supporting the village!`;
@@ -450,7 +450,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
       // Link to applications dashboard
       const applicationsUrl = villageId 
-        ? `https://villedge.lovable.app/${villageId}/edit?tab=applications`
+        ? `https://villedge.tech/${villageId}/edit?tab=applications`
         : miniAppLinks.app;
       telegramMessage += `\n\n📝 <a href="${applicationsUrl}">Review Applications</a>`;
     } else if (type === "application_status") {
