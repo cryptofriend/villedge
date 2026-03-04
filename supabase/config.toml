@@ -51,5 +51,8 @@ verify_jwt = false
 [functions.telegram-webhook]
 verify_jwt = false
 
+[functions.agent-create-village]
+verify_jwt = false
+
 [functions.generate-village-about]
 verify_jwt = false
