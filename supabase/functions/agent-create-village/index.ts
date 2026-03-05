@@ -8,6 +8,77 @@ const corsHeaders = {
 
 const SITE_URL = "https://villedge.tech";
 
+// ── Twitter/X OAuth 1.0a ────────────────────────────────────────────
+
+function percentEncode(str: string): string {
+  return encodeURIComponent(str).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+}
+
+async function hmacSha1(key: string, data: string): Promise<string> {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey("raw", enc.encode(key), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(data));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+}
+
+async function postTweet(text: string): Promise<boolean> {
+  const consumerKey = Deno.env.get("TWITTER_CONSUMER_KEY");
+  const consumerSecret = Deno.env.get("TWITTER_CONSUMER_SECRET");
+  const accessToken = Deno.env.get("TWITTER_ACCESS_TOKEN");
+  const accessTokenSecret = Deno.env.get("TWITTER_ACCESS_TOKEN_SECRET");
+
+  if (!consumerKey || !consumerSecret || !accessToken || !accessTokenSecret) {
+    console.error("Twitter credentials not configured");
+    return false;
+  }
+
+  const method = "POST";
+  const url = "https://api.x.com/2/tweets";
+  const nonce = crypto.randomUUID().replace(/-/g, "");
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+
+  const oauthParams: Record<string, string> = {
+    oauth_consumer_key: consumerKey,
+    oauth_nonce: nonce,
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: timestamp,
+    oauth_token: accessToken,
+    oauth_version: "1.0",
+  };
+
+  // Signature base string — do NOT include POST body params for JSON requests
+  const paramString = Object.keys(oauthParams)
+    .sort()
+    .map((k) => `${percentEncode(k)}=${percentEncode(oauthParams[k])}`)
+    .join("&");
+
+  const baseString = `${method}&${percentEncode(url)}&${percentEncode(paramString)}`;
+  const signingKey = `${percentEncode(consumerSecret)}&${percentEncode(accessTokenSecret)}`;
+  const signature = await hmacSha1(signingKey, baseString);
+
+  const authHeader = `OAuth ${Object.entries(oauthParams)
+    .map(([k, v]) => `${percentEncode(k)}="${percentEncode(v)}"`)
+    .join(", ")}, oauth_signature="${percentEncode(signature)}"`;
+
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: authHeader,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    console.error(`Twitter API error [${res.status}]:`, errBody);
+    return false;
+  }
+
+  console.log("Tweet posted successfully");
+  return true;
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────
 
 function normalizeDomain(url: string): string {
@@ -327,6 +398,7 @@ Deno.serve(async (req) => {
     maps_url?: string;
     source?: string;
     mode?: string;
+    tweet_text?: string;
     // Override fields — agent can supply these to skip/augment AI extraction
     name?: string;
     description?: string;
@@ -517,11 +589,23 @@ Deno.serve(async (req) => {
   const link = `${SITE_URL}/${slug}`;
   console.log(`${logPrefix} | PUBLISHED | slug=${slug} | ${link}`);
 
+  // ── Auto-tweet if tweet_text provided ───────────────────────────
+  let tweeted = false;
+  if (body.tweet_text) {
+    try {
+      tweeted = await postTweet(body.tweet_text);
+      console.log(`${logPrefix} | TWEET | ${tweeted ? "OK" : "FAILED"}`);
+    } catch (e) {
+      console.error(`${logPrefix} | TWEET ERROR |`, e);
+    }
+  }
+
   return json({
     status: "published",
     name: villageData.name,
     slug,
     link,
+    tweeted,
     message: "created",
   });
 });
