@@ -18,6 +18,7 @@ export interface Village {
   telegram_url: string | null;
   twitter_url: string | null;
   instagram_url: string | null;
+  facebook_url: string | null;
   wallet_address: string | null;
   solana_wallet_address: string | null;
   website_url: string | null;

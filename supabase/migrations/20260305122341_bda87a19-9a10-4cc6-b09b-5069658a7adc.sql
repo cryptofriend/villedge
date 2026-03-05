@@ -1,0 +1,1 @@
+ALTER TABLE public.villages ADD COLUMN facebook_url text;

@@ -1029,6 +1029,7 @@ export type Database = {
           created_by: string | null
           dates: string
           description: string
+          facebook_url: string | null
           focus: string | null
           id: string
           instagram_url: string | null
@@ -1056,6 +1057,7 @@ export type Database = {
           created_by?: string | null
           dates: string
           description: string
+          facebook_url?: string | null
           focus?: string | null
           id: string
           instagram_url?: string | null
@@ -1083,6 +1085,7 @@ export type Database = {
           created_by?: string | null
           dates?: string
           description?: string
+          facebook_url?: string | null
           focus?: string | null
           id?: string
           instagram_url?: string | null
