@@ -111,6 +111,12 @@ async function scrapeWebsite(
     );
     if (tgMatch) metadata.telegram_url = tgMatch[1];
 
+    const fbMatch = html.match(
+      /href=["'](https?:\/\/(?:www\.)?(?:facebook\.com|fb\.com)\/[^"'\s]+)["']/i
+    );
+    if (fbMatch && !fbMatch[1].includes("/sharer"))
+      metadata.facebook_url = fbMatch[1];
+
     const domain = new URL(formattedUrl).hostname.replace("www.", "");
     const faviconMatch = html.match(
       /<link[^>]*rel=["'](?:icon|shortcut icon|apple-touch-icon)["'][^>]*href=["']([^"']+)["']/i
@@ -151,6 +157,7 @@ interface VillageData {
   twitter_url?: string;
   instagram_url?: string;
   telegram_url?: string;
+  facebook_url?: string;
   location_hint?: string;
   maps_url?: string;
 }
@@ -171,6 +178,7 @@ async function structureWithAI(
       twitter_url: metadata.twitter_url,
       instagram_url: metadata.instagram_url,
       telegram_url: metadata.telegram_url,
+      facebook_url: metadata.facebook_url,
       maps_url: metadata.maps_url,
     };
   }
@@ -237,6 +245,7 @@ Return ONLY valid JSON, no markdown fences.`;
       twitter_url: metadata.twitter_url || parsed.twitter_url,
       instagram_url: metadata.instagram_url || parsed.instagram_url,
       telegram_url: metadata.telegram_url || parsed.telegram_url,
+      facebook_url: metadata.facebook_url || parsed.facebook_url,
     };
   } catch (e) {
     console.error("AI structuring failed:", e);
@@ -249,6 +258,7 @@ Return ONLY valid JSON, no markdown fences.`;
       twitter_url: metadata.twitter_url,
       instagram_url: metadata.instagram_url,
       telegram_url: metadata.telegram_url,
+      facebook_url: metadata.facebook_url,
       maps_url: metadata.maps_url,
     };
   }
@@ -312,7 +322,24 @@ Deno.serve(async (req) => {
   }
 
   // ── Parse request ───────────────────────────────────────────────
-  let body: { website?: string; maps_url?: string; source?: string; mode?: string };
+  let body: {
+    website?: string;
+    maps_url?: string;
+    source?: string;
+    mode?: string;
+    // Override fields — agent can supply these to skip/augment AI extraction
+    name?: string;
+    description?: string;
+    dates?: string;
+    village_type?: string;
+    location?: string;
+    facebook_url?: string;
+    twitter_url?: string;
+    instagram_url?: string;
+    telegram_url?: string;
+    logo_url?: string;
+    thumbnail_url?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -369,6 +396,19 @@ Deno.serve(async (req) => {
   console.log(`${logPrefix} | SCRAPING`);
   const { markdown, metadata } = await scrapeWebsite(formattedUrl);
   const villageData = await structureWithAI(markdown, metadata, formattedUrl);
+
+  // Apply body overrides (agent-supplied values take priority)
+  if (body.name) villageData.name = body.name;
+  if (body.description) villageData.description = body.description;
+  if (body.dates) villageData.dates = body.dates;
+  if (body.village_type) villageData.village_type = body.village_type;
+  if (body.location) villageData.location_hint = body.location;
+  if (body.facebook_url) villageData.facebook_url = body.facebook_url;
+  if (body.twitter_url) villageData.twitter_url = body.twitter_url;
+  if (body.instagram_url) villageData.instagram_url = body.instagram_url;
+  if (body.telegram_url) villageData.telegram_url = body.telegram_url;
+  if (body.logo_url) villageData.favicon_url = body.logo_url;
+  if (body.thumbnail_url) villageData.thumbnail_url = body.thumbnail_url;
 
   if (!villageData.name) {
     console.log(`${logPrefix} | ERROR | could not extract name`);
@@ -439,6 +479,7 @@ Deno.serve(async (req) => {
     twitter_url: villageData.twitter_url || null,
     instagram_url: villageData.instagram_url || null,
     telegram_url: villageData.telegram_url || null,
+    facebook_url: villageData.facebook_url || null,
     created_by: null,
   });
 
