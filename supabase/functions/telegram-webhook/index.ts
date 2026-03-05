@@ -31,6 +31,70 @@ interface TelegramUpdate {
 
 const SITE_URL = "https://villedge.tech";
 
+// ── Twitter/X OAuth 1.0a ────────────────────────────────────────────
+
+function percentEncode(str: string): string {
+  return encodeURIComponent(str).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+}
+
+async function hmacSha1(key: string, data: string): Promise<string> {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey("raw", enc.encode(key), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(data));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+}
+
+async function postTweet(text: string): Promise<boolean> {
+  const consumerKey = Deno.env.get("TWITTER_CONSUMER_KEY");
+  const consumerSecret = Deno.env.get("TWITTER_CONSUMER_SECRET");
+  const accessToken = Deno.env.get("TWITTER_ACCESS_TOKEN");
+  const accessTokenSecret = Deno.env.get("TWITTER_ACCESS_TOKEN_SECRET");
+
+  if (!consumerKey || !consumerSecret || !accessToken || !accessTokenSecret) {
+    console.error("Twitter credentials not configured");
+    return false;
+  }
+
+  const method = "POST";
+  const url = "https://api.x.com/2/tweets";
+  const nonce = crypto.randomUUID().replace(/-/g, "");
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+
+  const oauthParams: Record<string, string> = {
+    oauth_consumer_key: consumerKey,
+    oauth_nonce: nonce,
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: timestamp,
+    oauth_token: accessToken,
+    oauth_version: "1.0",
+  };
+
+  const paramString = Object.keys(oauthParams)
+    .sort()
+    .map((k) => `${percentEncode(k)}=${percentEncode(oauthParams[k])}`)
+    .join("&");
+
+  const baseString = `${method}&${percentEncode(url)}&${percentEncode(paramString)}`;
+  const signingKey = `${percentEncode(consumerSecret)}&${percentEncode(accessTokenSecret)}`;
+  const signature = await hmacSha1(signingKey, baseString);
+
+  const authHeader = `OAuth ${Object.entries(oauthParams)
+    .map(([k, v]) => `${percentEncode(k)}="${percentEncode(v)}"`)
+    .join(", ")}, oauth_signature="${percentEncode(signature)}"`;
+
+  const res = await fetch(url, {
+    method,
+    headers: { Authorization: authHeader, "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+
+  if (!res.ok) {
+    console.error(`Twitter API error [${res.status}]:`, await res.text());
+    return false;
+  }
+  return true;
+}
+
 async function sendTelegramMessage(botToken: string, chatId: number, text: string): Promise<void> {
   await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST",
@@ -528,8 +592,31 @@ const handler = async (req: Request): Promise<Response> => {
         });
       }
 
-      // Run pipeline (don't await in response — but edge functions need to complete)
       await handleAddVillage(supabase, botToken, chatId, username, urlArg);
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // ── /tweet <text> ──
+    if (text.startsWith("/tweet")) {
+      const tweetText = text.replace(/^\/tweet\s*/i, "").trim();
+      if (!tweetText) {
+        await sendTelegramMessage(botToken, chatId, "Usage: <code>/tweet Your tweet text here</code>");
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const success = await postTweet(tweetText);
+      if (success) {
+        await sendTelegramMessage(botToken, chatId, "✅ Tweet posted!");
+      } else {
+        await sendTelegramMessage(botToken, chatId, "❌ Failed to post tweet. Check Twitter API credentials.");
+      }
 
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -557,7 +644,8 @@ const handler = async (req: Request): Promise<Response> => {
           botToken,
           chatId,
           "👋 <b>Welcome to Villedge!</b>\n\n" +
-            "📌 Add a village: <code>/addvillage https://village-website.com</code>\n\n" +
+            "📌 Add a village: <code>/addvillage https://village-website.com</code>\n" +
+            "🐦 Post a tweet: <code>/tweet Your message here</code>\n\n" +
             "I also notify you about application status updates."
         );
         return new Response(JSON.stringify({ ok: true }), {
