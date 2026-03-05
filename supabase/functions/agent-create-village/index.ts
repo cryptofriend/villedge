@@ -28,8 +28,14 @@ async function postTweet(text: string): Promise<boolean> {
   const accessTokenSecret = Deno.env.get("TWITTER_ACCESS_TOKEN_SECRET");
 
   if (!consumerKey || !consumerSecret || !accessToken || !accessTokenSecret) {
-    console.error("Twitter credentials not configured");
-    return false;
+    const missing = [
+      !consumerKey && "CONSUMER_KEY",
+      !consumerSecret && "CONSUMER_SECRET",
+      !accessToken && "ACCESS_TOKEN",
+      !accessTokenSecret && "ACCESS_TOKEN_SECRET",
+    ].filter(Boolean);
+    console.error(`Twitter credentials missing: ${missing.join(", ")}`);
+    throw new Error(`missing_x_credentials: ${missing.join(", ")}`);
   }
 
   const method = "POST";
@@ -46,7 +52,6 @@ async function postTweet(text: string): Promise<boolean> {
     oauth_version: "1.0",
   };
 
-  // Signature base string — do NOT include POST body params for JSON requests
   const paramString = Object.keys(oauthParams)
     .sort()
     .map((k) => `${percentEncode(k)}=${percentEncode(oauthParams[k])}`)
@@ -69,13 +74,19 @@ async function postTweet(text: string): Promise<boolean> {
     body: JSON.stringify({ text }),
   });
 
+  const resBody = await res.text();
+
   if (!res.ok) {
-    const errBody = await res.text();
-    console.error(`Twitter API error [${res.status}]:`, errBody);
-    return false;
+    console.error(`Twitter API error [${res.status}]:`, resBody);
+    // Parse specific error type for agent
+    if (res.status === 402) throw new Error("credits_depleted");
+    if (res.status === 401) throw new Error("invalid_token");
+    if (res.status === 429) throw new Error("rate_limited");
+    if (res.status === 403) throw new Error("forbidden_read_only_app");
+    throw new Error(`x_api_error_${res.status}`);
   }
 
-  console.log("Tweet posted successfully");
+  console.log("Tweet posted successfully:", resBody);
   return true;
 }
 
@@ -591,11 +602,15 @@ Deno.serve(async (req) => {
 
   // ── Auto-tweet if tweet_text provided ───────────────────────────
   let tweeted = false;
+  let tweet_error: string | null = null;
   if (body.tweet_text) {
+    console.log(`${logPrefix} | TWEET ATTEMPT | text=${body.tweet_text.slice(0, 80)}...`);
     try {
       tweeted = await postTweet(body.tweet_text);
+      if (!tweeted) tweet_error = "post_failed";
       console.log(`${logPrefix} | TWEET | ${tweeted ? "OK" : "FAILED"}`);
-    } catch (e) {
+    } catch (e: any) {
+      tweet_error = e?.message || "unknown_error";
       console.error(`${logPrefix} | TWEET ERROR |`, e);
     }
   }
@@ -606,6 +621,7 @@ Deno.serve(async (req) => {
     slug,
     link,
     tweeted,
+    ...(tweet_error && { tweet_error }),
     message: "created",
   });
 });
