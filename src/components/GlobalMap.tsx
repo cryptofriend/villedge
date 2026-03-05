@@ -162,6 +162,29 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     return text.substring(0, maxLength) + '...';
   };
 
+  // Calculate marker scale based on zoom level
+  const getMarkerScale = useCallback((zoom: number) => {
+    // Scale markers with zoom: smaller when zoomed out, larger when zoomed in
+    const minZoom = 1;
+    const maxZoom = 8;
+    const minScale = 0.5;
+    const maxScale = 1.0;
+    const clampedZoom = Math.max(minZoom, Math.min(maxZoom, zoom));
+    return minScale + (maxScale - minScale) * ((clampedZoom - minZoom) / (maxZoom - minZoom));
+  }, []);
+
+  // Update marker scales based on current zoom
+  const updateMarkerScales = useCallback(() => {
+    if (!map.current) return;
+    const zoom = map.current.getZoom();
+    const scale = getMarkerScale(zoom);
+    clusterMarkersRef.current.forEach((marker) => {
+      const el = marker.getElement();
+      el.style.transform = `scale(${scale})`;
+      el.style.transformOrigin = 'bottom center';
+    });
+  }, [getMarkerScale]);
+
   // Create village markers
   const createVillageMarkers = useCallback(() => {
     if (!map.current || filteredVillages.length === 0) return;
@@ -169,11 +192,17 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     clusterMarkersRef.current.forEach((marker) => marker.remove());
     clusterMarkersRef.current.clear();
 
+    const currentZoom = map.current.getZoom();
+    const initialScale = getMarkerScale(currentZoom);
+
     filteredVillages.forEach((village, index) => {
       const el = document.createElement("div");
       el.className = "village-marker";
       el.style.zIndex = String(10 + index);
       el.style.position = "relative";
+      el.style.transform = `scale(${initialScale})`;
+      el.style.transformOrigin = 'bottom center';
+      el.style.transition = 'transform 0.15s ease-out';
 
       const truncatedLocation = truncateText(village.location, 20);
       const logoSrc = village.logo_url || '/placeholder.svg';
@@ -252,7 +281,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       clusterMarkersRef.current.set(village.id, marker);
     });
-  }, [filteredVillages, navigate]);
+  }, [filteredVillages, navigate, getMarkerScale]);
 
   // Create markers when filtered villages change
   useEffect(() => {
@@ -260,6 +289,15 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       createVillageMarkers();
     }
   }, [mapReady, filteredVillages, createVillageMarkers]);
+
+  // Listen to zoom changes to scale markers
+  useEffect(() => {
+    if (!map.current || !mapReady) return;
+    const m = map.current;
+    const onZoom = () => updateMarkerScales();
+    m.on('zoom', onZoom);
+    return () => { m.off('zoom', onZoom); };
+  }, [mapReady, updateMarkerScales]);
 
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ touchAction: 'manipulation', overscrollBehavior: 'contain' }}>
