@@ -111,7 +111,6 @@ const SEOContent = ({ village }: { village: Village }) => {
   const aboutContent = (village as any).about_content as string | null;
   const typeLabel = village.village_type === "popup" ? "Popup Village" : "Community";
 
-  // Build FAQ-style structured content for AI search
   const faqItems = [
     { q: `What is ${village.name}?`, a: village.description },
     village.focus && { q: `What is the focus of ${village.name}?`, a: village.focus },
@@ -121,29 +120,20 @@ const SEOContent = ({ village }: { village: Village }) => {
     village.website_url && { q: `What is the official website of ${village.name}?`, a: `The official website is ${village.website_url}` },
   ].filter(Boolean) as { q: string; a: string }[];
 
-  // JSON-LD FAQPage for AI search engines
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: faqItems.map(item => ({
       "@type": "Question",
       name: item.q,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.a,
-      },
+      acceptedAnswer: { "@type": "Answer", text: item.a },
     })),
   };
 
   return (
     <div className="space-y-5">
-      {/* FAQPage JSON-LD for AI crawlers */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
-      {/* Semantic header */}
       <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-1">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Optimized for AI Search & SEO</p>
         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -151,66 +141,68 @@ const SEOContent = ({ village }: { village: Village }) => {
         </p>
       </div>
 
-      {/* H1-level title block */}
+      {/* Village header */}
+      <header className="flex items-start gap-3">
+        {village.logo_url && (
+          <img
+            src={village.logo_url}
+            alt={`${village.name} logo`}
+            className="h-14 w-14 rounded-xl object-cover flex-shrink-0 border border-border"
+          />
+        )}
+        <div className="min-w-0 flex-1">
+          <h1 className="text-base font-bold text-foreground leading-tight">
+            {village.name} — {typeLabel}
+          </h1>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span>{village.location}</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Key details */}
+      <section className="grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+          <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Dates</p>
+            <p className="text-xs font-medium text-foreground truncate">{village.dates}</p>
+          </div>
+        </div>
+        {village.participants && (
+          <div className="flex items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+            <Users className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Participants</p>
+              <p className="text-xs font-medium text-foreground truncate">{village.participants}</p>
+            </div>
+          </div>
+        )}
+        {village.focus && (
+          <div className="flex items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2 col-span-2">
+            <Info className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Focus</p>
+              <p className="text-xs font-medium text-foreground">{village.focus}</p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* About content */}
       <section>
-        <h1 className="text-base font-bold text-foreground leading-tight">
-          {village.name} — {typeLabel} in {village.location}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">{village.description}</p>
-      </section>
-
-      {/* Key facts as definition list */}
-      <section className="space-y-2">
-        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Key Facts</h2>
-        <dl className="grid grid-cols-1 gap-2">
-          <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
-            <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Type</dt>
-            <dd className="text-xs font-medium text-foreground">{typeLabel}</dd>
-          </div>
-          <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
-            <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Location</dt>
-            <dd className="text-xs font-medium text-foreground">{village.location}</dd>
-          </div>
-          <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
-            <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Dates</dt>
-            <dd className="text-xs font-medium text-foreground">{village.dates}</dd>
-          </div>
-          {village.participants && (
-            <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
-              <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Participants</dt>
-              <dd className="text-xs font-medium text-foreground">{village.participants}</dd>
-            </div>
-          )}
-          {village.focus && (
-            <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
-              <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Focus</dt>
-              <dd className="text-xs font-medium text-foreground">{village.focus}</dd>
-            </div>
-          )}
-          {village.website_url && (
-            <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
-              <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Website</dt>
-              <dd className="text-xs font-medium text-primary">
-                <a href={village.website_url} target="_blank" rel="noopener noreferrer" className="hover:underline inline-flex items-center gap-1">
-                  {village.website_url} <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-              </dd>
-            </div>
-          )}
-        </dl>
-      </section>
-
-      {/* AI-generated long-form content */}
-      {aboutContent && (
-        <section className="space-y-1.5">
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">About {village.name}</h2>
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">About</h2>
+        {aboutContent ? (
           <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground/90 prose-p:leading-relaxed prose-h2:text-sm prose-h2:font-semibold prose-h2:mt-4 prose-h2:mb-1.5 prose-h3:text-xs prose-h3:font-semibold prose-h3:mt-3 prose-h3:mb-1">
             <ReactMarkdown>{aboutContent}</ReactMarkdown>
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="text-sm leading-relaxed text-foreground/90">{village.description}</p>
+        )}
+      </section>
 
-      {/* FAQ section — visible text for AI crawlers */}
+      {/* FAQ section */}
       <section className="space-y-3">
         <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Frequently Asked Questions</h2>
         <div className="space-y-3">
@@ -223,7 +215,7 @@ const SEOContent = ({ village }: { village: Village }) => {
         </div>
       </section>
 
-      {/* Social links for entity connection */}
+      {/* Social links */}
       <section className="space-y-2">
         <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Connect</h2>
         <div className="flex flex-wrap gap-2">
