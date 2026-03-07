@@ -58,7 +58,7 @@ const TwitterEmbed = ({ username }: { username: string }) => {
   }, [loadTimeline]);
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col flex-1 min-h-0 gap-2">
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">@{username} on X</span>
         <button
@@ -72,8 +72,8 @@ const TwitterEmbed = ({ username }: { username: string }) => {
       </div>
       <div
         ref={ref}
-        className="rounded-lg overflow-hidden border border-border bg-background max-w-full"
-        style={{ maxHeight: 500, overflowY: "auto" }}
+        className="rounded-lg overflow-hidden border border-border bg-background max-w-full flex-1 min-h-0"
+        style={{ overflowY: "auto" }}
       >
         <a
           className="twitter-timeline"
