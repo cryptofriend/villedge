@@ -23,8 +23,13 @@ import { ApplicationFormManager } from "@/components/villages/ApplicationFormMan
 import { ApplicationsManager } from "@/components/villages/ApplicationsManager";
 import { VillageBotManager } from "@/components/villages/VillageBotManager";
 
-const EditVillage = () => {
+interface EditVillageProps {
+  overrideVillageSlug?: string;
+}
+
+const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
   const { villageSlug } = useParams<{ villageSlug: string }>();
+  const effectiveSlug = overrideVillageSlug || villageSlug;
   const navigate = useNavigate();
   const { villages, loading: villagesLoading, refetch: refetchVillages } = useVillages();
   const { isHost, loading: permissionsLoading } = usePermissions();
