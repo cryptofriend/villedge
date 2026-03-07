@@ -23,8 +23,13 @@ import { ApplicationFormManager } from "@/components/villages/ApplicationFormMan
 import { ApplicationsManager } from "@/components/villages/ApplicationsManager";
 import { VillageBotManager } from "@/components/villages/VillageBotManager";
 
-const EditVillage = () => {
+interface EditVillageProps {
+  overrideVillageSlug?: string;
+}
+
+const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
   const { villageSlug } = useParams<{ villageSlug: string }>();
+  const effectiveSlug = overrideVillageSlug || villageSlug;
   const navigate = useNavigate();
   const { villages, loading: villagesLoading, refetch: refetchVillages } = useVillages();
   const { isHost, loading: permissionsLoading } = usePermissions();
@@ -36,7 +41,7 @@ const EditVillage = () => {
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
 
   // Find the village
-  const village = villages.find((v) => v.id === villageSlug);
+  const village = villages.find((v) => v.id === effectiveSlug);
 
   // Form state
   const [name, setName] = useState("");
@@ -141,7 +146,7 @@ const EditVillage = () => {
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to={`/${villageSlug}`} replace />;
+    return <Navigate to={`/${effectiveSlug}`} replace />;
   }
 
   // Check if village exists
@@ -152,7 +157,7 @@ const EditVillage = () => {
   // Check permissions: must be host or admin
   const hasAccess = isHost(village.id) || isAdmin;
   if (!hasAccess) {
-    return <Navigate to={`/${villageSlug}`} replace />;
+    return <Navigate to={`/${effectiveSlug}`} replace />;
   }
 
   const handleThumbnailUpload = async (file: File) => {
@@ -256,7 +261,7 @@ const EditVillage = () => {
 
       toast.success("Village updated successfully!");
       await refetchVillages();
-      navigate(`/${villageSlug}`);
+      navigate(`/${effectiveSlug}`);
     } catch (err) {
       console.error("Error updating village:", err);
       toast.error("Failed to update village");
@@ -274,7 +279,7 @@ const EditVillage = () => {
             variant="ghost"
             size="icon"
             className="shrink-0"
-            onClick={() => navigate(`/${villageSlug}`)}
+            onClick={() => navigate(`/${effectiveSlug}`)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -534,7 +539,7 @@ const EditVillage = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => navigate(`/${villageSlug}`)}
+                      onClick={() => navigate(`/${effectiveSlug}`)}
                       disabled={isSubmitting}
                     >
                       Cancel
@@ -612,7 +617,7 @@ const EditVillage = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate(`/${villageSlug}`)}
+                    onClick={() => navigate(`/${effectiveSlug}`)}
                     disabled={isSubmitting}
                   >
                     Cancel

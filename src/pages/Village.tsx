@@ -9,22 +9,26 @@ const MAPBOX_TOKEN = "pk.eyJ1IjoiZXVkYWZvcm0iLCJhIjoiY21lczgwdndsMDZlczJqcXo3Y2g
 
 type CategoryType = "map" | "about" | "residents" | "scenius" | "events";
 
-const Village = () => {
+interface VillageProps {
+  overrideVillageSlug?: string;
+}
+
+const Village = ({ overrideVillageSlug }: VillageProps) => {
   const { villageSlug } = useParams<{ villageSlug: string }>();
   const location = useLocation();
   const { isAuthenticated, loading } = useAuth();
   const [showAuthDialog, setShowAuthDialog] = useState(true);
   
-  // Use the URL param directly as the village ID
-  const villageId = villageSlug;
+  // Use override (custom domain) or URL param
+  const villageId = overrideVillageSlug || villageSlug;
   
   // Extract category from the URL path (e.g., /proof-of-retreat/residents -> residents)
   const initialCategory = useMemo<CategoryType>(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
     const validCategories: CategoryType[] = ["map", "about", "residents", "scenius", "events"];
     
-    // If path has more than one part, check if last part is a valid category
-    if (pathParts.length > 1) {
+    // Check the last path segment for a valid category
+    if (pathParts.length >= 1) {
       const lastPart = pathParts[pathParts.length - 1] as CategoryType;
       if (validCategories.includes(lastPart)) {
         return lastPart;
