@@ -942,12 +942,14 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         </div>
       )}
 
-      {/* About view */}
+      {/* About view - full screen below header */}
       {activeView === "about" && isZoomedIn && activeVillage && (
-        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
-          <ExpandablePanel>
-            <VillageAbout village={activeVillage} />
-          </ExpandablePanel>
+        <div className="absolute inset-0 z-20 pt-[72px] pb-[72px] sm:pt-[80px] sm:pb-0 md:pt-[88px] bg-background/95 backdrop-blur-sm">
+          <ScrollArea className="h-full w-full">
+            <div className="max-w-2xl mx-auto">
+              <VillageAbout village={activeVillage} />
+            </div>
+          </ScrollArea>
         </div>
       )}
 
