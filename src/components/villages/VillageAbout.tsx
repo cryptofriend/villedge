@@ -64,7 +64,7 @@ export const VillageAbout = ({ village }: VillageAboutProps) => {
   };
 
   return (
-    <article className="space-y-5 p-4 overflow-y-auto flex-1 min-h-0" itemScope itemType={village.village_type === "popup" ? "https://schema.org/Event" : "https://schema.org/Organization"}>
+    <article className="flex flex-col p-4 flex-1 min-h-0" itemScope itemType={village.village_type === "popup" ? "https://schema.org/Event" : "https://schema.org/Organization"}>
       {/* JSON-LD for search engines */}
       <script
         type="application/ld+json"
