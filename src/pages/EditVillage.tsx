@@ -539,7 +539,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => navigate(`/${villageSlug}`)}
+                      onClick={() => navigate(`/${effectiveSlug}`)}
                       disabled={isSubmitting}
                     >
                       Cancel
@@ -617,7 +617,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate(`/${villageSlug}`)}
+                    onClick={() => navigate(`/${effectiveSlug}`)}
                     disabled={isSubmitting}
                   >
                     Cancel
