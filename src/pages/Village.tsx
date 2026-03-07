@@ -9,14 +9,18 @@ const MAPBOX_TOKEN = "pk.eyJ1IjoiZXVkYWZvcm0iLCJhIjoiY21lczgwdndsMDZlczJqcXo3Y2g
 
 type CategoryType = "map" | "about" | "residents" | "scenius" | "events";
 
-const Village = () => {
+interface VillageProps {
+  overrideVillageSlug?: string;
+}
+
+const Village = ({ overrideVillageSlug }: VillageProps) => {
   const { villageSlug } = useParams<{ villageSlug: string }>();
   const location = useLocation();
   const { isAuthenticated, loading } = useAuth();
   const [showAuthDialog, setShowAuthDialog] = useState(true);
   
-  // Use the URL param directly as the village ID
-  const villageId = villageSlug;
+  // Use override (custom domain) or URL param
+  const villageId = overrideVillageSlug || villageSlug;
   
   // Extract category from the URL path (e.g., /proof-of-retreat/residents -> residents)
   const initialCategory = useMemo<CategoryType>(() => {
