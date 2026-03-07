@@ -8,6 +8,7 @@ interface SocialWebSwitcherProps {
   village: Village;
   twitterUsername: string | null;
   instagramUsername: string | null;
+  backlinkSlot?: React.ReactNode;
 }
 
 // Cache: track which usernames have already had their widget rendered
@@ -105,7 +106,7 @@ const InstagramLink = ({ username, url }: { username: string; url: string }) => 
   </a>
 );
 
-export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername }: SocialWebSwitcherProps) => {
+export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername, backlinkSlot }: SocialWebSwitcherProps) => {
   const hasSocial = !!(twitterUsername || instagramUsername);
   const hasWeb = !!village.website_url;
 
@@ -151,10 +152,11 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername 
       {/* Social tab content */}
       {activeTab === "social" && hasSocial && (
         <div className="space-y-4">
-          {twitterUsername && <TwitterEmbed username={twitterUsername} />}
+          {backlinkSlot}
           {instagramUsername && village.instagram_url && (
             <InstagramLink username={instagramUsername} url={village.instagram_url} />
           )}
+          {twitterUsername && <TwitterEmbed username={twitterUsername} />}
         </div>
       )}
 
