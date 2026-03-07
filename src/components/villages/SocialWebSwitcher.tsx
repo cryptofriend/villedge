@@ -319,7 +319,7 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
             href={village.website_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline shrink-0"
           >
             <Globe className="h-3 w-3" />
             Open {new URL(village.website_url).hostname}
