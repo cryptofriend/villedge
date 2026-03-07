@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Village } from "@/hooks/useVillages";
-import { ExternalLink, Globe, Search } from "lucide-react";
+import { ExternalLink, Globe, Search, MapPin, Calendar, Users, Info } from "lucide-react";
 import { RefreshCw } from "lucide-react";
 import { useRef, useCallback, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
