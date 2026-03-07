@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Village } from "@/hooks/useVillages";
-import { ExternalLink, Globe } from "lucide-react";
+import { ExternalLink, Globe, Search } from "lucide-react";
 import { RefreshCw } from "lucide-react";
 import { useRef, useCallback, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 interface SocialWebSwitcherProps {
   village: Village;
@@ -106,46 +107,196 @@ const InstagramLink = ({ username, url }: { username: string; url: string }) => 
   </a>
 );
 
+const SEOContent = ({ village }: { village: Village }) => {
+  const aboutContent = (village as any).about_content as string | null;
+  const typeLabel = village.village_type === "popup" ? "Popup Village" : "Community";
+
+  // Build FAQ-style structured content for AI search
+  const faqItems = [
+    { q: `What is ${village.name}?`, a: village.description },
+    village.focus && { q: `What is the focus of ${village.name}?`, a: village.focus },
+    village.location && { q: `Where is ${village.name} located?`, a: `${village.name} is located in ${village.location}.` },
+    village.dates && { q: `When does ${village.name} take place?`, a: `${village.name} runs during: ${village.dates}.` },
+    village.participants && { q: `How many participants does ${village.name} have?`, a: `${village.name} hosts ${village.participants} participants.` },
+    village.website_url && { q: `What is the official website of ${village.name}?`, a: `The official website is ${village.website_url}` },
+  ].filter(Boolean) as { q: string; a: string }[];
+
+  // JSON-LD FAQPage for AI search engines
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map(item => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* FAQPage JSON-LD for AI crawlers */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+
+      {/* Semantic header */}
+      <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-1">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Optimized for AI Search & SEO</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          This page is structured for search engines and AI assistants like ChatGPT, Perplexity, and Google AI Overviews.
+        </p>
+      </div>
+
+      {/* H1-level title block */}
+      <section>
+        <h1 className="text-base font-bold text-foreground leading-tight">
+          {village.name} — {typeLabel} in {village.location}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">{village.description}</p>
+      </section>
+
+      {/* Key facts as definition list */}
+      <section className="space-y-2">
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Key Facts</h2>
+        <dl className="grid grid-cols-1 gap-2">
+          <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+            <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Type</dt>
+            <dd className="text-xs font-medium text-foreground">{typeLabel}</dd>
+          </div>
+          <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+            <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Location</dt>
+            <dd className="text-xs font-medium text-foreground">{village.location}</dd>
+          </div>
+          <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+            <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Dates</dt>
+            <dd className="text-xs font-medium text-foreground">{village.dates}</dd>
+          </div>
+          {village.participants && (
+            <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+              <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Participants</dt>
+              <dd className="text-xs font-medium text-foreground">{village.participants}</dd>
+            </div>
+          )}
+          {village.focus && (
+            <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+              <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Focus</dt>
+              <dd className="text-xs font-medium text-foreground">{village.focus}</dd>
+            </div>
+          )}
+          {village.website_url && (
+            <div className="flex items-baseline gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+              <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium whitespace-nowrap">Website</dt>
+              <dd className="text-xs font-medium text-primary">
+                <a href={village.website_url} target="_blank" rel="noopener noreferrer" className="hover:underline inline-flex items-center gap-1">
+                  {village.website_url} <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              </dd>
+            </div>
+          )}
+        </dl>
+      </section>
+
+      {/* AI-generated long-form content */}
+      {aboutContent && (
+        <section className="space-y-1.5">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">About {village.name}</h2>
+          <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground/90 prose-p:leading-relaxed prose-h2:text-sm prose-h2:font-semibold prose-h2:mt-4 prose-h2:mb-1.5 prose-h3:text-xs prose-h3:font-semibold prose-h3:mt-3 prose-h3:mb-1">
+            <ReactMarkdown>{aboutContent}</ReactMarkdown>
+          </div>
+        </section>
+      )}
+
+      {/* FAQ section — visible text for AI crawlers */}
+      <section className="space-y-3">
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Frequently Asked Questions</h2>
+        <div className="space-y-3">
+          {faqItems.map((item, i) => (
+            <div key={i} className="rounded-lg border border-border bg-background p-3 space-y-1">
+              <h3 className="text-xs font-semibold text-foreground">{item.q}</h3>
+              <p className="text-xs text-foreground/80 leading-relaxed">{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Social links for entity connection */}
+      <section className="space-y-2">
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Connect</h2>
+        <div className="flex flex-wrap gap-2">
+          {village.twitter_url && (
+            <a href={village.twitter_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-secondary/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary transition-colors">
+              X / Twitter <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
+          {village.instagram_url && (
+            <a href={village.instagram_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-secondary/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary transition-colors">
+              Instagram <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
+          {village.telegram_url && (
+            <a href={village.telegram_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-secondary/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary transition-colors">
+              Telegram <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
+          {village.website_url && (
+            <a href={village.website_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+              Official Website <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
+          {village.apply_url && (
+            <a href={village.apply_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-accent/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+              Apply Now <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+};
+
 export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername, backlinkSlot }: SocialWebSwitcherProps) => {
   const hasSocial = !!(twitterUsername || instagramUsername);
   const hasWeb = !!village.website_url;
 
   // Default to "social" if available, otherwise "web"
-  const [activeTab, setActiveTab] = useState<"social" | "web">(hasSocial ? "social" : "web");
+  const [activeTab, setActiveTab] = useState<"social" | "web" | "seo">(hasSocial ? "social" : "web");
 
-  // Only show switcher if both tabs have content
-  const showSwitcher = hasSocial && hasWeb;
+  // Always show switcher now (SEO tab is always available)
+  const tabs: { key: "social" | "web" | "seo"; label: string; icon?: React.ReactNode; show: boolean }[] = [
+    { key: "social", label: "Social", show: hasSocial },
+    { key: "web", label: "Website", icon: <Globe className="h-3 w-3" />, show: hasWeb },
+    { key: "seo", label: "SEO", icon: <Search className="h-3 w-3" />, show: true },
+  ];
+
+  const visibleTabs = tabs.filter(t => t.show);
 
   return (
     <section className="space-y-3">
       {/* Tab switcher */}
-      {showSwitcher ? (
+      {visibleTabs.length > 1 ? (
         <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5 w-fit">
-          <button
-            onClick={() => setActiveTab("social")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              activeTab === "social"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Social
-          </button>
-          <button
-            onClick={() => setActiveTab("web")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-              activeTab === "web"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Globe className="h-3 w-3" />
-            Website
-          </button>
+          {visibleTabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                activeTab === tab.key
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
         </div>
       ) : (
         <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-          {hasSocial ? "Social" : "Website"}
+          {visibleTabs[0]?.label}
         </h3>
       )}
 
@@ -183,6 +334,11 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
             <ExternalLink className="h-2.5 w-2.5" />
           </a>
         </div>
+      )}
+
+      {/* SEO tab content */}
+      {activeTab === "seo" && (
+        <SEOContent village={village} />
       )}
     </section>
   );
