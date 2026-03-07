@@ -19,22 +19,27 @@ const TwitterEmbed = ({ username }: { username: string }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
 
+  const getContainerHeight = () => {
+    if (!ref.current) return 600;
+    const h = ref.current.clientHeight;
+    return h > 100 ? h : 600;
+  };
+
   const loadTimeline = useCallback(() => {
     if (!ref.current) return;
     setLoading(true);
     const container = ref.current;
-    const linkEl = container.querySelector("a.twitter-timeline");
-    if (!linkEl) {
-      container.innerHTML = "";
-      const a = document.createElement("a");
-      a.className = "twitter-timeline";
-      a.setAttribute("data-height", "500");
-      a.setAttribute("data-theme", "light");
-      a.setAttribute("data-chrome", "nofooter noborders");
-      a.href = `https://twitter.com/${username}`;
-      a.textContent = `Loading posts by @${username}...`;
-      container.appendChild(a);
-    }
+    const height = String(getContainerHeight());
+    container.innerHTML = "";
+    const a = document.createElement("a");
+    a.className = "twitter-timeline";
+    a.setAttribute("data-height", height);
+    a.setAttribute("data-theme", "light");
+    a.setAttribute("data-chrome", "nofooter noborders");
+    a.href = `https://twitter.com/${username}`;
+    a.textContent = `Loading posts by @${username}...`;
+    container.appendChild(a);
+
     const win = window as any;
     if (win.twttr?.widgets) {
       win.twttr.widgets.load(container);
@@ -54,7 +59,9 @@ const TwitterEmbed = ({ username }: { username: string }) => {
   }, [username]);
 
   useEffect(() => {
-    loadTimeline();
+    // Delay slightly to let flexbox layout settle before measuring
+    const timer = setTimeout(() => loadTimeline(), 100);
+    return () => clearTimeout(timer);
   }, [loadTimeline]);
 
   return (
@@ -74,17 +81,7 @@ const TwitterEmbed = ({ username }: { username: string }) => {
         ref={ref}
         className="rounded-lg overflow-hidden border border-border bg-background max-w-full flex-1 min-h-0"
         style={{ overflowY: "auto" }}
-      >
-        <a
-          className="twitter-timeline"
-          data-height="100%"
-          data-theme="light"
-          data-chrome="nofooter noborders"
-          href={`https://twitter.com/${username}`}
-        >
-          {loading ? "Loading posts..." : `Posts by @${username}`}
-        </a>
-      </div>
+      />
     </div>
   );
 };
