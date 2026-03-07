@@ -27,8 +27,8 @@ const Village = ({ overrideVillageSlug }: VillageProps) => {
     const pathParts = location.pathname.split('/').filter(Boolean);
     const validCategories: CategoryType[] = ["map", "about", "residents", "scenius", "events"];
     
-    // If path has more than one part, check if last part is a valid category
-    if (pathParts.length > 1) {
+    // Check the last path segment for a valid category
+    if (pathParts.length >= 1) {
       const lastPart = pathParts[pathParts.length - 1] as CategoryType;
       if (validCategories.includes(lastPart)) {
         return lastPart;
