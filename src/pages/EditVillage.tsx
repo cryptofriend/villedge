@@ -146,7 +146,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to={`/${villageSlug}`} replace />;
+    return <Navigate to={`/${effectiveSlug}`} replace />;
   }
 
   // Check if village exists
@@ -157,7 +157,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
   // Check permissions: must be host or admin
   const hasAccess = isHost(village.id) || isAdmin;
   if (!hasAccess) {
-    return <Navigate to={`/${villageSlug}`} replace />;
+    return <Navigate to={`/${effectiveSlug}`} replace />;
   }
 
   const handleThumbnailUpload = async (file: File) => {
@@ -261,7 +261,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
 
       toast.success("Village updated successfully!");
       await refetchVillages();
-      navigate(`/${villageSlug}`);
+      navigate(`/${effectiveSlug}`);
     } catch (err) {
       console.error("Error updating village:", err);
       toast.error("Failed to update village");
