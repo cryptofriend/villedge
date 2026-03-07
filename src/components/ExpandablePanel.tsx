@@ -16,8 +16,8 @@ export const ExpandablePanel = ({ children, className }: ExpandablePanelProps) =
   const startSize = useRef<PanelSize>("default");
 
   const sizeClasses: Record<PanelSize, string> = {
-    default: "h-[55vh] sm:h-[65vh]",
-    expanded: "h-[75vh] sm:h-[80vh]",
+    default: "h-[calc(100vh-220px)] sm:h-[calc(100vh-200px)]",
+    expanded: "h-[calc(100vh-170px)] sm:h-[calc(100vh-150px)]",
     full: "h-[calc(100vh-140px)] sm:h-[calc(100vh-120px)]",
   };
 
