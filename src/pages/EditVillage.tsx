@@ -41,7 +41,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
 
   // Find the village
-  const village = villages.find((v) => v.id === villageSlug);
+  const village = villages.find((v) => v.id === effectiveSlug);
 
   // Form state
   const [name, setName] = useState("");
