@@ -77,41 +77,41 @@ export const VillageAbout = ({ village }: VillageAboutProps) => {
           village={village}
           twitterUsername={twitterUsername}
           instagramUsername={instagramUsername}
+          backlinkSlot={
+            <div className="space-y-3">
+              {(village.website_url || village.apply_url) && (
+                <div className="flex flex-wrap gap-2">
+                  {village.website_url && (
+                    <a
+                      href={village.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                      itemProp="url"
+                    >
+                      <Globe className="h-3 w-3" />
+                      Website
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
+                  {village.apply_url && (
+                    <a
+                      href={village.apply_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-accent/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors"
+                    >
+                      Apply
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
+                </div>
+              )}
+              <VillageSocialIcons village={village as any} />
+            </div>
+          }
         />
       )}
-
-      {/* Backlinks */}
-      <section className="space-y-3">
-        {(village.website_url || village.apply_url) && (
-          <div className="flex flex-wrap gap-2">
-            {village.website_url && (
-              <a
-                href={village.website_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                itemProp="url"
-              >
-                <Globe className="h-3 w-3" />
-                Website
-                <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-            )}
-            {village.apply_url && (
-              <a
-                href={village.apply_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-accent/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors"
-              >
-                Apply
-                <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-            )}
-          </div>
-        )}
-        <VillageSocialIcons village={village as any} />
-      </section>
 
       {/* Header */}
       <header className="flex items-start gap-3">
