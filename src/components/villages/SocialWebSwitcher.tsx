@@ -294,10 +294,14 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
 
       {/* Social tab content */}
       {activeTab === "social" && hasSocial && (
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
-          {backlinkSlot}
+        <div className="flex-1 min-h-0 flex flex-col gap-4">
+          <div className="shrink-0">
+            {backlinkSlot}
+          </div>
           {instagramUsername && village.instagram_url && (
-            <InstagramLink username={instagramUsername} url={village.instagram_url} />
+            <div className="shrink-0">
+              <InstagramLink username={instagramUsername} url={village.instagram_url} />
+            </div>
           )}
           {twitterUsername && <TwitterEmbed username={twitterUsername} />}
         </div>
