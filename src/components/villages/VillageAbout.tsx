@@ -72,7 +72,7 @@ export const VillageAbout = ({ village }: VillageAboutProps) => {
       />
 
       {/* Social / Web Switcher */}
-      {((twitterUsername || instagramUsername) || village.website_url) ? (
+      {((twitterUsername || instagramUsername) || village.website_url) && (
         <SocialWebSwitcher
           village={village}
           twitterUsername={twitterUsername}
@@ -111,7 +111,7 @@ export const VillageAbout = ({ village }: VillageAboutProps) => {
             </div>
           }
         />
-      ) : null}
+      )}
 
       {/* Coordinates meta for SEO */}
       <meta itemProp="latitude" content={String(village.center[1])} />
