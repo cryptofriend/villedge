@@ -279,7 +279,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
             variant="ghost"
             size="icon"
             className="shrink-0"
-            onClick={() => navigate(`/${villageSlug}`)}
+            onClick={() => navigate(`/${effectiveSlug}`)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
