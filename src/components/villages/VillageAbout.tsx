@@ -1,8 +1,8 @@
 import { Village } from "@/hooks/useVillages";
 import { VillageSocialIcons } from "@/components/VillageSocialIcons";
-import { MapPin, Calendar, Users, Globe, ExternalLink, Info, RefreshCw } from "lucide-react";
+import { MapPin, Calendar, Users, Globe, ExternalLink, Info } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { SocialWebSwitcher } from "./SocialWebSwitcher";
 
 interface VillageAboutProps {
   village: Village;
