@@ -59,7 +59,7 @@ const TwitterEmbed = ({ username }: { username: string }) => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <span className="text-xs text-muted-foreground">@{username} on X</span>
         <button
           onClick={loadTimeline}
@@ -77,7 +77,7 @@ const TwitterEmbed = ({ username }: { username: string }) => {
       >
         <a
           className="twitter-timeline"
-          data-height="500"
+          data-height="100%"
           data-theme="light"
           data-chrome="nofooter noborders"
           href={`https://twitter.com/${username}`}
