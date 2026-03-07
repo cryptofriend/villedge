@@ -315,7 +315,7 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
               src={village.website_url}
               title={`${village.name} website`}
               className="w-full h-full border-0"
-              sandbox="allow-scripts allow-same-origin allow-popups"
+              sandbox="allow-scripts allow-popups"
               loading="lazy"
             />
           </div>
