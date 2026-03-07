@@ -944,7 +944,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
 
       {/* About view */}
       {activeView === "about" && isZoomedIn && activeVillage && (
-        <div className="absolute bottom-[72px] left-2 right-2 z-20 sm:left-4 sm:right-4 md:bottom-[80px] md:left-6 md:right-6">
+        <div className="absolute bottom-0 left-2 right-2 z-20 sm:left-4 sm:right-4 md:left-6 md:right-6">
           <ExpandablePanel>
             <VillageAbout village={activeVillage} />
           </ExpandablePanel>
