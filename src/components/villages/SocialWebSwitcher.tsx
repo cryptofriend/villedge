@@ -267,7 +267,7 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
   const visibleTabs = tabs.filter(t => t.show);
 
   return (
-    <section className="space-y-3">
+    <section className="flex flex-col flex-1 min-h-0 gap-3">
       {/* Tab switcher */}
       {visibleTabs.length > 1 ? (
         <div className="flex items-center gap-1 rounded-lg bg-secondary/50 p-0.5 w-fit">
@@ -294,7 +294,7 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
 
       {/* Social tab content */}
       {activeTab === "social" && hasSocial && (
-        <div className="space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
           {backlinkSlot}
           {instagramUsername && village.instagram_url && (
             <InstagramLink username={instagramUsername} url={village.instagram_url} />
@@ -305,8 +305,8 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
 
       {/* Web tab content */}
       {activeTab === "web" && hasWeb && village.website_url && (
-        <div className="space-y-2">
-          <div className="rounded-lg overflow-hidden border border-border bg-background" style={{ height: 500 }}>
+        <div className="flex-1 min-h-0 flex flex-col gap-2">
+          <div className="rounded-lg overflow-hidden border border-border bg-background flex-1 min-h-0">
             <iframe
               src={village.website_url}
               title={`${village.name} website`}
@@ -330,7 +330,9 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
 
       {/* SEO tab content */}
       {activeTab === "seo" && (
-        <SEOContent village={village} />
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <SEOContent village={village} />
+        </div>
       )}
     </section>
   );
