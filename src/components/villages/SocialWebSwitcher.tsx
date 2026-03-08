@@ -323,7 +323,7 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
             className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline shrink-0"
           >
             <Globe className="h-3 w-3" />
-            Open {new URL(village.website_url).hostname}
+            Open {(() => { try { return new URL(village.website_url!).hostname; } catch { return village.website_url; } })()}
             <ExternalLink className="h-2.5 w-2.5" />
           </a>
         </div>
