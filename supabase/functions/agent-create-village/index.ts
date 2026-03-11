@@ -8,6 +8,41 @@ const corsHeaders = {
 
 const SITE_URL = "https://villedge.tech";
 
+// ── Retry with backoff ──────────────────────────────────────────────
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  label: string,
+  maxRetries = 3,
+  backoffMs = [3000, 10000, 30000]
+): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      lastError = e;
+      const isDnsOrNetwork =
+        e?.message?.includes("dns") ||
+        e?.message?.includes("nodename") ||
+        e?.message?.includes("ENOTFOUND") ||
+        e?.message?.includes("NetworkError") ||
+        e?.message?.includes("fetch failed") ||
+        e?.message?.includes("connection") ||
+        e?.name === "TypeError";
+      if (!isDnsOrNetwork || attempt >= maxRetries) {
+        throw e;
+      }
+      const delay = backoffMs[attempt] || 30000;
+      console.warn(
+        `[retry] ${label} attempt ${attempt + 1}/${maxRetries} failed (${e?.message}), retrying in ${delay}ms`
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastError;
+}
+
 // ── Twitter/X OAuth 1.0a ────────────────────────────────────────────
 
 function percentEncode(str: string): string {
@@ -453,10 +488,10 @@ Deno.serve(async (req) => {
   );
 
   // ── Duplicate check (by website domain) ─────────────────────────
-  const { data: existing } = await supabase
-    .from("villages")
-    .select("id, name, website_url")
-    .not("website_url", "is", null);
+  const { data: existing } = await withRetry(
+    () => supabase.from("villages").select("id, name, website_url").not("website_url", "is", null),
+    "duplicate-check-domain"
+  );
 
   if (existing) {
     const dup = existing.find((v: any) => {
@@ -503,11 +538,10 @@ Deno.serve(async (req) => {
 
   // ── Duplicate check (by slug) ───────────────────────────────────
   const slug = makeSlug(villageData.name);
-  const { data: slugCheck } = await supabase
-    .from("villages")
-    .select("id, name")
-    .eq("id", slug)
-    .maybeSingle();
+  const { data: slugCheck } = await withRetry(
+    () => supabase.from("villages").select("id, name").eq("id", slug).maybeSingle(),
+    "duplicate-check-slug"
+  );
 
   if (slugCheck) {
     console.log(`${logPrefix} | DUPLICATE | slug=${slug}`);
@@ -527,7 +561,10 @@ Deno.serve(async (req) => {
 
   if (mapsUrl) {
     console.log(`${logPrefix} | RESOLVING MAP | ${mapsUrl}`);
-    const mapResult = await resolveMapUrl(mapsUrl);
+    const mapResult = await withRetry(
+      () => resolveMapUrl(mapsUrl),
+      "resolve-map"
+    );
     if (mapResult) {
       coordinates = mapResult.coordinates;
       if (mapResult.name && !locationName) locationName = mapResult.name;
@@ -548,23 +585,26 @@ Deno.serve(async (req) => {
   if (websiteUrl && !websiteUrl.startsWith("http"))
     websiteUrl = `https://${websiteUrl}`;
 
-  const { error } = await supabase.from("villages").insert({
-    id: slug,
-    name: villageData.name,
-    location: locationName || "Location",
-    center: coordinates,
-    dates: villageData.dates || "Permanent",
-    description: villageData.description || `Welcome to ${villageData.name}`,
-    village_type: villageData.village_type || "popup",
-    website_url: websiteUrl || null,
-    logo_url: villageData.favicon_url || null,
-    thumbnail_url: villageData.thumbnail_url || null,
-    twitter_url: villageData.twitter_url || null,
-    instagram_url: villageData.instagram_url || null,
-    telegram_url: villageData.telegram_url || null,
-    facebook_url: villageData.facebook_url || null,
-    created_by: null,
-  });
+  const { error } = await withRetry(
+    () => supabase.from("villages").insert({
+      id: slug,
+      name: villageData.name,
+      location: locationName || "Location",
+      center: coordinates,
+      dates: villageData.dates || "Permanent",
+      description: villageData.description || `Welcome to ${villageData.name}`,
+      village_type: villageData.village_type || "popup",
+      website_url: websiteUrl || null,
+      logo_url: villageData.favicon_url || null,
+      thumbnail_url: villageData.thumbnail_url || null,
+      twitter_url: villageData.twitter_url || null,
+      instagram_url: villageData.instagram_url || null,
+      telegram_url: villageData.telegram_url || null,
+      facebook_url: villageData.facebook_url || null,
+      created_by: null,
+    }),
+    "insert-village"
+  );
 
   if (error) {
     if (error.code === "23505") {
