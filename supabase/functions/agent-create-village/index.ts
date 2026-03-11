@@ -8,6 +8,41 @@ const corsHeaders = {
 
 const SITE_URL = "https://villedge.tech";
 
+// ── Retry with backoff ──────────────────────────────────────────────
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  label: string,
+  maxRetries = 3,
+  backoffMs = [3000, 10000, 30000]
+): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      lastError = e;
+      const isDnsOrNetwork =
+        e?.message?.includes("dns") ||
+        e?.message?.includes("nodename") ||
+        e?.message?.includes("ENOTFOUND") ||
+        e?.message?.includes("NetworkError") ||
+        e?.message?.includes("fetch failed") ||
+        e?.message?.includes("connection") ||
+        e?.name === "TypeError";
+      if (!isDnsOrNetwork || attempt >= maxRetries) {
+        throw e;
+      }
+      const delay = backoffMs[attempt] || 30000;
+      console.warn(
+        `[retry] ${label} attempt ${attempt + 1}/${maxRetries} failed (${e?.message}), retrying in ${delay}ms`
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastError;
+}
+
 // ── Twitter/X OAuth 1.0a ────────────────────────────────────────────
 
 function percentEncode(str: string): string {
