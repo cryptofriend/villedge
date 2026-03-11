@@ -488,10 +488,10 @@ Deno.serve(async (req) => {
   );
 
   // ── Duplicate check (by website domain) ─────────────────────────
-  const { data: existing } = await supabase
-    .from("villages")
-    .select("id, name, website_url")
-    .not("website_url", "is", null);
+  const { data: existing } = await withRetry(
+    () => supabase.from("villages").select("id, name, website_url").not("website_url", "is", null),
+    "duplicate-check-domain"
+  );
 
   if (existing) {
     const dup = existing.find((v: any) => {
