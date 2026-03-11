@@ -538,11 +538,10 @@ Deno.serve(async (req) => {
 
   // ── Duplicate check (by slug) ───────────────────────────────────
   const slug = makeSlug(villageData.name);
-  const { data: slugCheck } = await supabase
-    .from("villages")
-    .select("id, name")
-    .eq("id", slug)
-    .maybeSingle();
+  const { data: slugCheck } = await withRetry(
+    () => supabase.from("villages").select("id, name").eq("id", slug).maybeSingle(),
+    "duplicate-check-slug"
+  );
 
   if (slugCheck) {
     console.log(`${logPrefix} | DUPLICATE | slug=${slug}`);
@@ -562,7 +561,10 @@ Deno.serve(async (req) => {
 
   if (mapsUrl) {
     console.log(`${logPrefix} | RESOLVING MAP | ${mapsUrl}`);
-    const mapResult = await resolveMapUrl(mapsUrl);
+    const mapResult = await withRetry(
+      () => resolveMapUrl(mapsUrl),
+      "resolve-map"
+    );
     if (mapResult) {
       coordinates = mapResult.coordinates;
       if (mapResult.name && !locationName) locationName = mapResult.name;
@@ -583,23 +585,26 @@ Deno.serve(async (req) => {
   if (websiteUrl && !websiteUrl.startsWith("http"))
     websiteUrl = `https://${websiteUrl}`;
 
-  const { error } = await supabase.from("villages").insert({
-    id: slug,
-    name: villageData.name,
-    location: locationName || "Location",
-    center: coordinates,
-    dates: villageData.dates || "Permanent",
-    description: villageData.description || `Welcome to ${villageData.name}`,
-    village_type: villageData.village_type || "popup",
-    website_url: websiteUrl || null,
-    logo_url: villageData.favicon_url || null,
-    thumbnail_url: villageData.thumbnail_url || null,
-    twitter_url: villageData.twitter_url || null,
-    instagram_url: villageData.instagram_url || null,
-    telegram_url: villageData.telegram_url || null,
-    facebook_url: villageData.facebook_url || null,
-    created_by: null,
-  });
+  const { error } = await withRetry(
+    () => supabase.from("villages").insert({
+      id: slug,
+      name: villageData.name,
+      location: locationName || "Location",
+      center: coordinates,
+      dates: villageData.dates || "Permanent",
+      description: villageData.description || `Welcome to ${villageData.name}`,
+      village_type: villageData.village_type || "popup",
+      website_url: websiteUrl || null,
+      logo_url: villageData.favicon_url || null,
+      thumbnail_url: villageData.thumbnail_url || null,
+      twitter_url: villageData.twitter_url || null,
+      instagram_url: villageData.instagram_url || null,
+      telegram_url: villageData.telegram_url || null,
+      facebook_url: villageData.facebook_url || null,
+      created_by: null,
+    }),
+    "insert-village"
+  );
 
   if (error) {
     if (error.code === "23505") {
