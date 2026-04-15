@@ -497,6 +497,55 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
           ))}
         </div>
       )}
+
+      {/* Edit Dates Dialog */}
+      <Dialog open={!!editingApp} onOpenChange={(open) => !open && setEditingApp(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Dates — {editingApp?.nickname}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Start Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !editStartDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editStartDate ? format(editStartDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker mode="single" selected={editStartDate} onSelect={setEditStartDate} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">End Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !editEndDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editEndDate ? format(editEndDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker mode="single" selected={editEndDate} onSelect={setEditEndDate} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditingApp(null)}>Cancel</Button>
+            <Button onClick={handleSaveDates} disabled={savingDates}>{savingDates ? "Saving..." : "Save Changes"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
