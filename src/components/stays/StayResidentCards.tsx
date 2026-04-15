@@ -133,8 +133,6 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
           const userScenius = userId 
             ? sceniusProjects.filter(s => s.contributors?.includes(userId))
             : [];
-          const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);
-          const social = getSocialNetwork(primaryStay.social_profile || null);
           const startDate = parseISO(primaryStay.start_date);
           const endDate = parseISO(primaryStay.end_date);
           const duration = differenceInDays(endDate, startDate) + 1;
