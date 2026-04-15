@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { 
   Clock, CheckCircle2, XCircle, User, Calendar, ExternalLink, 
-  ChevronDown, ChevronUp, Search, Filter
+  ChevronDown, ChevronUp, Search, Filter, Pencil, CalendarIcon
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Select, 
@@ -57,7 +61,50 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [editingApp, setEditingApp] = useState<Application | null>(null);
+  const [editStartDate, setEditStartDate] = useState<Date | undefined>();
+  const [editEndDate, setEditEndDate] = useState<Date | undefined>();
+  const [savingDates, setSavingDates] = useState(false);
   const navigate = useNavigate();
+
+  const openEditDates = (app: Application) => {
+    setEditingApp(app);
+    setEditStartDate(parseISO(app.start_date));
+    setEditEndDate(parseISO(app.end_date));
+  };
+
+  const handleSaveDates = async () => {
+    if (!editingApp || !editStartDate || !editEndDate) return;
+    if (editEndDate < editStartDate) {
+      toast.error("End date must be after start date");
+      return;
+    }
+    setSavingDates(true);
+    try {
+      const { error } = await supabase
+        .from("stays")
+        .update({
+          start_date: format(editStartDate, "yyyy-MM-dd"),
+          end_date: format(editEndDate, "yyyy-MM-dd"),
+        })
+        .eq("id", editingApp.id);
+      if (error) throw error;
+      toast.success("Dates updated!");
+      setApplications((prev) =>
+        prev.map((a) =>
+          a.id === editingApp.id
+            ? { ...a, start_date: format(editStartDate, "yyyy-MM-dd"), end_date: format(editEndDate, "yyyy-MM-dd") }
+            : a
+        )
+      );
+      setEditingApp(null);
+    } catch (err) {
+      console.error("Error updating dates:", err);
+      toast.error("Failed to update dates");
+    } finally {
+      setSavingDates(false);
+    }
+  };
 
   const fetchApplications = async () => {
     try {
@@ -399,7 +446,15 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
                     )}
 
                     {/* Status Actions */}
-                    <div className="flex gap-2 pt-3 border-t">
+                    <div className="flex flex-wrap gap-2 pt-3 border-t">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditDates(app)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Edit Dates
+                      </Button>
                       <Button
                         size="sm"
                         variant={app.status === "confirmed" ? "default" : "outline"}
@@ -442,6 +497,55 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
           ))}
         </div>
       )}
+
+      {/* Edit Dates Dialog */}
+      <Dialog open={!!editingApp} onOpenChange={(open) => !open && setEditingApp(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Dates — {editingApp?.nickname}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Start Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !editStartDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editStartDate ? format(editStartDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker mode="single" selected={editStartDate} onSelect={setEditStartDate} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">End Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !editEndDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editEndDate ? format(editEndDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker mode="single" selected={editEndDate} onSelect={setEditEndDate} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditingApp(null)}>Cancel</Button>
+            <Button onClick={handleSaveDates} disabled={savingDates}>{savingDates ? "Saving..." : "Save Changes"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
