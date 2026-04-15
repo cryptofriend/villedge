@@ -61,7 +61,50 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [editingApp, setEditingApp] = useState<Application | null>(null);
+  const [editStartDate, setEditStartDate] = useState<Date | undefined>();
+  const [editEndDate, setEditEndDate] = useState<Date | undefined>();
+  const [savingDates, setSavingDates] = useState(false);
   const navigate = useNavigate();
+
+  const openEditDates = (app: Application) => {
+    setEditingApp(app);
+    setEditStartDate(parseISO(app.start_date));
+    setEditEndDate(parseISO(app.end_date));
+  };
+
+  const handleSaveDates = async () => {
+    if (!editingApp || !editStartDate || !editEndDate) return;
+    if (editEndDate < editStartDate) {
+      toast.error("End date must be after start date");
+      return;
+    }
+    setSavingDates(true);
+    try {
+      const { error } = await supabase
+        .from("stays")
+        .update({
+          start_date: format(editStartDate, "yyyy-MM-dd"),
+          end_date: format(editEndDate, "yyyy-MM-dd"),
+        })
+        .eq("id", editingApp.id);
+      if (error) throw error;
+      toast.success("Dates updated!");
+      setApplications((prev) =>
+        prev.map((a) =>
+          a.id === editingApp.id
+            ? { ...a, start_date: format(editStartDate, "yyyy-MM-dd"), end_date: format(editEndDate, "yyyy-MM-dd") }
+            : a
+        )
+      );
+      setEditingApp(null);
+    } catch (err) {
+      console.error("Error updating dates:", err);
+      toast.error("Failed to update dates");
+    } finally {
+      setSavingDates(false);
+    }
+  };
 
   const fetchApplications = async () => {
     try {
