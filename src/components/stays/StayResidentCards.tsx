@@ -214,7 +214,36 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
                 </div>
               )}
               
-              {/* Social Link */}
+              {/* Scenius Projects */}
+              {userScenius.length > 0 && (
+                <div className="px-4 pb-3">
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <Sparkles className="h-3 w-3 text-accent-foreground" />
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Scenius</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {userScenius.map(project => (
+                      project.project_url ? (
+                        <a
+                          key={project.id}
+                          href={project.project_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-md bg-accent/50 px-2 py-0.5 text-xs text-accent-foreground hover:bg-accent transition-colors"
+                        >
+                          {project.name}
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      ) : (
+                        <Badge key={project.id} variant="secondary" className="text-xs px-2 py-0.5">
+                          {project.name}
+                        </Badge>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {primaryStay.social_profile && social.icon && (
                 <div className="mt-auto px-4 pb-3 flex justify-center">
                   <a
