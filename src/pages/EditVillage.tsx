@@ -17,6 +17,8 @@ import { useVillages, Village } from "@/hooks/useVillages";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { useAuth } from "@/hooks/useAuth";
+import { useResidents } from "@/hooks/useResidents";
+import { ResidentsList } from "@/components/ResidentsList";
 import { supabase } from "@/integrations/supabase/client";
 import { CoHostManager } from "@/components/villages/CoHostManager";
 import { ApplicationFormManager } from "@/components/villages/ApplicationFormManager";
@@ -35,6 +37,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
   const { isHost, loading: permissionsLoading } = usePermissions();
   const { isAdmin, loading: adminLoading } = useAdminRole();
   const { loading: authLoading, isAuthenticated } = useAuth();
+  const { residents, loading: residentsLoading } = useResidents(effectiveSlug || "__none__");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolvingLocation, setIsResolvingLocation] = useState(false);
@@ -302,12 +305,12 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Village Settings</CardTitle>
             <CardDescription>
-              Update village details, branding, and manage hosts
+              Update village details, branding, review residents, and manage hosts.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-6 mb-6">
+              <TabsList className="grid w-full grid-cols-7 mb-6">
                 <TabsTrigger value="details" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   <span className="hidden sm:inline">Details</span>
@@ -327,6 +330,10 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
                 <TabsTrigger value="bot" className="flex items-center gap-2">
                   <Bot className="h-4 w-4" />
                   <span className="hidden sm:inline">TG Bot</span>
+                </TabsTrigger>
+                <TabsTrigger value="residents" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Residents</span>
                 </TabsTrigger>
                 <TabsTrigger value="hosts" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -474,7 +481,6 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
                       </div>
                     </div>
                   </div>
-
 
                   {/* Links */}
                   <div className="border-t pt-6">
@@ -655,6 +661,21 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
                   botToken={(village as any).bot_token}
                   onBotTokenUpdate={refetchVillages}
                 />
+              </TabsContent>
+
+              <TabsContent value="residents" className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground">Residents</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Current resident list for {village.name}.
+                    </p>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {residents.length} resident{residents.length === 1 ? "" : "s"}
+                  </div>
+                </div>
+                <ResidentsList residents={residents} loading={residentsLoading} />
               </TabsContent>
 
               <TabsContent value="hosts">
