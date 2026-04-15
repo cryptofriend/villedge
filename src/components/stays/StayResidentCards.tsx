@@ -38,6 +38,22 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResidentCardsProps) => {
   const { user } = useAuth();
 
+  // Fetch scenius projects for the village
+  const [sceniusProjects, setSceniusProjects] = useState<Array<{ id: string; name: string; project_url: string | null; contributors: string[] | null }>>([]);
+  
+  const villageId = stays[0]?.village_id;
+  
+  useEffect(() => {
+    if (!villageId) return;
+    const fetchScenius = async () => {
+      const { data } = await supabase
+        .from("scenius")
+        .select("id, name, project_url, contributors")
+        .eq("village_id", villageId);
+      if (data) setSceniusProjects(data);
+    };
+    fetchScenius();
+  }, [villageId]);
   // Group stays by nickname and get the latest/most relevant stay
   const residents = useMemo(() => {
     const grouped = new Map<string, { label: string; stays: Stay[] }>();
