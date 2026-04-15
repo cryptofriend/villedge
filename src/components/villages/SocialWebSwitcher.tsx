@@ -251,8 +251,8 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
   const hasSocial = !!(twitterUsername || instagramUsername);
   const hasWeb = !!village.website_url;
 
-  // Default to "social" if available, otherwise "web"
-  const [activeTab, setActiveTab] = useState<"social" | "web" | "seo">(hasSocial ? "social" : "web");
+  // Default to "web" (embedded website) if available, otherwise "social"
+  const [activeTab, setActiveTab] = useState<"social" | "web" | "seo">(hasWeb ? "web" : hasSocial ? "social" : "seo");
 
   // Always show switcher now (SEO tab is always available)
   const tabs: { key: "social" | "web" | "seo"; label: string; icon?: React.ReactNode; show: boolean }[] = [
