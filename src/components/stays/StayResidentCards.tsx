@@ -121,16 +121,18 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
       </div>
     );
   }
-          const userScenius = userId 
-            ? sceniusProjects.filter(s => s.contributors?.includes(userId))
-            : [];
-          
-          return (
+
+  return (
     <ScrollArea className="h-full">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
         {residents.map(({ residentKey, nickname, primaryStay, isVisible, userId }) => {
           // Use backend-computed visibility
           const shouldBlur = shouldBlurResident({ isVisible, userId });
+          const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);
+          const social = getSocialNetwork(primaryStay.social_profile || null);
+          const userScenius = userId 
+            ? sceniusProjects.filter(s => s.contributors?.includes(userId))
+            : [];
           const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);
           const social = getSocialNetwork(primaryStay.social_profile || null);
           const startDate = parseISO(primaryStay.start_date);
