@@ -446,7 +446,15 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
                     )}
 
                     {/* Status Actions */}
-                    <div className="flex gap-2 pt-3 border-t">
+                    <div className="flex flex-wrap gap-2 pt-3 border-t">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditDates(app)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Edit Dates
+                      </Button>
                       <Button
                         size="sm"
                         variant={app.status === "confirmed" ? "default" : "outline"}
