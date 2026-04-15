@@ -105,19 +105,22 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     };
   }, [mapboxToken]);
 
-  // Center map on user's current village or active popup
+  // Center map on user's current village or preferred village
   useEffect(() => {
     if (!map.current || !mapReady || initialCenterSet) return;
 
-    if (currentVillage) {
+    // Prefer muShanghai as the featured village, then fall back to user's current village
+    const preferredVillage = villages.find(v => v.id === 'mushanghai') || currentVillage;
+
+    if (preferredVillage) {
       map.current.flyTo({
-        center: currentVillage.center,
+        center: preferredVillage.center,
         zoom: 4,
         duration: 1500,
       });
       setInitialCenterSet(true);
     }
-  }, [mapReady, currentVillage, initialCenterSet]);
+  }, [mapReady, currentVillage, villages, initialCenterSet]);
 
   // Get village route slug - all villages use /:id format now
   const getVillageRoute = (village: Village | { id: string }) => {
