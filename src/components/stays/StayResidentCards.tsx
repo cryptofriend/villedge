@@ -1,14 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format, parseISO, differenceInDays, isWithinInterval } from "date-fns";
 import { Stay } from "@/hooks/useStays";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar, Twitter, Instagram, Github, Linkedin, ExternalLink, Briefcase, Search, Loader2 } from "lucide-react";
+import { Calendar, Twitter, Instagram, Github, Linkedin, ExternalLink, Briefcase, Search, Loader2, Sparkles } from "lucide-react";
 import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-
+import { supabase } from "@/integrations/supabase/client";
 interface StayResidentCardsProps {
   stays: Stay[];
   loading: boolean;
@@ -38,6 +38,22 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResidentCardsProps) => {
   const { user } = useAuth();
 
+  // Fetch scenius projects for the village
+  const [sceniusProjects, setSceniusProjects] = useState<Array<{ id: string; name: string; project_url: string | null; contributors: string[] | null }>>([]);
+  
+  const villageId = stays[0]?.village_id;
+  
+  useEffect(() => {
+    if (!villageId) return;
+    const fetchScenius = async () => {
+      const { data } = await supabase
+        .from("scenius")
+        .select("id, name, project_url, contributors")
+        .eq("village_id", villageId);
+      if (data) setSceniusProjects(data);
+    };
+    fetchScenius();
+  }, [villageId]);
   // Group stays by nickname and get the latest/most relevant stay
   const residents = useMemo(() => {
     const grouped = new Map<string, { label: string; stays: Stay[] }>();
@@ -114,6 +130,9 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
           const shouldBlur = shouldBlurResident({ isVisible, userId });
           const avatarUrl = getBestAvatar(nickname, primaryStay.social_profile || null, 80);
           const social = getSocialNetwork(primaryStay.social_profile || null);
+          const userScenius = userId 
+            ? sceniusProjects.filter(s => s.contributors?.includes(userId))
+            : [];
           const startDate = parseISO(primaryStay.start_date);
           const endDate = parseISO(primaryStay.end_date);
           const duration = differenceInDays(endDate, startDate) + 1;
@@ -195,7 +214,36 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
                 </div>
               )}
               
-              {/* Social Link */}
+              {/* Scenius Projects */}
+              {userScenius.length > 0 && (
+                <div className="px-4 pb-3">
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <Sparkles className="h-3 w-3 text-accent-foreground" />
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Scenius</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {userScenius.map(project => (
+                      project.project_url ? (
+                        <a
+                          key={project.id}
+                          href={project.project_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-md bg-accent/50 px-2 py-0.5 text-xs text-accent-foreground hover:bg-accent transition-colors"
+                        >
+                          {project.name}
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      ) : (
+                        <Badge key={project.id} variant="secondary" className="text-xs px-2 py-0.5">
+                          {project.name}
+                        </Badge>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {primaryStay.social_profile && social.icon && (
                 <div className="mt-auto px-4 pb-3 flex justify-center">
                   <a
