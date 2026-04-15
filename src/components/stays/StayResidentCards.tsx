@@ -1,14 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format, parseISO, differenceInDays, isWithinInterval } from "date-fns";
 import { Stay } from "@/hooks/useStays";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar, Twitter, Instagram, Github, Linkedin, ExternalLink, Briefcase, Search, Loader2 } from "lucide-react";
+import { Calendar, Twitter, Instagram, Github, Linkedin, ExternalLink, Briefcase, Search, Loader2, Sparkles } from "lucide-react";
 import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-
+import { supabase } from "@/integrations/supabase/client";
 interface StayResidentCardsProps {
   stays: Stay[];
   loading: boolean;
