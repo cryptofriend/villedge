@@ -12,6 +12,93 @@ interface SocialWebSwitcherProps {
   backlinkSlot?: React.ReactNode;
 }
 
+const VillagePageContent = ({ village }: { village: Village }) => {
+  const typeLabel = village.village_type === "popup" ? "Popup Village" : "Community";
+
+  return (
+    <div className="space-y-4">
+      {/* Village header */}
+      <header className="flex items-start gap-3">
+        {village.logo_url && (
+          <img
+            src={village.logo_url}
+            alt={`${village.name} logo`}
+            className="h-14 w-14 rounded-xl object-cover flex-shrink-0 border border-border"
+          />
+        )}
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-bold text-foreground leading-tight">
+            {village.name}
+          </h2>
+          <p className="text-xs text-muted-foreground">{typeLabel}</p>
+        </div>
+      </header>
+
+      {/* Key details */}
+      <section className="grid grid-cols-2 gap-3">
+        {village.location && (
+          <div className="flex items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+            <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Location</p>
+              <p className="text-xs font-medium text-foreground truncate">{village.location}</p>
+            </div>
+          </div>
+        )}
+        {village.dates && (
+          <div className="flex items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+            <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Dates</p>
+              <p className="text-xs font-medium text-foreground truncate">{village.dates}</p>
+            </div>
+          </div>
+        )}
+        {village.participants && (
+          <div className="flex items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2">
+            <Users className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Participants</p>
+              <p className="text-xs font-medium text-foreground truncate">{village.participants}</p>
+            </div>
+          </div>
+        )}
+        {village.focus && (
+          <div className="flex items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2 col-span-2">
+            <Info className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Focus</p>
+              <p className="text-xs font-medium text-foreground">{village.focus}</p>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Description */}
+      {village.description && (
+        <section>
+          <p className="text-sm leading-relaxed text-foreground/90">{village.description}</p>
+        </section>
+      )}
+
+      {/* Links */}
+      <section className="flex flex-wrap gap-2">
+        {village.website_url && (
+          <a href={village.website_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors">
+            <Globe className="h-3 w-3" /> Website <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        )}
+        {village.apply_url && (
+          <a href={village.apply_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-accent/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+            Apply <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        )}
+      </section>
+    </div>
+  );
+};
+
+
 // Cache: track which usernames have already had their widget rendered
 const renderedTimelines = new Set<string>();
 
@@ -251,11 +338,11 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
   const hasSocial = !!(twitterUsername || instagramUsername);
   const hasWeb = !!village.website_url;
 
-  // Default to "web" (embedded website) if available, otherwise "social"
-  const [activeTab, setActiveTab] = useState<"social" | "web" | "seo">(hasWeb ? "web" : hasSocial ? "social" : "seo");
+  const [activeTab, setActiveTab] = useState<"social" | "web" | "seo" | "page">("page");
 
   // Always show switcher now (SEO tab is always available)
-  const tabs: { key: "social" | "web" | "seo"; label: string; icon?: React.ReactNode; show: boolean }[] = [
+  const tabs: { key: "social" | "web" | "seo" | "page"; label: string; icon?: React.ReactNode; show: boolean }[] = [
+    { key: "page", label: "Page", icon: <Info className="h-3 w-3" />, show: true },
     { key: "social", label: "Social", show: hasSocial },
     { key: "web", label: "Website", icon: <Globe className="h-3 w-3" />, show: hasWeb },
     { key: "seo", label: "SEO", icon: <Search className="h-3 w-3" />, show: true },
@@ -287,6 +374,13 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
         <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
           {visibleTabs[0]?.label}
         </h3>
+      )}
+
+      {/* Page tab content */}
+      {activeTab === "page" && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <VillagePageContent village={village} />
+        </div>
       )}
 
       {/* Social tab content */}
