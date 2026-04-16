@@ -342,7 +342,8 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
   const [activeTab, setActiveTab] = useState<"social" | "web" | "seo">(hasWeb ? "web" : hasSocial ? "social" : "seo");
 
   // Always show switcher now (SEO tab is always available)
-  const tabs: { key: "social" | "web" | "seo"; label: string; icon?: React.ReactNode; show: boolean }[] = [
+  const tabs: { key: "social" | "web" | "seo" | "page"; label: string; icon?: React.ReactNode; show: boolean }[] = [
+    { key: "page", label: "Page", icon: <Info className="h-3 w-3" />, show: true },
     { key: "social", label: "Social", show: hasSocial },
     { key: "web", label: "Website", icon: <Globe className="h-3 w-3" />, show: hasWeb },
     { key: "seo", label: "SEO", icon: <Search className="h-3 w-3" />, show: true },
