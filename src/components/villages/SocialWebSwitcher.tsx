@@ -376,6 +376,13 @@ export const SocialWebSwitcher = ({ village, twitterUsername, instagramUsername,
         </h3>
       )}
 
+      {/* Page tab content */}
+      {activeTab === "page" && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <VillagePageContent village={village} />
+        </div>
+      )}
+
       {/* Social tab content */}
       {activeTab === "social" && hasSocial && (
         <div className="flex-1 min-h-0 flex flex-col gap-4">
