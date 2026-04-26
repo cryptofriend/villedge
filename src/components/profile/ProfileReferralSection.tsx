@@ -26,6 +26,7 @@ interface ProfileReferralSectionProps {
 export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionProps) {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
+  const { open: openProfilePopup } = useUserProfilePopup();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [customCodeDialogOpen, setCustomCodeDialogOpen] = useState(false);
   const [customCode, setCustomCode] = useState('');
