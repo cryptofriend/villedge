@@ -9,6 +9,7 @@ import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 interface StayResidentCardsProps {
   stays: Stay[];
   loading: boolean;
