@@ -38,6 +38,7 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 
 export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResidentCardsProps) => {
   const { user } = useAuth();
+  const { open: openProfilePopup } = useUserProfilePopup();
 
   // Fetch scenius projects for the village
   const [sceniusProjects, setSceniusProjects] = useState<Array<{ id: string; name: string; project_url: string | null; contributors: string[] | null }>>([]);
