@@ -222,7 +222,19 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {joinedStays.map((stay) => (
-                      <Badge key={stay.id} variant="secondary" className="text-xs">
+                      <Badge
+                        key={stay.id}
+                        variant="secondary"
+                        className="text-xs gap-1.5 pl-1 pr-2 py-1"
+                      >
+                        <Avatar className="h-5 w-5">
+                          {stay.image_url && (
+                            <AvatarImage src={stay.image_url} alt={stay.name} />
+                          )}
+                          <AvatarFallback className="text-[9px] font-medium">
+                            {stay.name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                         {stay.name}
                       </Badge>
                     ))}
