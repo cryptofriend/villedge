@@ -18,6 +18,7 @@ import AdminAnalyticsPage from "./pages/AdminAnalytics";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import TelegramCallback from "./pages/TelegramCallback";
+import { UserProfilePopupProvider } from "@/components/profile/UserProfilePopup";
 
 const queryClient = new QueryClient();
 
