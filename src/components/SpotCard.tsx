@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Spot, categoryColors } from "@/data/spots";
 import { SpotUpdate } from "@/hooks/useSpots";
 import { useComments } from "@/hooks/useComments";
@@ -172,10 +173,9 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
                     <div className="flex -space-x-2">
                       {joiners.slice(0, 5).map((j) => {
                         const name = j.username || "anon";
-                        return (
+                        const avatar = (
                           <Avatar
-                            key={j.id}
-                            className="h-7 w-7 border-2 border-card"
+                            className="h-7 w-7 border-2 border-card transition-transform hover:scale-110"
                             title={name}
                           >
                             <AvatarImage
@@ -186,6 +186,13 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
                               {name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
+                        );
+                        return j.username ? (
+                          <Link key={j.id} to={`/u/${j.username}`} aria-label={`View ${name}'s profile`}>
+                            {avatar}
+                          </Link>
+                        ) : (
+                          <div key={j.id}>{avatar}</div>
                         );
                       })}
                       {joiners.length > 5 && (
