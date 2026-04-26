@@ -359,7 +359,14 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                 return (
                   <div
                     key={residentKey}
-                    onClick={() => !shouldBlur && setSelectedResidentKey(residentKey)}
+                    onClick={() => {
+                      if (shouldBlur) return;
+                      if (firstStay?.user_id) {
+                        openProfilePopup(firstStay.user_id);
+                      } else {
+                        setSelectedResidentKey(residentKey);
+                      }
+                    }}
                     className={cn(
                       "flex items-center gap-1.5 px-1.5 border-b border-border font-medium transition-colors",
                       isMobile ? "h-9 text-xs" : "h-10 text-sm gap-2 px-2",
