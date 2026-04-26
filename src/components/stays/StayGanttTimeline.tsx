@@ -125,6 +125,24 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
     return eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   }, [dateRange]);
 
+  // Compute dayWidth so the full timeline fits the visible width when possible.
+  // Falls back to a minimum width (with horizontal scroll) if there are too many days.
+  const dayWidth = useMemo(() => {
+    if (!timelineWidth || days.length === 0) return minDayWidth;
+    return Math.max(minDayWidth, timelineWidth / days.length);
+  }, [timelineWidth, days.length, minDayWidth]);
+
+  // Measure the timeline scroll container width
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const update = () => setTimelineWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Group stays by a stable key to avoid collapsing multiple "Anonymous" users into one row.
   // - If user_id is visible (host/owner), group by user_id (merges multiple stays per person)
   // - Otherwise, group by stay.id (each anonymous stay stays distinct)
