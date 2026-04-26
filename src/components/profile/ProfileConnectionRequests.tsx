@@ -10,6 +10,7 @@ import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 export const ProfileConnectionRequests = () => {
   const { incomingRequests, respondToRequest, loading } = useConnectionRequests();
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const { open: openProfilePopup } = useUserProfilePopup();
 
   const handleRespond = async (requestId: string, approved: boolean) => {
     setRespondingId(requestId);
