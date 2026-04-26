@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Twitter, Instagram, Github, Linkedin, Loader2, BadgeCheck, ArrowRight } from "lucide-react";
+import { ExternalLink, Twitter, Instagram, Github, Linkedin, Loader2, BadgeCheck, ArrowRight, Home } from "lucide-react";
 import { getBestAvatar } from "@/lib/avatar";
 
 type PublicProfile = {
@@ -46,9 +46,17 @@ const getSocialIcon = (url: string) => {
   return <ExternalLink className="h-4 w-4" />;
 };
 
+type JoinedStay = {
+  id: string;
+  name: string;
+  village_id: string | null;
+  image_url: string | null;
+};
+
 export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) => {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [joinedStays, setJoinedStays] = useState<JoinedStay[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -60,6 +68,7 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
   const close = useCallback(() => {
     setActiveKey(null);
     setProfile(null);
+    setJoinedStays([]);
   }, []);
 
   useEffect(() => {
@@ -67,6 +76,7 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
     let cancelled = false;
     setLoading(true);
     setProfile(null);
+    setJoinedStays([]);
 
     const fetchProfile = async () => {
       // Try by username first
@@ -86,10 +96,36 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
         data = res.data ?? null;
       }
 
-      if (!cancelled) {
-        setProfile(data ?? null);
-        setLoading(false);
+      if (cancelled) return;
+      setProfile(data ?? null);
+
+      // Fetch joined stays (accommodation spots the user joined)
+      if (data?.user_id) {
+        const { data: joins } = await supabase
+          .from("spot_joins")
+          .select("spot_id")
+          .eq("user_id", data.user_id);
+        const spotIds = (joins || []).map((j: any) => j.spot_id);
+        if (spotIds.length > 0) {
+          const { data: spots } = await supabase
+            .from("spots")
+            .select("id, name, village_id, image_url, category")
+            .in("id", spotIds)
+            .eq("category", "accommodation");
+          if (!cancelled && spots) {
+            setJoinedStays(
+              spots.map((s: any) => ({
+                id: s.id,
+                name: s.name,
+                village_id: s.village_id,
+                image_url: s.image_url,
+              }))
+            );
+          }
+        }
       }
+
+      if (!cancelled) setLoading(false);
     };
 
     fetchProfile();
@@ -175,6 +211,22 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
                       <span className="text-muted-foreground">{profile.asks}</span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {joinedStays.length > 0 && (
+                <div className="w-full text-left">
+                  <div className="flex items-center gap-1.5 mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    <Home className="h-3.5 w-3.5" />
+                    Joined stays
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {joinedStays.map((stay) => (
+                      <Badge key={stay.id} variant="secondary" className="text-xs">
+                        {stay.name}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               )}
 
