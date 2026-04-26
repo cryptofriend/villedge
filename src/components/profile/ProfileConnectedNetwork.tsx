@@ -101,7 +101,7 @@ export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps
               {mutualConnections.map((connection) => (
                 <button
                   key={connection.user_id}
-                  onClick={() => navigate(`/profile/${connection.username || connection.user_id}`)}
+                  onClick={() => openProfilePopup(connection.username || connection.user_id)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/30 hover:bg-muted/30 transition-all"
                 >
                   <Avatar className="h-6 w-6">
