@@ -4,6 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useMutualConnections } from "@/hooks/useMutualConnections";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 
 interface Village {
   id: string;
