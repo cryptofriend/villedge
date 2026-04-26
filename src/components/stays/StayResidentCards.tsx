@@ -9,6 +9,7 @@ import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 interface StayResidentCardsProps {
   stays: Stay[];
   loading: boolean;
@@ -37,6 +38,7 @@ const getSocialNetwork = (url: string | null): { type: 'twitter' | 'instagram' |
 
 export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResidentCardsProps) => {
   const { user } = useAuth();
+  const { open: openProfilePopup } = useUserProfilePopup();
 
   // Fetch scenius projects for the village
   const [sceniusProjects, setSceniusProjects] = useState<Array<{ id: string; name: string; project_url: string | null; contributors: string[] | null }>>([]);
@@ -157,20 +159,46 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
                   </Badge>
                 )}
                 
-                {/* Avatar */}
-                <Avatar className="h-16 w-16 ring-2 ring-primary/10">
-                  <AvatarImage src={avatarUrl} alt={nickname} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                    {nickname.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                {/* Avatar (clickable when we know the user) */}
+                {userId ? (
+                  <button
+                    type="button"
+                    onClick={() => openProfilePopup(userId)}
+                    className="rounded-full transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary"
+                    aria-label={`View ${nickname}'s profile`}
+                  >
+                    <Avatar className="h-16 w-16 ring-2 ring-primary/10">
+                      <AvatarImage src={avatarUrl} alt={nickname} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                        {nickname.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                ) : (
+                  <Avatar className="h-16 w-16 ring-2 ring-primary/10">
+                    <AvatarImage src={avatarUrl} alt={nickname} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                      {nickname.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 
                 {/* Name */}
-                <h3 className="font-semibold text-foreground mt-2 text-center px-2 truncate max-w-full">
-                  {nickname}
-                  {user && userId === user.id && <span className="text-muted-foreground font-normal"> (you)</span>}
-                </h3>
-                
+                {userId ? (
+                  <button
+                    type="button"
+                    onClick={() => openProfilePopup(userId)}
+                    className="font-semibold text-foreground mt-2 text-center px-2 truncate max-w-full hover:underline focus:outline-none"
+                  >
+                    {nickname}
+                    {user && userId === user.id && <span className="text-muted-foreground font-normal"> (you)</span>}
+                  </button>
+                ) : (
+                  <h3 className="font-semibold text-foreground mt-2 text-center px-2 truncate max-w-full">
+                    {nickname}
+                  </h3>
+                )}
+
                 {/* Villa */}
                 <p className="text-xs text-muted-foreground">
                   {primaryStay.villa}

@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 import { notifyApplicantOfStatusChange } from "@/hooks/useStayStatusNotification";
 
 interface ApplicationAnswer {
@@ -66,6 +67,7 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
   const [editEndDate, setEditEndDate] = useState<Date | undefined>();
   const [savingDates, setSavingDates] = useState(false);
   const navigate = useNavigate();
+  const { open: openProfilePopup } = useUserProfilePopup();
 
   const openEditDates = (app: Application) => {
     setEditingApp(app);
@@ -380,7 +382,7 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
                               className="h-6 text-xs text-muted-foreground"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/profile/${app.username}`);
+                                openProfilePopup(app.username);
                               }}
                             >
                               @{app.username}

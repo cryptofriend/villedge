@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Copy, Plus, Users, Ticket, Check, Lock, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useUserProfilePopup } from '@/components/profile/UserProfilePopup';
 
 // Special user IDs that can create custom codes
 const CUSTOM_CODE_USERS = [
@@ -25,6 +26,7 @@ interface ProfileReferralSectionProps {
 export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionProps) {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
+  const { open: openProfilePopup } = useUserProfilePopup();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [customCodeDialogOpen, setCustomCodeDialogOpen] = useState(false);
   const [customCode, setCustomCode] = useState('');
@@ -76,7 +78,7 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
               <div>
                 <p className="text-sm text-muted-foreground">Invited by</p>
                 <button 
-                  onClick={() => navigate(`/profile/${referrerInfo.username}`)}
+                  onClick={() => openProfilePopup(referrerInfo.username)}
                   className="font-medium text-primary hover:underline"
                 >
                   @{referrerInfo.username || 'unknown'}
@@ -233,7 +235,7 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
                   key={referral.id}
                   onClick={() => {
                     if (referral.referred_profile?.username) {
-                      navigate(`/profile/${referral.referred_profile.username}`);
+                      openProfilePopup(referral.referred_profile.username);
                     }
                   }}
                   className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors"

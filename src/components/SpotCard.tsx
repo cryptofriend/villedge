@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 import { Spot, categoryColors } from "@/data/spots";
 import { SpotUpdate } from "@/hooks/useSpots";
 import { useComments } from "@/hooks/useComments";
@@ -53,6 +53,7 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
   const { comments, loading: commentsLoading, addComment } = useComments(spot.id);
   const { user } = useAuth();
   const { joiners, hasJoined, busy, join, leave } = useSpotJoins(spot.id);
+  const { open: openProfilePopup } = useUserProfilePopup();
   const showJoin = spot.category === "accommodation";
 
   const distance = userLocation
@@ -188,9 +189,15 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
                           </Avatar>
                         );
                         return j.username ? (
-                          <Link key={j.id} to={`/profile/${j.username}`} aria-label={`View ${name}'s profile`}>
+                          <button
+                            key={j.id}
+                            type="button"
+                            onClick={() => openProfilePopup(j.username!)}
+                            aria-label={`View ${name}'s profile`}
+                            className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
                             {avatar}
-                          </Link>
+                          </button>
                         ) : (
                           <div key={j.id}>{avatar}</div>
                         );

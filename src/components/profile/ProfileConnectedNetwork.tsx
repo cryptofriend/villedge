@@ -4,6 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useMutualConnections } from "@/hooks/useMutualConnections";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 
 interface Village {
   id: string;
@@ -17,6 +18,7 @@ interface ProfileConnectedNetworkProps {
 
 export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps) => {
   const navigate = useNavigate();
+  const { open: openProfilePopup } = useUserProfilePopup();
   const [villages, setVillages] = useState<Village[]>([]);
   const [loading, setLoading] = useState(true);
   const { connections: mutualConnections, connectionsCount, loading: connectionsLoading } = useMutualConnections(userId);
@@ -99,7 +101,7 @@ export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps
               {mutualConnections.map((connection) => (
                 <button
                   key={connection.user_id}
-                  onClick={() => navigate(`/profile/${connection.username || connection.user_id}`)}
+                  onClick={() => openProfilePopup(connection.username || connection.user_id)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/30 hover:bg-muted/30 transition-all"
                 >
                   <Avatar className="h-6 w-6">

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 
 interface StayGanttTimelineProps {
   stays: Stay[];
@@ -87,6 +88,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   const intentionColumnRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const { open: openProfilePopup } = useUserProfilePopup();
   const [nameColumnWidth, setNameColumnWidth] = useState(isMobile ? 100 : 120);
   const [intentionColumnWidth, setIntentionColumnWidth] = useState(140);
   const [isResizing, setIsResizing] = useState(false);
@@ -357,7 +359,14 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
                 return (
                   <div
                     key={residentKey}
-                    onClick={() => !shouldBlur && setSelectedResidentKey(residentKey)}
+                    onClick={() => {
+                      if (shouldBlur) return;
+                      if (firstStay?.user_id) {
+                        openProfilePopup(firstStay.user_id);
+                      } else {
+                        setSelectedResidentKey(residentKey);
+                      }
+                    }}
                     className={cn(
                       "flex items-center gap-1.5 px-1.5 border-b border-border font-medium transition-colors",
                       isMobile ? "h-9 text-xs" : "h-10 text-sm gap-2 px-2",

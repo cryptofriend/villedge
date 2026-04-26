@@ -5,11 +5,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConnectionRequests, ConnectionRequest } from "@/hooks/useConnectionRequests";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 
 export const ProfileConnectionRequests = () => {
   const { incomingRequests, respondToRequest, loading } = useConnectionRequests();
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const { open: openProfilePopup } = useUserProfilePopup();
 
   const handleRespond = async (requestId: string, approved: boolean) => {
     setRespondingId(requestId);
@@ -44,9 +45,10 @@ export const ProfileConnectionRequests = () => {
             key={request.id}
             className="flex items-center justify-between gap-3 p-2 rounded-lg bg-background"
           >
-            <Link
-              to={`/profile/${request.requester_profile?.username || request.requester_id}`}
-              className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
+            <button
+              type="button"
+              onClick={() => openProfilePopup(request.requester_profile?.username || request.requester_id)}
+              className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity text-left"
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage src={request.requester_profile?.avatar_url || undefined} />
@@ -57,7 +59,7 @@ export const ProfileConnectionRequests = () => {
               <span className="text-sm font-medium truncate">
                 @{request.requester_profile?.username || "unknown"}
               </span>
-            </Link>
+            </button>
             <div className="flex items-center gap-1">
               <Button
                 size="sm"
