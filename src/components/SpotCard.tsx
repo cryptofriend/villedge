@@ -50,7 +50,10 @@ interface SpotCardProps {
 export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: SpotCardProps) => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { comments, loading: commentsLoading, addComment } = useComments(spot.id);
-  
+  const { user } = useAuth();
+  const { joiners, hasJoined, busy, join, leave } = useSpotJoins(spot.id);
+  const showJoin = spot.category === "accommodation";
+
   const distance = userLocation
     ? calculateDistance(userLocation, spot.coordinates)
     : null;
