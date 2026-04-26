@@ -159,25 +159,45 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
                   </Badge>
                 )}
                 
-                {/* Avatar */}
-                <Avatar className="h-16 w-16 ring-2 ring-primary/10">
-                  <AvatarImage src={avatarUrl} alt={nickname} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                    {nickname.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                {/* Avatar (clickable when we know the user) */}
+                {userId ? (
+                  <button
+                    type="button"
+                    onClick={() => openProfilePopup(userId)}
+                    className="rounded-full transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary"
+                    aria-label={`View ${nickname}'s profile`}
+                  >
+                    <Avatar className="h-16 w-16 ring-2 ring-primary/10">
+                      <AvatarImage src={avatarUrl} alt={nickname} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                        {nickname.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                ) : (
+                  <Avatar className="h-16 w-16 ring-2 ring-primary/10">
+                    <AvatarImage src={avatarUrl} alt={nickname} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                      {nickname.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 
                 {/* Name */}
-                <h3 className="font-semibold text-foreground mt-2 text-center px-2 truncate max-w-full">
-                  {nickname}
-                  {user && userId === user.id && <span className="text-muted-foreground font-normal"> (you)</span>}
-                </h3>
-                
-                {/* Villa */}
-                <p className="text-xs text-muted-foreground">
-                  {primaryStay.villa}
-                </p>
-              </div>
+                {userId ? (
+                  <button
+                    type="button"
+                    onClick={() => openProfilePopup(userId)}
+                    className="font-semibold text-foreground mt-2 text-center px-2 truncate max-w-full hover:underline focus:outline-none"
+                  >
+                    {nickname}
+                    {user && userId === user.id && <span className="text-muted-foreground font-normal"> (you)</span>}
+                  </button>
+                ) : (
+                  <h3 className="font-semibold text-foreground mt-2 text-center px-2 truncate max-w-full">
+                    {nickname}
+                  </h3>
+                )}
               
               {/* Date Range */}
               <div className="px-4 py-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
