@@ -18,6 +18,7 @@ interface ProfileConnectedNetworkProps {
 
 export const ProfileConnectedNetwork = ({ userId }: ProfileConnectedNetworkProps) => {
   const navigate = useNavigate();
+  const { open: openProfilePopup } = useUserProfilePopup();
   const [villages, setVillages] = useState<Village[]>([]);
   const [loading, setLoading] = useState(true);
   const { connections: mutualConnections, connectionsCount, loading: connectionsLoading } = useMutualConnections(userId);
