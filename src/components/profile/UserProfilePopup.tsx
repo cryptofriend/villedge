@@ -214,6 +214,22 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
                 </div>
               )}
 
+              {joinedStays.length > 0 && (
+                <div className="w-full text-left">
+                  <div className="flex items-center gap-1.5 mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    <Home className="h-3.5 w-3.5" />
+                    Joined stays
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {joinedStays.map((stay) => (
+                      <Badge key={stay.id} variant="secondary" className="text-xs">
+                        {stay.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2 justify-center">
                 {profile.social_url && (
                   <Button variant="outline" size="sm" asChild>
