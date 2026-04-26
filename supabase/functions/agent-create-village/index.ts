@@ -586,7 +586,7 @@ Deno.serve(async (req) => {
     websiteUrl = `https://${websiteUrl}`;
 
   const { error } = await withRetry(
-    () => supabase.from("villages").insert({
+    async () => await supabase.from("villages").insert({
       id: slug,
       name: villageData.name,
       location: locationName || "Location",
