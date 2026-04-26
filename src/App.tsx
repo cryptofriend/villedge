@@ -44,41 +44,45 @@ const App = () => (
                 <Sonner />
                 <BrowserRouter>
                   {isCustomDomain ? (
-                    <Routes>
-                      <Route path="/" element={<CustomDomainVillage />} />
-                      <Route path="/about" element={<CustomDomainVillage />} />
-                      <Route path="/map" element={<CustomDomainVillage />} />
-                      <Route path="/residents" element={<CustomDomainVillage />} />
-                      <Route path="/scenius" element={<CustomDomainVillage />} />
-                      <Route path="/events" element={<CustomDomainVillage />} />
-                      <Route path="/edit" element={<EditVillage overrideVillageSlug={customVillageSlug!} />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
-                      <Route path="/embed" element={<Embed />} />
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
+                    <UserProfilePopupProvider>
+                      <Routes>
+                        <Route path="/" element={<CustomDomainVillage />} />
+                        <Route path="/about" element={<CustomDomainVillage />} />
+                        <Route path="/map" element={<CustomDomainVillage />} />
+                        <Route path="/residents" element={<CustomDomainVillage />} />
+                        <Route path="/scenius" element={<CustomDomainVillage />} />
+                        <Route path="/events" element={<CustomDomainVillage />} />
+                        <Route path="/edit" element={<EditVillage overrideVillageSlug={customVillageSlug!} />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
+                        <Route path="/embed" element={<Embed />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </UserProfilePopupProvider>
                   ) : (
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/embed" element={<Embed />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
-                      <Route path="/admin" element={<Admin />} />
-                      <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-                      <Route path="/profile/:username" element={<Profile />} />
-                      {/* Village routes with category deep links */}
-                      <Route path="/:villageSlug" element={<Village />} />
-                      <Route path="/:villageSlug/about" element={<Village />} />
-                      <Route path="/:villageSlug/edit" element={<EditVillage />} />
-                      <Route path="/:villageSlug/map" element={<Village />} />
-                      <Route path="/:villageSlug/residents" element={<Village />} />
-                      <Route path="/:villageSlug/scenius" element={<Village />} />
-                      <Route path="/:villageSlug/bulletin" element={<Village />} />
-                      <Route path="/:villageSlug/events" element={<Village />} />
-                      <Route path="/:villageSlug/treasury" element={<Village />} />
-                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <UserProfilePopupProvider>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/embed" element={<Embed />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
+                        <Route path="/admin" element={<Admin />} />
+                        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+                        <Route path="/profile/:username" element={<Profile />} />
+                        {/* Village routes with category deep links */}
+                        <Route path="/:villageSlug" element={<Village />} />
+                        <Route path="/:villageSlug/about" element={<Village />} />
+                        <Route path="/:villageSlug/edit" element={<EditVillage />} />
+                        <Route path="/:villageSlug/map" element={<Village />} />
+                        <Route path="/:villageSlug/residents" element={<Village />} />
+                        <Route path="/:villageSlug/scenius" element={<Village />} />
+                        <Route path="/:villageSlug/bulletin" element={<Village />} />
+                        <Route path="/:villageSlug/events" element={<Village />} />
+                        <Route path="/:villageSlug/treasury" element={<Village />} />
+                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </UserProfilePopupProvider>
                   )}
                 </BrowserRouter>
               </TooltipProvider>
