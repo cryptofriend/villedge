@@ -382,7 +382,7 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
                               className="h-6 text-xs text-muted-foreground"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/profile/${app.username}`);
+                                openProfilePopup(app.username);
                               }}
                             >
                               @{app.username}
