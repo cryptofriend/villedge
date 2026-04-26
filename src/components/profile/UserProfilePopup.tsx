@@ -46,9 +46,17 @@ const getSocialIcon = (url: string) => {
   return <ExternalLink className="h-4 w-4" />;
 };
 
+type JoinedStay = {
+  id: string;
+  name: string;
+  village_id: string | null;
+  image_url: string | null;
+};
+
 export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) => {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [joinedStays, setJoinedStays] = useState<JoinedStay[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -60,6 +68,7 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
   const close = useCallback(() => {
     setActiveKey(null);
     setProfile(null);
+    setJoinedStays([]);
   }, []);
 
   useEffect(() => {
@@ -67,6 +76,7 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
     let cancelled = false;
     setLoading(true);
     setProfile(null);
+    setJoinedStays([]);
 
     const fetchProfile = async () => {
       // Try by username first
@@ -86,10 +96,36 @@ export const UserProfilePopupProvider = ({ children }: { children: ReactNode }) 
         data = res.data ?? null;
       }
 
-      if (!cancelled) {
-        setProfile(data ?? null);
-        setLoading(false);
+      if (cancelled) return;
+      setProfile(data ?? null);
+
+      // Fetch joined stays (accommodation spots the user joined)
+      if (data?.user_id) {
+        const { data: joins } = await supabase
+          .from("spot_joins")
+          .select("spot_id")
+          .eq("user_id", data.user_id);
+        const spotIds = (joins || []).map((j: any) => j.spot_id);
+        if (spotIds.length > 0) {
+          const { data: spots } = await supabase
+            .from("spots")
+            .select("id, name, village_id, image_url, category")
+            .in("id", spotIds)
+            .eq("category", "accommodation");
+          if (!cancelled && spots) {
+            setJoinedStays(
+              spots.map((s: any) => ({
+                id: s.id,
+                name: s.name,
+                village_id: s.village_id,
+                image_url: s.image_url,
+              }))
+            );
+          }
+        }
       }
+
+      if (!cancelled) setLoading(false);
     };
 
     fetchProfile();
