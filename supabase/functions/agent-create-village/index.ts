@@ -489,7 +489,7 @@ Deno.serve(async (req) => {
 
   // ── Duplicate check (by website domain) ─────────────────────────
   const { data: existing } = await withRetry(
-    () => supabase.from("villages").select("id, name, website_url").not("website_url", "is", null),
+    async () => await supabase.from("villages").select("id, name, website_url").not("website_url", "is", null),
     "duplicate-check-domain"
   );
 
@@ -539,7 +539,7 @@ Deno.serve(async (req) => {
   // ── Duplicate check (by slug) ───────────────────────────────────
   const slug = makeSlug(villageData.name);
   const { data: slugCheck } = await withRetry(
-    () => supabase.from("villages").select("id, name").eq("id", slug).maybeSingle(),
+    async () => await supabase.from("villages").select("id, name").eq("id", slug).maybeSingle(),
     "duplicate-check-slug"
   );
 
@@ -586,7 +586,7 @@ Deno.serve(async (req) => {
     websiteUrl = `https://${websiteUrl}`;
 
   const { error } = await withRetry(
-    () => supabase.from("villages").insert({
+    async () => await supabase.from("villages").insert({
       id: slug,
       name: villageData.name,
       location: locationName || "Location",
