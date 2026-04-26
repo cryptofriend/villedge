@@ -158,6 +158,70 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
               ))}
             </div>
           )}
+
+          {/* Join section (housing/accommodation) */}
+          {showJoin && (
+            <div className="mt-4 border-t border-border pt-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {joiners.length} joined
+                  </span>
+                  {joiners.length > 0 && (
+                    <div className="flex -space-x-2">
+                      {joiners.slice(0, 5).map((j) => {
+                        const name = j.username || "anon";
+                        return (
+                          <Avatar
+                            key={j.id}
+                            className="h-7 w-7 border-2 border-card"
+                            title={name}
+                          >
+                            <AvatarImage
+                              src={j.avatar_url || getBestAvatar(name, null, 56)}
+                              alt={name}
+                            />
+                            <AvatarFallback className="text-[10px]">
+                              {name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        );
+                      })}
+                      {joiners.length > 5 && (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-card bg-muted text-[10px] font-medium text-muted-foreground">
+                          +{joiners.length - 5}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {hasJoined ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={leave}
+                    disabled={busy}
+                    className="h-8"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Joined
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={join}
+                    disabled={busy || !user}
+                    className="h-8"
+                    title={!user ? "Sign in to join" : undefined}
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Join
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Comments Section */}
