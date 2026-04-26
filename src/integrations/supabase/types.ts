@@ -618,6 +618,27 @@ export type Database = {
         }
         Relationships: []
       }
+      spot_joins: {
+        Row: {
+          created_at: string
+          id: string
+          spot_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          spot_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          spot_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       spots: {
         Row: {
           category: string
