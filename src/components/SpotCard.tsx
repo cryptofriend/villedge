@@ -188,7 +188,7 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: Sp
                           </Avatar>
                         );
                         return j.username ? (
-                          <Link key={j.id} to={`/u/${j.username}`} aria-label={`View ${name}'s profile`}>
+                          <Link key={j.id} to={`/profile/${j.username}`} aria-label={`View ${name}'s profile`}>
                             {avatar}
                           </Link>
                         ) : (
