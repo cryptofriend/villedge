@@ -93,7 +93,8 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   const [resizingColumn, setResizingColumn] = useState<'name' | 'intention' | null>(null);
   const [selectedResidentKey, setSelectedResidentKey] = useState<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const dayWidth = isMobile ? 20 : 28;
+  const [timelineWidth, setTimelineWidth] = useState(0);
+  const minDayWidth = isMobile ? 14 : 20;
 
   // Calculate date range from stays
   const dateRange = useMemo(() => {
