@@ -67,6 +67,7 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
   const [editEndDate, setEditEndDate] = useState<Date | undefined>();
   const [savingDates, setSavingDates] = useState(false);
   const navigate = useNavigate();
+  const { open: openProfilePopup } = useUserProfilePopup();
 
   const openEditDates = (app: Application) => {
     setEditingApp(app);
