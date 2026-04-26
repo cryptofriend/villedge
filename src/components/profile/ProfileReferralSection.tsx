@@ -235,7 +235,7 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
                   key={referral.id}
                   onClick={() => {
                     if (referral.referred_profile?.username) {
-                      navigate(`/profile/${referral.referred_profile.username}`);
+                      openProfilePopup(referral.referred_profile.username);
                     }
                   }}
                   className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
