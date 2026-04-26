@@ -45,9 +45,10 @@ export const ProfileConnectionRequests = () => {
             key={request.id}
             className="flex items-center justify-between gap-3 p-2 rounded-lg bg-background"
           >
-            <Link
-              to={`/profile/${request.requester_profile?.username || request.requester_id}`}
-              className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity"
+            <button
+              type="button"
+              onClick={() => openProfilePopup(request.requester_profile?.username || request.requester_id)}
+              className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity text-left"
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage src={request.requester_profile?.avatar_url || undefined} />
@@ -58,7 +59,7 @@ export const ProfileConnectionRequests = () => {
               <span className="text-sm font-medium truncate">
                 @{request.requester_profile?.username || "unknown"}
               </span>
-            </Link>
+            </button>
             <div className="flex items-center gap-1">
               <Button
                 size="sm"
