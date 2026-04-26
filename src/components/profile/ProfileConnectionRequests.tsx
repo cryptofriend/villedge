@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConnectionRequests, ConnectionRequest } from "@/hooks/useConnectionRequests";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 
 export const ProfileConnectionRequests = () => {
   const { incomingRequests, respondToRequest, loading } = useConnectionRequests();
