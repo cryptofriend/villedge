@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 
 interface StayGanttTimelineProps {
   stays: Stay[];
