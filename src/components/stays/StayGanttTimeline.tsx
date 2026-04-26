@@ -88,6 +88,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   const intentionColumnRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const { open: openProfilePopup } = useUserProfilePopup();
   const [nameColumnWidth, setNameColumnWidth] = useState(isMobile ? 100 : 120);
   const [intentionColumnWidth, setIntentionColumnWidth] = useState(140);
   const [isResizing, setIsResizing] = useState(false);
