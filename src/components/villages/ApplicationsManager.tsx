@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 import { notifyApplicantOfStatusChange } from "@/hooks/useStayStatusNotification";
 
 interface ApplicationAnswer {
