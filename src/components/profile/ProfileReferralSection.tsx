@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Copy, Plus, Users, Ticket, Check, Lock, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useUserProfilePopup } from '@/components/profile/UserProfilePopup';
 
 // Special user IDs that can create custom codes
 const CUSTOM_CODE_USERS = [
