@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useUserProfilePopup } from "@/components/profile/UserProfilePopup";
 import { Spot, categoryColors } from "@/data/spots";
 import { SpotUpdate } from "@/hooks/useSpots";
 import { useComments } from "@/hooks/useComments";
