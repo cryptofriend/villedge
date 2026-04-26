@@ -198,6 +198,12 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
                     {nickname}
                   </h3>
                 )}
+
+                {/* Villa */}
+                <p className="text-xs text-muted-foreground">
+                  {primaryStay.villa}
+                </p>
+              </div>
               
               {/* Date Range */}
               <div className="px-4 py-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
