@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Twitter, Instagram, Github, Linkedin, Loader2, BadgeCheck, ArrowRight } from "lucide-react";
+import { ExternalLink, Twitter, Instagram, Github, Linkedin, Loader2, BadgeCheck, ArrowRight, Home } from "lucide-react";
 import { getBestAvatar } from "@/lib/avatar";
 
 type PublicProfile = {
