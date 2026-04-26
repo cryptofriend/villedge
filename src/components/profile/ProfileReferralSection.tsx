@@ -78,7 +78,7 @@ export function ProfileReferralSection({ isOwnProfile }: ProfileReferralSectionP
               <div>
                 <p className="text-sm text-muted-foreground">Invited by</p>
                 <button 
-                  onClick={() => navigate(`/profile/${referrerInfo.username}`)}
+                  onClick={() => openProfilePopup(referrerInfo.username)}
                   className="font-medium text-primary hover:underline"
                 >
                   @{referrerInfo.username || 'unknown'}
