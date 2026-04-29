@@ -103,7 +103,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
 
   // Format dates for storage
   const formatDatesString = (): string => {
-    if (village?.village_type === 'permanent') {
+    if (villageType === 'permanent') {
       return 'Permanent';
     }
     if (!startDate || !endDate) {
