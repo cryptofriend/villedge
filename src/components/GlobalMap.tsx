@@ -20,12 +20,11 @@ const ADMIN_USER_IDS = [
   "9807c494-ba07-4438-9a89-07ac13334e78", // dev
   "b015441b-3bb4-4150-94e6-d8be048035bb", // booga
 ];
-const DEFAULT_CENTER: [number, number] = [30, 25];
-const DEFAULT_ZOOM = 2;
+const RENAISSANCE_CENTER: [number, number] = [106.7358675, 10.8056129];
+const DEFAULT_CENTER: [number, number] = RENAISSANCE_CENTER;
+const DEFAULT_ZOOM = 8;
 const FEATURED_VILLAGE_ID = "renaissance-village";
 const FEATURED_VILLAGE_ZOOM = 8;
-const FEATURED_VILLAGE_FLY_OFFSET: [number, number] = [-160, -120];
-const FEATURED_VILLAGE_MARKER_OFFSET: [number, number] = [0, -110];
 
 // Padding to account for UI overlays (right sidebar, bottom timeline)
 const MAP_PADDING = { top: 80, bottom: 220, left: 0, right: 300 };
@@ -125,7 +124,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       map.current.flyTo({
         center: preferredVillage.center,
         zoom: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_ZOOM : 5,
-        offset: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_FLY_OFFSET : [0, 0],
         duration: 1500,
       });
       setInitialCenterSet(true);
@@ -239,8 +237,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       const el = document.createElement("div");
       el.className = "village-marker";
       el.style.zIndex = isFeaturedVillage ? "900" : String(10 + index);
-      el.style.position = "relative";
-      el.style.transition = 'transform 0.15s ease-out, opacity 0.2s ease-out';
+      el.style.transition = 'opacity 0.2s ease-out';
       el.style.opacity = isPast ? '0.5' : '1';
 
       const truncatedLocation = truncateText(village.location, 20);
@@ -317,7 +314,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       const marker = new mapboxgl.Marker({
         element: el,
         anchor: 'bottom',
-        offset: isFeaturedVillage ? FEATURED_VILLAGE_MARKER_OFFSET : [0, 0],
       })
         .setLngLat(village.center)
         .addTo(map.current!);
