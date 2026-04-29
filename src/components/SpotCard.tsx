@@ -5,13 +5,14 @@ import { SpotUpdate } from "@/hooks/useSpots";
 import { useComments } from "@/hooks/useComments";
 import { useSpotJoins } from "@/hooks/useSpotJoins";
 import { useAuth } from "@/hooks/useAuth";
-import { X, Trash2, Pencil, MapPin, Navigation, UserPlus, Check, Users } from "lucide-react";
+import { X, Trash2, Pencil, MapPin, Navigation, UserPlus, Check, Users, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { EditSpotDialog } from "./EditSpotDialog";
 import { SpotComments } from "./SpotComments";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getBestAvatar } from "@/lib/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 // Haversine formula to calculate distance between two coordinates
 const calculateDistance = (
