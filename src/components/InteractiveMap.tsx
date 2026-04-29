@@ -938,6 +938,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
             onDelete={activeVillage && isHost(activeVillage.id) ? deleteSpot : undefined}
             onUpdate={canCreate ? updateSpot : undefined}
             userLocation={userLocation}
+            villageHostUserId={activeVillage?.created_by ?? null}
           />
         </div>
       )}
