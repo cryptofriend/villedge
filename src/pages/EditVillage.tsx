@@ -259,6 +259,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
           location: location.trim(),
           center: center,
           dates: formatDatesString(),
+          village_type: villageType,
         } as any)
         .eq("id", village.id);
 
