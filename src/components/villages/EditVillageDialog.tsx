@@ -103,6 +103,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
       setTwitterUrl(village.twitter_url || "");
       setInstagramUrl(village.instagram_url || "");
       setApplyUrl((village as any).apply_url || "");
+      setVillageType(village.village_type || 'popup');
       setGoogleMapsUrl("");
       setLocation(village.location);
       setCenter(village.center);
