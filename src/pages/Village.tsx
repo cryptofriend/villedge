@@ -34,7 +34,7 @@ const Village = ({ overrideVillageSlug }: VillageProps) => {
         return lastPart;
       }
     }
-    return "about";
+    return "map";
   }, [location.pathname]);
   
   // Show loading state while checking auth
