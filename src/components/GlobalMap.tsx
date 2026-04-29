@@ -229,9 +229,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
     filteredVillages.forEach((village, index) => {
       const isPast = isVillagePast(village);
+      const isFeaturedVillage = village.id === FEATURED_VILLAGE_ID;
       const el = document.createElement("div");
       el.className = "village-marker";
-      el.style.zIndex = String(10 + index);
+      el.style.zIndex = isFeaturedVillage ? "900" : String(10 + index);
       el.style.position = "relative";
       el.style.transform = `scale(${initialScale})`;
       el.style.transformOrigin = 'bottom center';
@@ -252,13 +253,14 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(250, 248, 245, 0.97);
+            background: ${isFeaturedVillage ? 'rgba(255, 255, 255, 1)' : 'rgba(250, 248, 245, 0.97)'};
             padding: 8px 12px 8px 8px;
             border-radius: 24px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border: ${isFeaturedVillage ? '2px solid #294f35' : '0'};
+            box-shadow: ${isFeaturedVillage ? '0 8px 28px rgba(41,79,53,0.32)' : '0 4px 16px rgba(0,0,0,0.15)'};
             cursor: pointer;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            max-width: 200px;
+            max-width: ${isFeaturedVillage ? '240px' : '200px'};
           ">
             <img 
               src="${logoSrc}" 
@@ -276,7 +278,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             height: 0;
             border-left: 8px solid transparent;
             border-right: 8px solid transparent;
-            border-top: 8px solid rgba(250, 248, 245, 0.97);
+            border-top: 8px solid ${isFeaturedVillage ? '#294f35' : 'rgba(250, 248, 245, 0.97)'};
             margin-top: -1px;
           "></div>
         </div>
@@ -292,7 +294,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       });
 
       el.addEventListener("mouseleave", () => {
-        el.style.zIndex = String(10 + index);
+        el.style.zIndex = isFeaturedVillage ? "900" : String(10 + index);
         const pill = el.querySelector('.village-marker-pill') as HTMLElement;
         if (pill) {
           pill.style.transform = "scale(1)";
