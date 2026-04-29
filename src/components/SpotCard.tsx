@@ -256,6 +256,45 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation, vill
                   </Button>
                 )}
               </div>
+
+              {/* Host contact prompt */}
+              {host && (
+                <div className="mt-3 flex items-start gap-2 rounded-lg bg-muted/50 p-2.5">
+                  <button
+                    type="button"
+                    onClick={() => host.username && openProfilePopup(host.username)}
+                    className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
+                    aria-label={`View host ${host.username || ""}'s profile`}
+                  >
+                    <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+                      <AvatarImage
+                        src={host.avatar_url || getBestAvatar(host.username || "host", null, 72)}
+                        alt={host.username || "host"}
+                      />
+                      <AvatarFallback className="text-[10px]">
+                        {(host.username || "H").slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs leading-snug text-muted-foreground">
+                      <MessageCircle className="mr-1 inline h-3 w-3" />
+                      To join coliving, DM the host{" "}
+                      {host.username ? (
+                        <button
+                          type="button"
+                          onClick={() => openProfilePopup(host.username!)}
+                          className="font-semibold text-foreground hover:underline"
+                        >
+                          @{host.username}
+                        </button>
+                      ) : (
+                        <span className="font-semibold text-foreground">the host</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
