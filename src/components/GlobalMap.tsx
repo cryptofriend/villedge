@@ -49,9 +49,14 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const isMobile = useIsMobile();
   const { profile, isAuthenticated } = useAuth();
 
-  // Filter villages by type
+  // Filter villages by type, ensuring the featured village renders on top
   const filteredVillages = useMemo(() => {
-    return villages.filter(v => v.village_type === villageTypeFilter);
+    const list = villages.filter(v => v.village_type === villageTypeFilter);
+    return list.sort((a, b) => {
+      if (a.id === 'renaissance-village') return 1;
+      if (b.id === 'renaissance-village') return -1;
+      return 0;
+    });
   }, [villages, villageTypeFilter]);
 
   // Initialize map
@@ -109,13 +114,13 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   useEffect(() => {
     if (!map.current || !mapReady || initialCenterSet) return;
 
-    // Prefer muShanghai as the featured village, then fall back to user's current village
-    const preferredVillage = villages.find(v => v.id === 'mushanghai') || currentVillage;
+    // Prefer Renaissance Village as the featured village, then fall back to user's current village
+    const preferredVillage = villages.find(v => v.id === 'renaissance-village') || currentVillage;
 
     if (preferredVillage) {
       map.current.flyTo({
         center: preferredVillage.center,
-        zoom: 4,
+        zoom: 5,
         duration: 1500,
       });
       setInitialCenterSet(true);
