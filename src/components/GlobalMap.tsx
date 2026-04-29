@@ -24,8 +24,7 @@ const DEFAULT_CENTER: [number, number] = [30, 25];
 const DEFAULT_ZOOM = 2;
 const FEATURED_VILLAGE_ID = "renaissance-village";
 const FEATURED_VILLAGE_ZOOM = 8;
-const FEATURED_VILLAGE_FLY_OFFSET: [number, number] = [-160, -120];
-const FEATURED_VILLAGE_MARKER_OFFSET: [number, number] = [0, -110];
+const FEATURED_VILLAGE_FLY_OFFSET: [number, number] = [0, -120];
 
 // Padding to account for UI overlays (right sidebar, bottom timeline)
 const MAP_PADDING = { top: 80, bottom: 220, left: 0, right: 300 };
@@ -317,7 +316,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       const marker = new mapboxgl.Marker({
         element: el,
         anchor: 'bottom',
-        offset: isFeaturedVillage ? FEATURED_VILLAGE_MARKER_OFFSET : [0, 0],
       })
         .setLngLat(village.center)
         .addTo(map.current!);
