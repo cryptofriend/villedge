@@ -225,6 +225,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           location: location.trim(),
           center: center,
           dates: formatDatesString(),
+          village_type: villageType,
         } as any)
         .eq("id", village.id);
 
