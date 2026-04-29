@@ -61,6 +61,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
   const [center, setCenter] = useState<[number, number]>([0, 0]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [villageType, setVillageType] = useState<'popup' | 'permanent'>('popup');
 
   // Parse dates from village.dates string (format: "Mar 1 - Mar 30, 2025" or similar)
   const parseDatesFromString = (datesStr: string): { start?: Date; end?: Date } => {
@@ -102,7 +103,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
 
   // Format dates for storage
   const formatDatesString = (): string => {
-    if (village?.village_type === 'permanent') {
+    if (villageType === 'permanent') {
       return 'Permanent';
     }
     if (!startDate || !endDate) {
@@ -128,6 +129,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
       setApplyUrl((village as any).apply_url || "");
       setLocation(village.location);
       setCenter(village.center);
+      setVillageType(village.village_type || 'popup');
       
       // Parse dates
       const { start, end } = parseDatesFromString(village.dates);
@@ -234,7 +236,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
     }
 
     // Validate dates for popup villages
-    if (village.village_type === 'popup' && startDate && endDate && endDate < startDate) {
+    if (villageType === 'popup' && startDate && endDate && endDate < startDate) {
       toast.error("End date must be after start date");
       return;
     }
@@ -257,6 +259,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
           location: location.trim(),
           center: center,
           dates: formatDatesString(),
+          village_type: villageType,
         } as any)
         .eq("id", village.id);
 
@@ -365,8 +368,36 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
                     />
                   </div>
 
+                  {/* Village Type Selector */}
+                  <div className="border-t pt-6">
+                    <Label className="text-sm font-medium mb-2 block">Village Type</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={villageType === 'popup' ? 'default' : 'outline'}
+                        onClick={() => setVillageType('popup')}
+                        className="w-full"
+                      >
+                        Popup
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={villageType === 'permanent' ? 'default' : 'outline'}
+                        onClick={() => setVillageType('permanent')}
+                        className="w-full"
+                      >
+                        Permanent
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {villageType === 'permanent'
+                        ? 'Permanent villages have no fixed dates.'
+                        : 'Popup villages have specific start and end dates.'}
+                    </p>
+                  </div>
+
                   {/* Dates Section - Only for popup villages */}
-                  {village.village_type === 'popup' && (
+                  {villageType === 'popup' && (
                     <div className="border-t pt-6">
                       <h4 className="font-medium text-sm mb-4 flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4" />
