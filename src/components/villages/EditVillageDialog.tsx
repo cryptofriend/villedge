@@ -179,7 +179,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
 
   // Format dates for storage
   const formatDatesString = (): string => {
-    if (village.village_type === 'permanent') {
+    if (villageType === 'permanent') {
       return 'Permanent';
     }
     if (!startDate || !endDate) {
@@ -200,7 +200,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
     }
 
     // Validate dates for popup villages
-    if (village.village_type === 'popup' && startDate && endDate && endDate < startDate) {
+    if (villageType === 'popup' && startDate && endDate && endDate < startDate) {
       toast.error("End date must be after start date");
       return;
     }
