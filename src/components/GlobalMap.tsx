@@ -188,6 +188,28 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     });
   }, [getMarkerScale]);
 
+  // Detect if a popup village's end date is in the past
+  const isVillagePast = useCallback((village: Village): boolean => {
+    if (village.village_type !== 'popup' || !village.dates) return false;
+    const dateStr = village.dates;
+    if (dateStr.toLowerCase().includes('coming') || dateStr.toLowerCase().includes('permanent')) return false;
+    const months: Record<string, number> = { jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11 };
+    try {
+      const parts = dateStr.split(/[–-]/);
+      const endPart = (parts[1] || parts[0]).trim();
+      const yearMatch = endPart.match(/(\d{4})/);
+      const endYear = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+      const endMonthMatch = endPart.match(/([a-zA-Z]+)/);
+      const endDayMatch = endPart.match(/(\d+)/);
+      const endMonth = endMonthMatch ? months[endMonthMatch[1].toLowerCase().slice(0,3)] : 11;
+      const endDay = endDayMatch ? parseInt(endDayMatch[1]) : 28;
+      const end = new Date(endYear, endMonth, endDay);
+      return end.getTime() < Date.now();
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Create village markers
   const createVillageMarkers = useCallback(() => {
     if (!map.current || filteredVillages.length === 0) return;
@@ -199,13 +221,15 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     const initialScale = getMarkerScale(currentZoom);
 
     filteredVillages.forEach((village, index) => {
+      const isPast = isVillagePast(village);
       const el = document.createElement("div");
       el.className = "village-marker";
       el.style.zIndex = String(10 + index);
       el.style.position = "relative";
       el.style.transform = `scale(${initialScale})`;
       el.style.transformOrigin = 'bottom center';
-      el.style.transition = 'transform 0.15s ease-out';
+      el.style.transition = 'transform 0.15s ease-out, opacity 0.2s ease-out';
+      el.style.opacity = isPast ? '0.5' : '1';
 
       const truncatedLocation = truncateText(village.location, 20);
       const logoSrc = village.logo_url || '/placeholder.svg';
@@ -284,7 +308,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       clusterMarkersRef.current.set(village.id, marker);
     });
-  }, [filteredVillages, navigate, getMarkerScale]);
+  }, [filteredVillages, navigate, getMarkerScale, isVillagePast]);
 
   // Create markers when filtered villages change
   useEffect(() => {

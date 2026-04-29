@@ -57,7 +57,16 @@ const parseDateRange = (dateStr: string): { start: Date | null; end: Date | null
     
     // Check if start has its own year
     const startYearMatch = startPart.match(/(\d{4})/);
-    const startYear = startYearMatch ? parseInt(startYearMatch[1]) : endYear;
+    let startYear = startYearMatch ? parseInt(startYearMatch[1]) : endYear;
+
+    // Parse end month early to detect cross-year ranges (e.g. "Nov 9 - Jan 9, 2027")
+    const endMonthMatchEarly = endPart.match(/([a-zA-Z]+)/);
+    const endMonthEarly = endMonthMatchEarly
+      ? months[endMonthMatchEarly[1].toLowerCase().slice(0, 3)]
+      : startMonth;
+    if (!startYearMatch && endMonthEarly < startMonth) {
+      startYear = endYear - 1;
+    }
 
     // Parse end date
     const endMonthMatch = endPart.match(/([a-zA-Z]+)/);
