@@ -308,7 +308,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       clusterMarkersRef.current.set(village.id, marker);
     });
-  }, [filteredVillages, navigate, getMarkerScale]);
+  }, [filteredVillages, navigate, getMarkerScale, isVillagePast]);
 
   // Create markers when filtered villages change
   useEffect(() => {
