@@ -368,8 +368,36 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
                     />
                   </div>
 
+                  {/* Village Type Selector */}
+                  <div className="border-t pt-6">
+                    <Label className="text-sm font-medium mb-2 block">Village Type</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={villageType === 'popup' ? 'default' : 'outline'}
+                        onClick={() => setVillageType('popup')}
+                        className="w-full"
+                      >
+                        Popup
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={villageType === 'permanent' ? 'default' : 'outline'}
+                        onClick={() => setVillageType('permanent')}
+                        className="w-full"
+                      >
+                        Permanent
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {villageType === 'permanent'
+                        ? 'Permanent villages have no fixed dates.'
+                        : 'Popup villages have specific start and end dates.'}
+                    </p>
+                  </div>
+
                   {/* Dates Section - Only for popup villages */}
-                  {village.village_type === 'popup' && (
+                  {villageType === 'popup' && (
                     <div className="border-t pt-6">
                       <h4 className="font-medium text-sm mb-4 flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4" />
