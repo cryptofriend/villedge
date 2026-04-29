@@ -236,7 +236,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
     }
 
     // Validate dates for popup villages
-    if (village.village_type === 'popup' && startDate && endDate && endDate < startDate) {
+    if (villageType === 'popup' && startDate && endDate && endDate < startDate) {
       toast.error("End date must be after start date");
       return;
     }
