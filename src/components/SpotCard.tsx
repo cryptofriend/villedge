@@ -76,12 +76,7 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation, vill
     })();
     return () => { cancelled = true; };
   }, [showJoin, villageHostUserId]);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const { comments, loading: commentsLoading, addComment } = useComments(spot.id);
-  const { user } = useAuth();
-  const { joiners, hasJoined, busy, join, leave } = useSpotJoins(spot.id);
-  const { open: openProfilePopup } = useUserProfilePopup();
-  const showJoin = spot.category === "accommodation";
+
 
   const distance = userLocation
     ? calculateDistance(userLocation, spot.coordinates)
