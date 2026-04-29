@@ -42,14 +42,40 @@ const formatDistance = (km: number): string => {
 };
 
 interface SpotCardProps {
-  spot: Spot & { google_maps_url?: string | null };
+  spot: Spot & { google_maps_url?: string | null; village_id?: string | null };
   onClose: () => void;
   onDelete?: (spotId: string) => Promise<boolean>;
   onUpdate?: (spotId: string, updates: SpotUpdate) => Promise<any>;
   userLocation?: [number, number] | null;
+  villageHostUserId?: string | null;
 }
 
-export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation }: SpotCardProps) => {
+export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation, villageHostUserId }: SpotCardProps) => {
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const { comments, loading: commentsLoading, addComment } = useComments(spot.id);
+  const { user } = useAuth();
+  const { joiners, hasJoined, busy, join, leave } = useSpotJoins(spot.id);
+  const { open: openProfilePopup } = useUserProfilePopup();
+  const showJoin = spot.category === "accommodation";
+
+  const [host, setHost] = useState<{ user_id: string; username: string | null; avatar_url: string | null } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!showJoin || !villageHostUserId) {
+      setHost(null);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, username, avatar_url")
+        .eq("user_id", villageHostUserId)
+        .maybeSingle();
+      if (!cancelled && data) setHost(data as any);
+    })();
+    return () => { cancelled = true; };
+  }, [showJoin, villageHostUserId]);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { comments, loading: commentsLoading, addComment } = useComments(spot.id);
   const { user } = useAuth();
