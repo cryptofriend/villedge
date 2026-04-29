@@ -24,6 +24,8 @@ const DEFAULT_CENTER: [number, number] = [30, 25];
 const DEFAULT_ZOOM = 2;
 const FEATURED_VILLAGE_ID = "renaissance-village";
 const FEATURED_VILLAGE_ZOOM = 8;
+const FEATURED_VILLAGE_FLY_OFFSET: [number, number] = [-160, -120];
+const FEATURED_VILLAGE_MARKER_OFFSET: [number, number] = [0, -110];
 
 // Padding to account for UI overlays (right sidebar, bottom timeline)
 const MAP_PADDING = { top: 80, bottom: 220, left: 0, right: 300 };
@@ -123,6 +125,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       map.current.flyTo({
         center: preferredVillage.center,
         zoom: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_ZOOM : 5,
+        offset: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_FLY_OFFSET : [0, 0],
         duration: 1500,
       });
       setInitialCenterSet(true);
@@ -256,11 +259,11 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             display: flex;
             align-items: center;
             gap: 8px;
-            background: ${isFeaturedVillage ? 'rgba(255, 255, 255, 1)' : 'rgba(250, 248, 245, 0.97)'};
+            background: ${isFeaturedVillage ? 'hsl(var(--background))' : 'rgba(250, 248, 245, 0.97)'};
             padding: 8px 12px 8px 8px;
             border-radius: 24px;
-            border: ${isFeaturedVillage ? '2px solid #294f35' : '0'};
-            box-shadow: ${isFeaturedVillage ? '0 8px 28px rgba(41,79,53,0.32)' : '0 4px 16px rgba(0,0,0,0.15)'};
+            border: ${isFeaturedVillage ? '2px solid hsl(var(--primary))' : '0'};
+            box-shadow: ${isFeaturedVillage ? '0 8px 28px hsl(var(--primary) / 0.32)' : '0 4px 16px rgba(0,0,0,0.15)'};
             cursor: pointer;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             max-width: ${isFeaturedVillage ? '240px' : '200px'};
@@ -268,7 +271,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             <img 
               src="${logoSrc}" 
               alt="${village.name}" 
-              style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;"
+              style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: ${isFeaturedVillage ? 'hsl(var(--primary))' : 'transparent'};"
               onerror="this.onerror=null; this.src='/placeholder.svg';"
             />
             <div style="display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden;">
@@ -281,7 +284,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             height: 0;
             border-left: 8px solid transparent;
             border-right: 8px solid transparent;
-            border-top: 8px solid ${isFeaturedVillage ? '#294f35' : 'rgba(250, 248, 245, 0.97)'};
+            border-top: 8px solid ${isFeaturedVillage ? 'hsl(var(--primary))' : 'rgba(250, 248, 245, 0.97)'};
             margin-top: -1px;
           "></div>
         </div>
@@ -314,6 +317,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       const marker = new mapboxgl.Marker({
         element: el,
         anchor: 'bottom',
+        offset: isFeaturedVillage ? FEATURED_VILLAGE_MARKER_OFFSET : [0, 0],
       })
         .setLngLat(village.center)
         .addTo(map.current!);
