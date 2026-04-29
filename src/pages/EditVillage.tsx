@@ -61,6 +61,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
   const [center, setCenter] = useState<[number, number]>([0, 0]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [villageType, setVillageType] = useState<'popup' | 'permanent'>('popup');
 
   // Parse dates from village.dates string (format: "Mar 1 - Mar 30, 2025" or similar)
   const parseDatesFromString = (datesStr: string): { start?: Date; end?: Date } => {
