@@ -109,13 +109,13 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   useEffect(() => {
     if (!map.current || !mapReady || initialCenterSet) return;
 
-    // Prefer muShanghai as the featured village, then fall back to user's current village
-    const preferredVillage = villages.find(v => v.id === 'mushanghai') || currentVillage;
+    // Prefer Renaissance Village as the featured village, then fall back to user's current village
+    const preferredVillage = villages.find(v => v.id === 'renaissance-village') || currentVillage;
 
     if (preferredVillage) {
       map.current.flyTo({
         center: preferredVillage.center,
-        zoom: 4,
+        zoom: 5,
         duration: 1500,
       });
       setInitialCenterSet(true);
