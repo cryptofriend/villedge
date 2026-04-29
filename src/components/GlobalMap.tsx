@@ -190,8 +190,11 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     const scale = getMarkerScale(zoom);
     clusterMarkersRef.current.forEach((marker) => {
       const el = marker.getElement();
-      el.style.transform = `scale(${scale})`;
-      el.style.transformOrigin = 'bottom center';
+      const scaleWrapper = el.querySelector('.village-marker-scale') as HTMLElement | null;
+      if (scaleWrapper) {
+        scaleWrapper.style.transform = `scale(${scale})`;
+        scaleWrapper.style.transformOrigin = 'bottom center';
+      }
     });
   }, [getMarkerScale]);
 
@@ -234,8 +237,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       el.className = "village-marker";
       el.style.zIndex = isFeaturedVillage ? "900" : String(10 + index);
       el.style.position = "relative";
-      el.style.transform = `scale(${initialScale})`;
-      el.style.transformOrigin = 'bottom center';
       el.style.transition = 'transform 0.15s ease-out, opacity 0.2s ease-out';
       el.style.opacity = isPast ? '0.5' : '1';
 
@@ -244,10 +245,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       // Structure: pointer arrow at bottom center, pill above it
       el.innerHTML = `
-        <div style="
+        <div class="village-marker-scale" style="
           display: flex;
           flex-direction: column;
           align-items: center;
+          transform: scale(${initialScale});
+          transform-origin: bottom center;
         ">
           <div class="village-marker-pill" style="
             display: flex;
