@@ -167,31 +167,52 @@ export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onV
       .filter(Boolean) as { village: PopupVillage; position: { left: number; width: number }; start: Date; end: Date }[];
   }, [villages, timelineStart, timelineEnd]);
 
-  // Group overlapping villages into rows
+  // Group overlapping villages into rows.
+  // Bars have a min-width of 60px and we want a small visual gap, so we
+  // reserve a percentage-equivalent buffer (~6%) for short bars to prevent
+  // them from visually covering neighbors on the same row.
   const rows = useMemo(() => {
     const result: typeof villagePositions[] = [];
-    
-    villagePositions.forEach((item) => {
+    const MIN_VISUAL_WIDTH_PCT = 6; // ~60px on a typical timeline width
+    const GAP_PCT = 1.5;
+
+    // Sort left-to-right so placement is deterministic
+    const sorted = [...villagePositions].sort(
+      (a, b) => a.position.left - b.position.left
+    );
+
+    const effectiveBounds = (item: (typeof villagePositions)[number]) => {
+      const width = Math.max(item.position.width, MIN_VISUAL_WIDTH_PCT);
+      return {
+        start: item.position.left - GAP_PCT,
+        end: item.position.left + width + GAP_PCT,
+      };
+    };
+
+    sorted.forEach((item) => {
+      const itemBounds = effectiveBounds(item);
       let placed = false;
       for (const row of result) {
         const overlaps = row.some((existing) => {
-          const itemEnd = item.position.left + item.position.width;
-          const existingEnd = existing.position.left + existing.position.width;
-          return !(itemEnd <= existing.position.left || item.position.left >= existingEnd);
+          const existingBounds = effectiveBounds(existing);
+          return !(
+            itemBounds.end <= existingBounds.start ||
+            itemBounds.start >= existingBounds.end
+          );
         });
-        
+
         if (!overlaps) {
           row.push(item);
           placed = true;
           break;
         }
       }
-      
+
       if (!placed) {
         result.push([item]);
       }
     });
-    
+
     return result;
   }, [villagePositions]);
 
