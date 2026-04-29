@@ -239,7 +239,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       el.className = "village-marker";
       el.style.zIndex = isFeaturedVillage ? "900" : String(10 + index);
       el.style.position = "relative";
-      el.style.transition = 'transform 0.15s ease-out, opacity 0.2s ease-out';
+      el.style.transition = 'opacity 0.2s ease-out';
       el.style.opacity = isPast ? '0.5' : '1';
 
       const truncatedLocation = truncateText(village.location, 20);
