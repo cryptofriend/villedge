@@ -24,7 +24,7 @@ const DEFAULT_CENTER: [number, number] = [30, 25];
 const DEFAULT_ZOOM = 2;
 const FEATURED_VILLAGE_ID = "renaissance-village";
 const FEATURED_VILLAGE_ZOOM = 8;
-const FEATURED_VILLAGE_FLY_OFFSET: [number, number] = [0, -120];
+const FEATURED_VILLAGE_FLY_OFFSET: [number, number] = [0, -80];
 
 // Padding to account for UI overlays (right sidebar, bottom timeline)
 const MAP_PADDING = { top: 80, bottom: 220, left: 0, right: 300 };
@@ -124,7 +124,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       map.current.flyTo({
         center: preferredVillage.center,
         zoom: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_ZOOM : 5,
-        offset: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_FLY_OFFSET : [0, 0],
+        offset: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_FLY_OFFSET : undefined,
         duration: 1500,
       });
       setInitialCenterSet(true);
