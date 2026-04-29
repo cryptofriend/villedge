@@ -129,6 +129,7 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
       setApplyUrl((village as any).apply_url || "");
       setLocation(village.location);
       setCenter(village.center);
+      setVillageType(village.village_type || 'popup');
       
       // Parse dates
       const { start, end } = parseDatesFromString(village.dates);
