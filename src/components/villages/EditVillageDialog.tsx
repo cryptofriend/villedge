@@ -39,6 +39,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
   const [twitterUrl, setTwitterUrl] = useState(village.twitter_url || "");
   const [instagramUrl, setInstagramUrl] = useState(village.instagram_url || "");
   const [applyUrl, setApplyUrl] = useState((village as any).apply_url || "");
+  const [villageType, setVillageType] = useState<'popup' | 'permanent'>(village.village_type || 'popup');
   
   // Date fields
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
