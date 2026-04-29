@@ -271,7 +271,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             <img 
               src="${logoSrc}" 
               alt="${village.name}" 
-              style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;"
+              style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: ${isFeaturedVillage ? '#294f35' : 'transparent'};"
               onerror="this.onerror=null; this.src='/placeholder.svg';"
             />
             <div style="display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden;">
