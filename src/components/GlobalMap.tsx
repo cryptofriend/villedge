@@ -49,9 +49,14 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const isMobile = useIsMobile();
   const { profile, isAuthenticated } = useAuth();
 
-  // Filter villages by type
+  // Filter villages by type, ensuring the featured village renders on top
   const filteredVillages = useMemo(() => {
-    return villages.filter(v => v.village_type === villageTypeFilter);
+    const list = villages.filter(v => v.village_type === villageTypeFilter);
+    return list.sort((a, b) => {
+      if (a.id === 'renaissance-village') return 1;
+      if (b.id === 'renaissance-village') return -1;
+      return 0;
+    });
   }, [villages, villageTypeFilter]);
 
   // Initialize map
