@@ -237,7 +237,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       const el = document.createElement("div");
       el.className = "village-marker";
       el.style.zIndex = isFeaturedVillage ? "900" : String(10 + index);
-      el.style.position = "relative";
       el.style.transition = 'opacity 0.2s ease-out';
       el.style.opacity = isPast ? '0.5' : '1';
 
