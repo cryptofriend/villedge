@@ -39,6 +39,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
   const [twitterUrl, setTwitterUrl] = useState(village.twitter_url || "");
   const [instagramUrl, setInstagramUrl] = useState(village.instagram_url || "");
   const [applyUrl, setApplyUrl] = useState((village as any).apply_url || "");
+  const [villageType, setVillageType] = useState<'popup' | 'permanent'>(village.village_type || 'popup');
   
   // Date fields
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -102,6 +103,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
       setTwitterUrl(village.twitter_url || "");
       setInstagramUrl(village.instagram_url || "");
       setApplyUrl((village as any).apply_url || "");
+      setVillageType(village.village_type || 'popup');
       setGoogleMapsUrl("");
       setLocation(village.location);
       setCenter(village.center);
@@ -177,7 +179,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
 
   // Format dates for storage
   const formatDatesString = (): string => {
-    if (village.village_type === 'permanent') {
+    if (villageType === 'permanent') {
       return 'Permanent';
     }
     if (!startDate || !endDate) {
@@ -198,7 +200,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
     }
 
     // Validate dates for popup villages
-    if (village.village_type === 'popup' && startDate && endDate && endDate < startDate) {
+    if (villageType === 'popup' && startDate && endDate && endDate < startDate) {
       toast.error("End date must be after start date");
       return;
     }
@@ -223,6 +225,7 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           location: location.trim(),
           center: center,
           dates: formatDatesString(),
+          village_type: villageType,
         } as any)
         .eq("id", village.id);
 
@@ -299,8 +302,36 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
                 />
               </div>
 
+              {/* Village Type Selector */}
+              <div className="border-t pt-4">
+                <Label className="text-sm font-medium mb-2 block">Village Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={villageType === 'popup' ? 'default' : 'outline'}
+                    onClick={() => setVillageType('popup')}
+                    className="w-full"
+                  >
+                    Popup
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={villageType === 'permanent' ? 'default' : 'outline'}
+                    onClick={() => setVillageType('permanent')}
+                    className="w-full"
+                  >
+                    Permanent
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {villageType === 'permanent'
+                    ? 'Permanent villages have no fixed dates.'
+                    : 'Popup villages have specific start and end dates.'}
+                </p>
+              </div>
+
               {/* Dates Section - Only for popup villages */}
-              {village.village_type === 'popup' && (
+              {villageType === 'popup' && (
                 <div className="border-t pt-4">
                   <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4" />
