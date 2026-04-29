@@ -22,6 +22,8 @@ const ADMIN_USER_IDS = [
 ];
 const DEFAULT_CENTER: [number, number] = [30, 25];
 const DEFAULT_ZOOM = 2;
+const FEATURED_VILLAGE_ID = "renaissance-village";
+const FEATURED_VILLAGE_ZOOM = 8;
 
 // Padding to account for UI overlays (right sidebar, bottom timeline)
 const MAP_PADDING = { top: 80, bottom: 220, left: 0, right: 300 };
@@ -53,8 +55,8 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const filteredVillages = useMemo(() => {
     const list = villages.filter(v => v.village_type === villageTypeFilter);
     return list.sort((a, b) => {
-      if (a.id === 'renaissance-village') return 1;
-      if (b.id === 'renaissance-village') return -1;
+      if (a.id === FEATURED_VILLAGE_ID) return 1;
+      if (b.id === FEATURED_VILLAGE_ID) return -1;
       return 0;
     });
   }, [villages, villageTypeFilter]);
@@ -115,12 +117,12 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     if (!map.current || !mapReady || initialCenterSet) return;
 
     // Prefer Renaissance Village as the featured village, then fall back to user's current village
-    const preferredVillage = villages.find(v => v.id === 'renaissance-village') || currentVillage;
+    const preferredVillage = villages.find(v => v.id === FEATURED_VILLAGE_ID) || currentVillage;
 
     if (preferredVillage) {
       map.current.flyTo({
         center: preferredVillage.center,
-        zoom: 5,
+        zoom: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_ZOOM : 5,
         duration: 1500,
       });
       setInitialCenterSet(true);
