@@ -933,6 +933,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
               coordinates: selectedSpot.coordinates,
               tags: selectedSpot.tags || undefined,
               google_maps_url: selectedSpot.google_maps_url,
+              created_by: (selectedSpot as any).created_by ?? null,
             }}
             onClose={handleCloseSpot}
             onDelete={activeVillage && isHost(activeVillage.id) ? deleteSpot : undefined}

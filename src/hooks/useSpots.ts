@@ -11,6 +11,7 @@ export interface DbSpot {
   coordinates: [number, number];
   tags: string[] | null;
   google_maps_url: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -75,6 +76,7 @@ export const useSpots = (villageId?: string) => {
 
   const addSpot = async (spot: SpotInput): Promise<DbSpot | null> => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("spots")
         .insert({
@@ -85,6 +87,7 @@ export const useSpots = (villageId?: string) => {
           google_maps_url: spot.google_maps_url || null,
           image_url: spot.image_url || null,
           village_id: villageId || null,
+          created_by: user?.id ?? null,
         })
         .select()
         .single();

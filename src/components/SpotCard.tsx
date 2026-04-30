@@ -42,7 +42,7 @@ const formatDistance = (km: number): string => {
 };
 
 interface SpotCardProps {
-  spot: Spot & { google_maps_url?: string | null; village_id?: string | null };
+  spot: Spot & { google_maps_url?: string | null; village_id?: string | null; created_by?: string | null };
   onClose: () => void;
   onDelete?: (spotId: string) => Promise<boolean>;
   onUpdate?: (spotId: string, updates: SpotUpdate) => Promise<any>;
@@ -58,11 +58,14 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation, vill
   const { open: openProfilePopup } = useUserProfilePopup();
   const showJoin = spot.category === "accommodation";
 
+  // Prefer the user who created this specific spot (housing). Fall back to village host.
+  const contactUserId = spot.created_by || villageHostUserId || null;
+
   const [host, setHost] = useState<{ user_id: string; username: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (!showJoin || !villageHostUserId) {
+    if (!showJoin || !contactUserId) {
       setHost(null);
       return;
     }
@@ -70,12 +73,12 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation, vill
       const { data } = await supabase
         .from("profiles")
         .select("user_id, username, avatar_url")
-        .eq("user_id", villageHostUserId)
+        .eq("user_id", contactUserId)
         .maybeSingle();
       if (!cancelled && data) setHost(data as any);
     })();
     return () => { cancelled = true; };
-  }, [showJoin, villageHostUserId]);
+  }, [showJoin, contactUserId]);
 
 
   const distance = userLocation
