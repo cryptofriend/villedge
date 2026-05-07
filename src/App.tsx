@@ -93,6 +93,7 @@ const App = () => (
                   )}
                 </BrowserRouter>
               </TooltipProvider>
+            </TonProvider>
           </SolanaProvider>
         </PortoProvider>
       </PrivyProvider>
