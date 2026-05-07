@@ -69,7 +69,7 @@ const MarkerIcon = ({ category }: { category: Spot["category"] }) => {
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
         </svg>
       );
-    case "food":
+    case "eat":
       return (
         <svg
           className={iconClass}
@@ -112,7 +112,7 @@ const MarkerIcon = ({ category }: { category: Spot["category"] }) => {
           <line x1="12" y1="17" x2="12" y2="21" />
         </svg>
       );
-    case "atm":
+    case "coffee":
       return (
         <svg
           className={iconClass}
@@ -128,7 +128,7 @@ const MarkerIcon = ({ category }: { category: Spot["category"] }) => {
           <rect x="6" y="12" width="12" height="4" />
         </svg>
       );
-    case "shopping":
+    case "bar":
       return (
         <svg
           className={iconClass}
