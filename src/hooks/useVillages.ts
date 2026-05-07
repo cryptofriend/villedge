@@ -28,6 +28,23 @@ export interface Village {
   updated_at: string;
   village_type: VillageType;
   about_content: string | null;
+  landing_blocks: LandingBlock[];
+}
+
+export type LandingBlockType =
+  | "hero"
+  | "residents"
+  | "stays"
+  | "scenius"
+  | "events"
+  | "map"
+  | "markdown";
+
+export interface LandingBlock {
+  id: string;
+  type: LandingBlockType;
+  visible: boolean;
+  props?: Record<string, any>;
 }
 
 export interface VillageInput {
