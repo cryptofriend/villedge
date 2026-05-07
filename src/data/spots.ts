@@ -2,12 +2,20 @@ import hackerHouseImg from "@/assets/hacker-house.jpg";
 import beachCafeImg from "@/assets/beach-cafe.jpg";
 import kitesurfingImg from "@/assets/kitesurfing.jpg";
 
+export type SpotCategory =
+  | "accommodation"
+  | "eat"
+  | "coffee"
+  | "bar"
+  | "activity"
+  | "work";
+
 export interface Spot {
   id: string;
   name: string;
   description: string;
   image: string;
-  category: "accommodation" | "food" | "activity" | "work" | "atm" | "shopping";
+  category: SpotCategory;
   coordinates: [number, number]; // [lng, lat]
   tags?: string[];
 }
@@ -27,7 +35,7 @@ export const spots: Spot[] = [
     name: "Sunrise Beach Café",
     description: "The perfect spot for morning coffee with your feet in the sand. Fresh coconuts and Vietnamese coffee.",
     image: beachCafeImg,
-    category: "food",
+    category: "coffee",
     coordinates: [108.2912, 10.9315],
     tags: ["Coffee", "Beach", "Breakfast"],
   },
@@ -51,20 +59,46 @@ export const spots: Spot[] = [
   },
 ];
 
-export const categoryColors: Record<Spot["category"], string> = {
+// Active categories shown in pickers and the legend
+export const ACTIVE_CATEGORIES: SpotCategory[] = [
+  "accommodation",
+  "eat",
+  "coffee",
+  "bar",
+  "activity",
+  "work",
+];
+
+const COLOR_MAP: Record<string, string> = {
   accommodation: "#C4C790",
-  food: "#8E9456",
+  eat: "#8E9456",
+  coffee: "#A47551",
+  bar: "#7C5E8C",
   activity: "#6E956E",
-  work: "#8E9456",
+  work: "#5F7A8C",
+  // legacy fallbacks for existing DB rows
+  food: "#8E9456",
   atm: "#7B8A6E",
   shopping: "#9E8B7D",
 };
 
-export const categoryLabels: Record<Spot["category"], string> = {
+const LABEL_MAP: Record<string, string> = {
   accommodation: "Stay",
-  food: "Eat & Drink",
+  eat: "Eat",
+  coffee: "Coffee Shops",
+  bar: "Bars",
   activity: "Activities",
   work: "Work",
-  atm: "ATMs",
-  shopping: "Shopping",
+  // legacy fallbacks
+  food: "Eat",
+  atm: "Other",
+  shopping: "Other",
 };
+
+export const categoryColors = new Proxy(COLOR_MAP, {
+  get: (t, k: string) => t[k] ?? "#8E9456",
+}) as Record<string, string>;
+
+export const categoryLabels = new Proxy(LABEL_MAP, {
+  get: (t, k: string) => t[k] ?? (k.charAt(0).toUpperCase() + k.slice(1)),
+}) as Record<string, string>;

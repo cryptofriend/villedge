@@ -42,12 +42,13 @@ export const AddSpotForm = ({
   const [name, setName] = useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [tags, setTags] = useState("");
   const [category, setCategory] = useState<Spot["category"]>("activity");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [placeData, setPlaceData] = useState<PlaceData | null>(null);
 
-  const categories: Spot["category"][] = ["accommodation", "food", "activity", "work", "atm", "shopping"];
+  const categories: Spot["category"][] = ["accommodation", "eat", "coffee", "bar", "activity", "work"];
 
   const resolveGoogleMapsUrl = async (url: string) => {
     if (!url.trim()) return;
@@ -118,6 +119,7 @@ export const AddSpotForm = ({
       google_maps_url: placeData?.resolvedUrl || googleMapsUrl.trim() || undefined,
       image_url: imageUrl.trim() || placeData?.imageUrl || undefined,
       description: placeData?.description || undefined,
+      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
     };
 
     const result = await onAddSpot(newSpot);
@@ -130,6 +132,7 @@ export const AddSpotForm = ({
       setName("");
       setGoogleMapsUrl("");
       setImageUrl("");
+      setTags("");
       setCategory("activity");
       setPlaceData(null);
       onSetCoordinates?.(null);
@@ -222,6 +225,16 @@ export const AddSpotForm = ({
               value={imageUrl}
               onChange={setImageUrl}
               placeholder="https://..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tags">Tags (comma-separated, optional)</Label>
+            <Input
+              id="tags"
+              placeholder="e.g., Vegan, Outdoor, Live Music"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
             />
           </div>
 
