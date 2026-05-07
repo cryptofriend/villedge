@@ -31,7 +31,14 @@ async function tryResolveChatIdViaBotApi(botToken: string, chatId: string): Prom
 }
 
 interface NotificationRequest {
-  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status" | "new_application";
+  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status" | "new_application" | "booking";
+  // Booking-specific fields
+  roomName?: string;
+  spotName?: string;
+  bookerName?: string;
+  startDate?: string;
+  endDate?: string;
+  price?: number;
   name?: string;
   description?: string;
   location?: string;
