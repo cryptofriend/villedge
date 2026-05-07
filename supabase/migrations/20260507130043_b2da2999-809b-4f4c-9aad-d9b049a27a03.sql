@@ -1,1 +1,0 @@
-ALTER TABLE public.villages ADD COLUMN IF NOT EXISTS landing_blocks jsonb NOT NULL DEFAULT '[]'::jsonb;
