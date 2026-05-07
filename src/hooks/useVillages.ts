@@ -81,6 +81,7 @@ export const useVillages = () => {
         created_by: v.created_by || null,
         village_type: v.village_type || 'popup',
         about_content: v.about_content || null,
+        landing_blocks: Array.isArray(v.landing_blocks) ? (v.landing_blocks as LandingBlock[]) : [],
       }));
 
       setVillages(mappedVillages);
