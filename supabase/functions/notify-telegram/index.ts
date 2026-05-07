@@ -31,7 +31,14 @@ async function tryResolveChatIdViaBotApi(botToken: string, chatId: string): Prom
 }
 
 interface NotificationRequest {
-  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status" | "new_application";
+  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status" | "new_application" | "booking";
+  // Booking-specific fields
+  roomName?: string;
+  spotName?: string;
+  bookerName?: string;
+  startDate?: string;
+  endDate?: string;
+  price?: number;
   name?: string;
   description?: string;
   location?: string;
@@ -193,7 +200,8 @@ const handler = async (req: Request): Promise<Response> => {
       residentName, stayDates, intention, socialProfile, 
       botToken: customBotToken,
       botTokenSecretName,
-      stayId, newStatus, villageName, applicantChatId
+      stayId, newStatus, villageName, applicantChatId,
+      roomName, spotName, bookerName, startDate, endDate, price
     }: NotificationRequest = requestBody;
     
     // Look up village-specific notification route for certain types
@@ -469,12 +477,20 @@ const handler = async (req: Request): Promise<Response> => {
       } else {
         telegramMessage += `🔗 <a href="${miniAppLinks.app}">View Details</a>`;
       }
+    } else if (type === "booking") {
+      telegramMessage = `🛏️ <b>New Room Booking</b>\n\n`;
+      if (spotName) telegramMessage += `🏠 <b>${escapeHtml(spotName)}</b>\n`;
+      if (roomName) telegramMessage += `Room: <b>${escapeHtml(roomName)}</b>\n`;
+      if (bookerName) telegramMessage += `Guest: <b>${escapeHtml(bookerName)}</b>\n`;
+      if (startDate && endDate) telegramMessage += `📅 ${escapeHtml(startDate)} → ${escapeHtml(endDate)}\n`;
+      if (typeof price === "number" && price > 0) telegramMessage += `💵 ${price} USD\n`;
+      telegramMessage += `\n🔗 <a href="${miniAppLinks.app}">View Village</a>`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
-    
+
     console.log(`Sending Telegram message to chat: ${chatId}${parsedThreadId ? ` (thread: ${parsedThreadId})` : ''}`);
-    
+
     const telegramPayload: Record<string, unknown> = {
       chat_id: chatId,
       text: telegramMessage,
@@ -544,6 +560,55 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Telegram notification sent successfully");
+
+    // Mirror to default @villedgebot + default chat for global oversight,
+    // unless the primary send already used them (avoid duplicates).
+    try {
+      const usedDefaultBot = effectiveBotToken === defaultBotToken;
+      const usedDefaultChat = chatId === defaultChatId;
+      if (defaultBotToken && defaultChatId && !(usedDefaultBot && usedDefaultChat) && type !== "test" && type !== "application_status") {
+        let mirrorChat = defaultChatId;
+        let mirrorThread: number | undefined;
+        if (mirrorChat.includes("t.me/")) {
+          const cMatch = mirrorChat.match(/t\.me\/c\/([^\/?#\s]+)(?:\/(\d+))?/);
+          if (cMatch) {
+            mirrorChat = /^\d+$/.test(cMatch[1]) ? `-100${cMatch[1]}` : `@${cMatch[1]}`;
+            if (cMatch[2]) mirrorThread = parseInt(cMatch[2], 10);
+          } else {
+            const pMatch = mirrorChat.match(/t\.me\/([a-zA-Z][a-zA-Z0-9_]{3,})(?:\/(\d+))?/);
+            if (pMatch) {
+              mirrorChat = `@${pMatch[1]}`;
+              if (pMatch[2]) mirrorThread = parseInt(pMatch[2], 10);
+            }
+          }
+        }
+        const mirrorPayload: Record<string, unknown> = {
+          chat_id: mirrorChat,
+          text: `[mirror • ${villageId || "global"}]\n\n${telegramMessage}`,
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+        };
+        if (mirrorThread) mirrorPayload.message_thread_id = mirrorThread;
+        const mirrorRes = await fetch(`https://api.telegram.org/bot${defaultBotToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mirrorPayload),
+        });
+        const mirrorJson = await mirrorRes.json();
+        if (!mirrorJson?.ok && mirrorThread && String(mirrorJson?.description || "").toLowerCase().includes("thread not found")) {
+          delete (mirrorPayload as any).message_thread_id;
+          await fetch(`https://api.telegram.org/bot${defaultBotToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(mirrorPayload),
+          });
+        } else if (!mirrorJson?.ok) {
+          console.log("Mirror to default failed:", mirrorJson?.description);
+        }
+      }
+    } catch (mirrorErr) {
+      console.log("Mirror notification error (non-fatal):", mirrorErr);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
