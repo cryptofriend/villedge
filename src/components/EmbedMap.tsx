@@ -9,15 +9,14 @@ const MAP_CENTER: [number, number] = [108.1885, 10.9355];
 
 interface EmbedMapProps {
   mapboxToken: string;
-  villageId?: string;
 }
 
-export const EmbedMap = ({ mapboxToken, villageId }: EmbedMapProps) => {
+export const EmbedMap = ({ mapboxToken }: EmbedMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
-  const { spots, loading } = useSpots(villageId);
+  const { spots, loading } = useSpots();
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
 
@@ -109,13 +108,6 @@ export const EmbedMap = ({ mapboxToken, villageId }: EmbedMapProps) => {
 
         markersRef.current.push(marker);
       });
-
-      // Auto-fit to spots when in single-village mode
-      if (villageId && filteredSpots.length > 0) {
-        const bounds = new mapboxgl.LngLatBounds();
-        filteredSpots.forEach((s) => bounds.extend(s.coordinates));
-        map.current!.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 0 });
-      }
     };
 
     const m = map.current;

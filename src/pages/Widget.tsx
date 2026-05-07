@@ -12,9 +12,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
-type Mode = "global" | "village";
 
 const Widget = () => {
   const { villages, loading } = useVillages();
@@ -22,18 +19,9 @@ const Widget = () => {
     () => villages.filter((v) => v.village_type === "popup"),
     [villages],
   );
-  const allVillages = villages;
 
-  const [mode, setMode] = useState<Mode>("global");
-
-  // Global mode state
   const [centerVillage, setCenterVillage] = useState<string>("");
   const [zoom, setZoom] = useState<string>("6");
-
-  // Village mode state
-  const [villageId, setVillageId] = useState<string>("");
-
-  // Shared sizing
   const [width, setWidth] = useState<string>("100%");
   const [height, setHeight] = useState<string>("520");
   const [copied, setCopied] = useState(false);
@@ -44,19 +32,10 @@ const Widget = () => {
 
   const src = useMemo(() => {
     const u = new URL(`${origin}/embed`);
-    if (mode === "global") {
-      if (centerVillage) u.searchParams.set("village", centerVillage);
-      if (zoom) u.searchParams.set("zoom", zoom);
-    } else {
-      u.searchParams.set("mode", "spots");
-      if (villageId) u.searchParams.set("village", villageId);
-    }
+    if (centerVillage) u.searchParams.set("village", centerVillage);
+    if (zoom) u.searchParams.set("zoom", zoom);
     return u.toString();
-  }, [origin, mode, centerVillage, zoom, villageId]);
-
-  const titleAttr = mode === "village"
-    ? `Villedge village map${villageId ? ` — ${allVillages.find(v => v.id === villageId)?.name ?? ""}` : ""}`
-    : "Villedge map";
+  }, [origin, centerVillage, zoom]);
 
   const snippet = `<iframe
   src="${src}"
@@ -65,7 +44,7 @@ const Widget = () => {
   style="border:0;border-radius:12px;overflow:hidden;max-width:100%;"
   loading="lazy"
   referrerpolicy="no-referrer-when-downgrade"
-  title="${titleAttr}"
+  title="Villedge map"
 ></iframe>`;
 
   const copy = async () => {
@@ -83,8 +62,9 @@ const Widget = () => {
               Embed the Villedge map
             </h1>
             <p className="mt-2 max-w-2xl font-body text-sm text-muted-foreground sm:text-base">
-              Drop our live maps into any website with one snippet. Embed the global
-              map of all popup villages, or zoom into a single village's spots map.
+              Drop our live map of popup villages into any website with one snippet.
+              Optionally choose which village should be highlighted at the center when
+              the widget loads.
             </p>
           </div>
           <a
@@ -96,173 +76,83 @@ const Widget = () => {
           </a>
         </header>
 
-        <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="mb-6">
-          <TabsList className="grid w-full grid-cols-2 sm:w-auto">
-            <TabsTrigger value="global">Global villages map</TabsTrigger>
-            <TabsTrigger value="village">Single village map</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="global" className="mt-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">1. Configure</CardTitle>
-                  <CardDescription>Pick the centered village and size.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="village">Center village</Label>
-                    <Select value={centerVillage} onValueChange={setCenterVillage}>
-                      <SelectTrigger id="village">
-                        <SelectValue
-                          placeholder={loading ? "Loading…" : "Default (first popup)"}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {popups.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.name}
-                            {v.location ? ` — ${v.location}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="zoom">Zoom</Label>
-                      <Input
-                        id="zoom"
-                        type="number"
-                        min={1}
-                        max={18}
-                        value={zoom}
-                        onChange={(e) => setZoom(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="w">Width</Label>
-                      <Input
-                        id="w"
-                        value={width}
-                        onChange={(e) => setWidth(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="h">Height</Label>
-                      <Input
-                        id="h"
-                        value={height}
-                        onChange={(e) => setHeight(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">2. Preview</CardTitle>
-                  <CardDescription>Live preview of your embed.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-hidden rounded-md border border-border">
-                    <iframe
-                      src={src}
-                      width="100%"
-                      height={280}
-                      style={{ border: 0, display: "block" }}
-                      loading="lazy"
-                      title="Villedge embed preview"
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">1. Configure</CardTitle>
+              <CardDescription>Pick the centered village and size.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="village">Center village</Label>
+                <Select value={centerVillage} onValueChange={setCenterVillage}>
+                  <SelectTrigger id="village">
+                    <SelectValue
+                      placeholder={loading ? "Loading…" : "Default (first popup)"}
                     />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {popups.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                        {v.location ? ` — ${v.location}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <TabsContent value="village" className="mt-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">1. Pick a village</CardTitle>
-                  <CardDescription>
-                    Embeds the village's spots map (stays, food, activities, etc.).
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="village-pick">Village</Label>
-                    <Select value={villageId} onValueChange={setVillageId}>
-                      <SelectTrigger id="village-pick">
-                        <SelectValue
-                          placeholder={loading ? "Loading…" : "Choose a village"}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {allVillages.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.name}
-                            {v.location ? ` — ${v.location}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="zoom">Zoom</Label>
+                  <Input
+                    id="zoom"
+                    type="number"
+                    min={1}
+                    max={18}
+                    value={zoom}
+                    onChange={(e) => setZoom(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="w">Width</Label>
+                  <Input
+                    id="w"
+                    value={width}
+                    onChange={(e) => setWidth(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="h">Height</Label>
+                  <Input
+                    id="h"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="vw">Width</Label>
-                      <Input
-                        id="vw"
-                        value={width}
-                        onChange={(e) => setWidth(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="vh">Height</Label>
-                      <Input
-                        id="vh"
-                        value={height}
-                        onChange={(e) => setHeight(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">2. Preview</CardTitle>
-                  <CardDescription>
-                    {villageId
-                      ? "Live preview of the village spots map."
-                      : "Pick a village to see the preview."}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-hidden rounded-md border border-border">
-                    {villageId ? (
-                      <iframe
-                        src={src}
-                        width="100%"
-                        height={280}
-                        style={{ border: 0, display: "block" }}
-                        loading="lazy"
-                        title="Villedge village embed preview"
-                      />
-                    ) : (
-                      <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
-                        No village selected
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">2. Preview</CardTitle>
+              <CardDescription>Live preview of your embed.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-hidden rounded-md border border-border">
+                <iframe
+                  src={src}
+                  width="100%"
+                  height={280}
+                  style={{ border: 0, display: "block" }}
+                  loading="lazy"
+                  title="Villedge embed preview"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card className="mt-6">
           <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
@@ -298,35 +188,29 @@ const Widget = () => {
               You can also build the embed URL manually:{" "}
               <code className="rounded bg-muted px-1 py-0.5 text-xs">
                 {docsOrigin}/embed?village=&lt;slug&gt;&zoom=6
-              </code>{" "}
-              or{" "}
-              <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                {docsOrigin}/embed?mode=spots&village=&lt;slug&gt;
               </code>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm text-foreground">
               <li>
-                <code className="rounded bg-muted px-1.5 py-0.5 text-xs">mode</code>
-                <span className="ml-2 text-muted-foreground">
-                  <code className="rounded bg-muted px-1">villages</code> (default,
-                  global popup villages map) or{" "}
-                  <code className="rounded bg-muted px-1">spots</code> for a single
-                  village's spots map.
-                </span>
-              </li>
-              <li>
                 <code className="rounded bg-muted px-1.5 py-0.5 text-xs">village</code>
                 <span className="ml-2 text-muted-foreground">
-                  Slug of the village. In global mode, centers the map on it. In
-                  spots mode, selects which village's spots to show.
+                  Slug of the popup to center the map on (optional).
                 </span>
               </li>
               <li>
                 <code className="rounded bg-muted px-1.5 py-0.5 text-xs">zoom</code>
                 <span className="ml-2 text-muted-foreground">
-                  Initial zoom level for global mode (1–18, default 6).
+                  Initial zoom level (1–18, default 6).
+                </span>
+              </li>
+              <li>
+                <code className="rounded bg-muted px-1.5 py-0.5 text-xs">mode</code>
+                <span className="ml-2 text-muted-foreground">
+                  <code className="rounded bg-muted px-1">villages</code> (default) or{" "}
+                  <code className="rounded bg-muted px-1">spots</code> for the legacy
+                  single-village spots map.
                 </span>
               </li>
             </ul>
