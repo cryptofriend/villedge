@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Loader2, ChevronDown, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
-import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
+import { TonLoginButton } from '@/components/auth/TonLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { lovable } from '@/integrations/lovable';
 
