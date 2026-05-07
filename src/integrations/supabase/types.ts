@@ -151,6 +151,53 @@ export type Database = {
         }
         Relationships: []
       }
+      housing_rooms: {
+        Row: {
+          capacity: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          id: string
+          name: string
+          price: number
+          spot_id: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          name: string
+          price?: number
+          spot_id: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number
+          spot_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "housing_rooms_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "spots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitation_codes: {
         Row: {
           code: string
@@ -537,6 +584,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      room_bookings: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          notes: string | null
+          room_id: string
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          room_id: string
+          start_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          room_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_bookings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "housing_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scenius: {
         Row: {
@@ -1264,6 +1355,10 @@ export type Database = {
     Functions: {
       approve_connection_request: {
         Args: { _request_id: string; _target_user_id: string }
+        Returns: boolean
+      }
+      can_manage_spot: {
+        Args: { _spot_id: string; _user_id: string }
         Returns: boolean
       }
       cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }

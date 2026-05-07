@@ -9,6 +9,7 @@ import { X, Trash2, Pencil, MapPin, Navigation, UserPlus, Check, Users, MessageC
 import { toast } from "sonner";
 import { EditSpotDialog } from "./EditSpotDialog";
 import { SpotComments } from "./SpotComments";
+import { HousingRoomsPanel } from "./HousingRoomsPanel";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getBestAvatar } from "@/lib/avatar";
@@ -299,6 +300,14 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation, vill
                 </div>
               )}
             </div>
+          )}
+
+          {/* Rooms / booking */}
+          {showJoin && (
+            <HousingRoomsPanel
+              spotId={spot.id}
+              canManage={!!user && (user.id === spot.created_by || (!!villageHostUserId && user.id === villageHostUserId))}
+            />
           )}
         </div>
 
