@@ -200,7 +200,8 @@ const handler = async (req: Request): Promise<Response> => {
       residentName, stayDates, intention, socialProfile, 
       botToken: customBotToken,
       botTokenSecretName,
-      stayId, newStatus, villageName, applicantChatId
+      stayId, newStatus, villageName, applicantChatId,
+      roomName, spotName, bookerName, startDate, endDate, price
     }: NotificationRequest = requestBody;
     
     // Look up village-specific notification route for certain types
