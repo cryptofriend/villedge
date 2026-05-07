@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_relays: {
+        Row: {
+          booker_chat_id: string | null
+          booker_user_id: string
+          booking_id: string
+          created_at: string
+          end_date: string | null
+          host_chat_id: string | null
+          host_user_id: string | null
+          id: string
+          status: string
+          updated_at: string
+          village_id: string | null
+        }
+        Insert: {
+          booker_chat_id?: string | null
+          booker_user_id: string
+          booking_id: string
+          created_at?: string
+          end_date?: string | null
+          host_chat_id?: string | null
+          host_user_id?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          village_id?: string | null
+        }
+        Update: {
+          booker_chat_id?: string | null
+          booker_user_id?: string
+          booking_id?: string
+          created_at?: string
+          end_date?: string | null
+          host_chat_id?: string | null
+          host_user_id?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          village_id?: string | null
+        }
+        Relationships: []
+      }
       bulletin: {
         Row: {
           author_name: string
