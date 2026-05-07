@@ -24,6 +24,7 @@ import { CoHostManager } from "@/components/villages/CoHostManager";
 import { ApplicationFormManager } from "@/components/villages/ApplicationFormManager";
 import { ApplicationsManager } from "@/components/villages/ApplicationsManager";
 import { VillageBotManager } from "@/components/villages/VillageBotManager";
+import { LandingPageEditor } from "@/components/villages/landing/LandingPageEditor";
 
 interface EditVillageProps {
   overrideVillageSlug?: string;
