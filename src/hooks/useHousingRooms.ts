@@ -174,27 +174,42 @@ export const useHousingRooms = (spotId: string | null) => {
     }
     toast.success("Room booked");
 
-    // Fire-and-forget notification
+    // Fire-and-forget notification + relay setup
     try {
       const room = rooms.find((r) => r.id === roomId);
       let spotName: string | undefined;
       let villageId: string | undefined;
+      let hostUserId: string | undefined;
       if (room?.spot_id) {
         const { data: spot } = await supabase
           .from("spots")
-          .select("name, village_id")
+          .select("name, village_id, created_by")
           .eq("id", room.spot_id)
           .maybeSingle();
         spotName = spot?.name ?? undefined;
         villageId = spot?.village_id ?? undefined;
+        hostUserId = spot?.created_by ?? undefined;
       }
+
+      // Warn if host has no Telegram linked — relay won't work end-to-end
+      if (hostUserId) {
+        const { data: hostProfile } = await supabase
+          .from("profiles")
+          .select("telegram_id")
+          .eq("user_id", hostUserId)
+          .maybeSingle();
+        if (!hostProfile?.telegram_id) {
+          toast.warning("Host hasn't connected Telegram — they'll be notified in the village chat instead of receiving a direct message.");
+        }
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("username")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      supabase.functions.invoke("notify-telegram", {
+      const { data: notifyData } = await supabase.functions.invoke("notify-telegram", {
         body: {
           type: "booking",
           villageId,
@@ -204,8 +219,26 @@ export const useHousingRooms = (spotId: string | null) => {
           startDate,
           endDate,
           price: room?.price,
+          bookingId: (data as RoomBooking).id,
+          hostUserId,
+          bookerUserId: user.id,
         },
-      }).catch((e) => console.log("notify-telegram booking error:", e));
+      });
+
+      const guestLink = (notifyData as any)?.guestRelayLink as string | undefined;
+      if (guestLink) {
+        toast("Chat with the host on Telegram", {
+          description: "Tap to enable two-way messaging through @villedgebot.",
+          action: {
+            label: "Open chat",
+            onClick: () => window.open(guestLink, "_blank"),
+          },
+          duration: 12000,
+        });
+      }
+    } catch (e) {
+      console.log("Booking notification setup failed:", e);
+    }
     } catch (e) {
       console.log("Booking notification setup failed:", e);
     }
