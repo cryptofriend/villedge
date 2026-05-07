@@ -18,7 +18,7 @@ const Embed = () => {
       style={{ height: "var(--viewport-height, 100dvh)" }}
     >
       {mode === "spots" ? (
-        <EmbedMap mapboxToken={MAPBOX_TOKEN} />
+        <EmbedMap mapboxToken={MAPBOX_TOKEN} villageId={centerVillage} />
       ) : (
         <EmbedVillagesMap
           mapboxToken={MAPBOX_TOKEN}
