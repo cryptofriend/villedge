@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PortoProvider } from "@/components/PortoProvider";
 import { SolanaProvider } from "@/components/SolanaProvider";
 import { PrivyProvider } from "@/components/PrivyProvider";
+import { TonProvider } from "@/components/TonProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { getVillageSlugFromDomain, isCustomVillageDomain } from "@/lib/domainMapping";
 import Index from "./pages/Index";
@@ -40,6 +41,7 @@ const App = () => (
       <PrivyProvider>
         <PortoProvider>
           <SolanaProvider>
+            <TonProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
@@ -91,6 +93,7 @@ const App = () => (
                   )}
                 </BrowserRouter>
               </TooltipProvider>
+            </TonProvider>
           </SolanaProvider>
         </PortoProvider>
       </PrivyProvider>

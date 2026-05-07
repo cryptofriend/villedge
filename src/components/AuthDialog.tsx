@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Loader2, ChevronDown, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
-import { TelegramLoginWidget } from '@/components/auth/TelegramLoginWidget';
+import { TonLoginButton } from '@/components/auth/TonLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { lovable } from '@/integrations/lovable';
 
@@ -39,16 +39,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const [authType, setAuthType] = useState<'solana' | 'ethereum' | 'magic' | 'google' | 'telegram' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOtherMethods, setShowOtherMethods] = useState(false);
-  const [telegramBotId, setTelegramBotId] = useState<string | null>(null);
 
-  // Fetch telegram bot ID from public config
-  useEffect(() => {
-    if (open) {
-      supabase.functions.invoke('public-config').then(({ data }) => {
-        if (data?.telegramBotId) setTelegramBotId(data.telegramBotId);
-      });
-    }
-  }, [open]);
 
   const handleGoogleLogin = async () => {
     setAuthType('google');
@@ -181,21 +172,18 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
                 )}
               </Button>
 
-              {/* Telegram Login */}
-              {telegramBotId && (
-                <TelegramLoginWidget
-                  botName={telegramBotId}
-                  disabled={anyLoading}
-                  isLoading={isTelegramLoading}
-                  onStart={() => setAuthType('telegram')}
-                  onSuccess={(isNewUser) => {
-                    if (isNewUser) {
-                      setShowOnboarding(true);
-                    }
-                  }}
-                  onError={() => setAuthType(null)}
-                />
-              )}
+              {/* TON Login */}
+              <TonLoginButton
+                disabled={anyLoading}
+                isLoading={isTelegramLoading}
+                onStart={() => setAuthType('telegram')}
+                onSuccess={(isNewUser) => {
+                  if (isNewUser) {
+                    setShowOnboarding(true);
+                  }
+                }}
+                onError={() => setAuthType(null)}
+              />
 
               {/* Other Methods Collapsible */}
               <div className="space-y-3">
