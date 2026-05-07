@@ -173,43 +173,6 @@ export const useHousingRooms = (spotId: string | null) => {
       return null;
     }
     toast.success("Room booked");
-
-    // Fire Telegram notification (non-blocking)
-    try {
-      const room = rooms.find((r) => r.id === roomId);
-      let spotName: string | undefined;
-      let villageId: string | undefined;
-      if (spotId) {
-        const { data: spot } = await supabase
-          .from("spots")
-          .select("name, village_id")
-          .eq("id", spotId)
-          .maybeSingle();
-        spotName = spot?.name;
-        villageId = spot?.village_id ?? undefined;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      supabase.functions.invoke("notify-telegram", {
-        body: {
-          type: "booking",
-          villageId,
-          roomName: room?.name,
-          spotName,
-          bookerName: profile?.username || "Someone",
-          startDate,
-          endDate,
-          totalPrice: room ? Number(room.price) : undefined,
-        },
-      }).catch((e) => console.log("Booking notification failed:", e));
-    } catch (e) {
-      console.log("Booking notification setup failed:", e);
-    }
-
     await fetchAll();
     return data as RoomBooking;
   };
