@@ -47,7 +47,7 @@ export const AddSpotForm = ({
   const [isResolving, setIsResolving] = useState(false);
   const [placeData, setPlaceData] = useState<PlaceData | null>(null);
 
-  const categories: Spot["category"][] = ["accommodation", "food", "activity", "work", "atm", "shopping"];
+  const categories: Spot["category"][] = ["accommodation", "eat", "coffee", "bar", "activity", "work"];
 
   const resolveGoogleMapsUrl = async (url: string) => {
     if (!url.trim()) return;
