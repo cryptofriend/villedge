@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { SpotCategory } from "@/data/spots";
 
 export interface DbSpot {
   id: string;
   name: string;
   description: string;
   image_url: string | null;
-  category: "accommodation" | "food" | "activity" | "work" | "atm" | "shopping";
+  category: SpotCategory;
   coordinates: [number, number];
   tags: string[] | null;
   google_maps_url: string | null;
@@ -19,17 +20,18 @@ export interface DbSpot {
 export interface SpotInput {
   name: string;
   coordinates: [number, number];
-  category?: "accommodation" | "food" | "activity" | "work" | "atm" | "shopping";
+  category?: SpotCategory;
   google_maps_url?: string;
   image_url?: string;
   description?: string;
+  tags?: string[];
 }
 
 export interface SpotUpdate {
   name?: string;
   description?: string;
   image_url?: string;
-  category?: "accommodation" | "food" | "activity" | "work" | "atm" | "shopping";
+  category?: SpotCategory;
   tags?: string[];
   google_maps_url?: string;
 }
