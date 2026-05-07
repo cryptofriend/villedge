@@ -489,8 +489,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
       telegramMessage += `\n🔗 <a href="${miniAppLinks.app}">View Village</a>`;
     }
+
+    const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
     
-    console.log(`Sending Telegram message to chat: ${chatId}${parsedThreadId ? ` (thread: ${parsedThreadId})` : ''}`);
     
     const telegramPayload: Record<string, unknown> = {
       chat_id: chatId,
