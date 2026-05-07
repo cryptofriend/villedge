@@ -122,7 +122,8 @@ export const useVillages = () => {
       const newVillage: Village = {
         ...data,
         center: data.center as [number, number],
-      } as Village;
+        landing_blocks: Array.isArray((data as any).landing_blocks) ? (data as any).landing_blocks : [],
+      } as unknown as Village;
 
       setVillages((prev) => [...prev, newVillage]);
       return newVillage;
