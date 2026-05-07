@@ -9,6 +9,7 @@ import { X, Trash2, Pencil, MapPin, Navigation, UserPlus, Check, Users, MessageC
 import { toast } from "sonner";
 import { EditSpotDialog } from "./EditSpotDialog";
 import { SpotComments } from "./SpotComments";
+import { HousingRoomsPanel } from "./HousingRoomsPanel";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getBestAvatar } from "@/lib/avatar";
