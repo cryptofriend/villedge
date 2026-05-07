@@ -20,7 +20,7 @@ const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   </svg>
 );
 
-type NotificationType = 'resident' | 'daily_events' | 'weekly_events' | 'new_application';
+type NotificationType = 'resident' | 'daily_events' | 'weekly_events' | 'new_application' | 'booking';
 
 interface NotificationRoute {
   id: string;
