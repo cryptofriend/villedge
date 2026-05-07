@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Loader2, Settings, Users, MapPin, Image, ClipboardList, Bot, FileText, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Settings, Users, MapPin, Image, ClipboardList, Bot, FileText, CalendarIcon, LayoutTemplate } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -24,6 +24,7 @@ import { CoHostManager } from "@/components/villages/CoHostManager";
 import { ApplicationFormManager } from "@/components/villages/ApplicationFormManager";
 import { ApplicationsManager } from "@/components/villages/ApplicationsManager";
 import { VillageBotManager } from "@/components/villages/VillageBotManager";
+import { LandingPageEditor } from "@/components/villages/landing/LandingPageEditor";
 
 interface EditVillageProps {
   overrideVillageSlug?: string;

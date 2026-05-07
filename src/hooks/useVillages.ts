@@ -28,6 +28,23 @@ export interface Village {
   updated_at: string;
   village_type: VillageType;
   about_content: string | null;
+  landing_blocks: LandingBlock[];
+}
+
+export type LandingBlockType =
+  | "hero"
+  | "residents"
+  | "stays"
+  | "scenius"
+  | "events"
+  | "map"
+  | "markdown";
+
+export interface LandingBlock {
+  id: string;
+  type: LandingBlockType;
+  visible: boolean;
+  props?: Record<string, any>;
 }
 
 export interface VillageInput {
@@ -64,6 +81,7 @@ export const useVillages = () => {
         created_by: v.created_by || null,
         village_type: v.village_type || 'popup',
         about_content: v.about_content || null,
+        landing_blocks: Array.isArray(v.landing_blocks) ? (v.landing_blocks as LandingBlock[]) : [],
       }));
 
       setVillages(mappedVillages);
@@ -104,7 +122,8 @@ export const useVillages = () => {
       const newVillage: Village = {
         ...data,
         center: data.center as [number, number],
-      } as Village;
+        landing_blocks: Array.isArray((data as any).landing_blocks) ? (data as any).landing_blocks : [],
+      } as unknown as Village;
 
       setVillages((prev) => [...prev, newVillage]);
       return newVillage;
