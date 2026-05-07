@@ -478,9 +478,17 @@ const handler = async (req: Request): Promise<Response> => {
       } else {
         telegramMessage += `🔗 <a href="${miniAppLinks.app}">View Details</a>`;
       }
+    } else if (type === "booking") {
+      telegramMessage = `🛏️ <b>New Room Booking</b>\n\n`;
+      if (bookerName) telegramMessage += `From: <b>${escapeHtml(bookerName)}</b>\n`;
+      if (spotName) telegramMessage += `🏠 ${escapeHtml(spotName)}\n`;
+      if (roomName) telegramMessage += `🚪 Room: <b>${escapeHtml(roomName)}</b>\n`;
+      if (startDate && endDate) telegramMessage += `📅 ${escapeHtml(startDate)} → ${escapeHtml(endDate)}\n`;
+      if (typeof totalPrice === "number" && totalPrice > 0) {
+        telegramMessage += `💰 ${totalPrice}\n`;
+      }
+      telegramMessage += `\n🔗 <a href="${miniAppLinks.app}">View Village</a>`;
     }
-
-    const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
     
     console.log(`Sending Telegram message to chat: ${chatId}${parsedThreadId ? ` (thread: ${parsedThreadId})` : ''}`);
     
