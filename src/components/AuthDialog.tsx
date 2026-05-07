@@ -172,21 +172,18 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
                 )}
               </Button>
 
-              {/* Telegram Login */}
-              {telegramBotId && (
-                <TelegramLoginWidget
-                  botName={telegramBotId}
-                  disabled={anyLoading}
-                  isLoading={isTelegramLoading}
-                  onStart={() => setAuthType('telegram')}
-                  onSuccess={(isNewUser) => {
-                    if (isNewUser) {
-                      setShowOnboarding(true);
-                    }
-                  }}
-                  onError={() => setAuthType(null)}
-                />
-              )}
+              {/* TON Login */}
+              <TonLoginButton
+                disabled={anyLoading}
+                isLoading={isTelegramLoading}
+                onStart={() => setAuthType('telegram')}
+                onSuccess={(isNewUser) => {
+                  if (isNewUser) {
+                    setShowOnboarding(true);
+                  }
+                }}
+                onError={() => setAuthType(null)}
+              />
 
               {/* Other Methods Collapsible */}
               <div className="space-y-3">
