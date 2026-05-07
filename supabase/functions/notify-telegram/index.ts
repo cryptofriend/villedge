@@ -31,7 +31,14 @@ async function tryResolveChatIdViaBotApi(botToken: string, chatId: string): Prom
 }
 
 interface NotificationRequest {
-  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status" | "new_application";
+  type: "spot" | "event" | "donation" | "bulletin" | "test" | "resident" | "application_status" | "new_application" | "booking";
+  // Booking-specific fields
+  roomName?: string;
+  spotName?: string;
+  bookerName?: string;
+  startDate?: string;
+  endDate?: string;
+  totalPrice?: number;
   name?: string;
   description?: string;
   location?: string;
@@ -193,7 +200,8 @@ const handler = async (req: Request): Promise<Response> => {
       residentName, stayDates, intention, socialProfile, 
       botToken: customBotToken,
       botTokenSecretName,
-      stayId, newStatus, villageName, applicantChatId
+      stayId, newStatus, villageName, applicantChatId,
+      roomName, spotName, bookerName, startDate, endDate, totalPrice
     }: NotificationRequest = requestBody;
     
     // Look up village-specific notification route for certain types
@@ -209,6 +217,7 @@ const handler = async (req: Request): Promise<Response> => {
       'resident': 'resident',
       'event': 'event',
       'new_application': 'new_application',
+      'booking': 'booking',
     };
     
     const routeType = typeToRouteType[type];
@@ -469,11 +478,20 @@ const handler = async (req: Request): Promise<Response> => {
       } else {
         telegramMessage += `🔗 <a href="${miniAppLinks.app}">View Details</a>`;
       }
+    } else if (type === "booking") {
+      telegramMessage = `🛏️ <b>New Room Booking</b>\n\n`;
+      if (bookerName) telegramMessage += `From: <b>${escapeHtml(bookerName)}</b>\n`;
+      if (spotName) telegramMessage += `🏠 ${escapeHtml(spotName)}\n`;
+      if (roomName) telegramMessage += `🚪 Room: <b>${escapeHtml(roomName)}</b>\n`;
+      if (startDate && endDate) telegramMessage += `📅 ${escapeHtml(startDate)} → ${escapeHtml(endDate)}\n`;
+      if (typeof totalPrice === "number" && totalPrice > 0) {
+        telegramMessage += `💰 ${totalPrice}\n`;
+      }
+      telegramMessage += `\n🔗 <a href="${miniAppLinks.app}">View Village</a>`;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
     
-    console.log(`Sending Telegram message to chat: ${chatId}${parsedThreadId ? ` (thread: ${parsedThreadId})` : ''}`);
     
     const telegramPayload: Record<string, unknown> = {
       chat_id: chatId,

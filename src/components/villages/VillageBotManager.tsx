@@ -20,7 +20,7 @@ const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   </svg>
 );
 
-type NotificationType = 'resident' | 'daily_events' | 'weekly_events' | 'new_application';
+type NotificationType = 'resident' | 'daily_events' | 'weekly_events' | 'new_application' | 'booking';
 
 interface NotificationRoute {
   id: string;
@@ -69,6 +69,12 @@ const notificationTypes: {
     label: "Weekly Events",
     description: "Weekly digest every Sunday 8PM",
     icon: <Activity className="h-4 w-4" />,
+  },
+  {
+    type: "booking",
+    label: "Room Bookings",
+    description: "Alerts when someone books a housing room",
+    icon: <Users className="h-4 w-4" />,
   },
 ];
 
