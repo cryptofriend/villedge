@@ -39,6 +39,9 @@ interface NotificationRequest {
   startDate?: string;
   endDate?: string;
   price?: number;
+  bookingId?: string;
+  hostUserId?: string;
+  bookerUserId?: string;
   name?: string;
   description?: string;
   location?: string;
@@ -201,7 +204,8 @@ const handler = async (req: Request): Promise<Response> => {
       botToken: customBotToken,
       botTokenSecretName,
       stayId, newStatus, villageName, applicantChatId,
-      roomName, spotName, bookerName, startDate, endDate, price
+      roomName, spotName, bookerName, startDate, endDate, price,
+      bookingId, hostUserId, bookerUserId
     }: NotificationRequest = requestBody;
     
     // Look up village-specific notification route for certain types
@@ -478,13 +482,96 @@ const handler = async (req: Request): Promise<Response> => {
         telegramMessage += `🔗 <a href="${miniAppLinks.app}">View Details</a>`;
       }
     } else if (type === "booking") {
+      // Create or refresh a relay row so the bot can route DM replies between host & guest
+      let hostChatId: string | null = null;
+      let bookerChatId: string | null = null;
+      let botUsername = "villedgebot";
+      try {
+        const sb = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+
+        // Try to fetch bot username dynamically (for the deep link)
+        try {
+          const meRes = await fetch(`https://api.telegram.org/bot${defaultBotToken}/getMe`);
+          const meJson = await meRes.json();
+          if (meJson?.ok && meJson?.result?.username) botUsername = meJson.result.username;
+        } catch (_) { /* ignore */ }
+
+        // Look up existing chat_ids from any prior relay for these users
+        if (hostUserId) {
+          const { data: prior } = await sb
+            .from("booking_relays")
+            .select("host_chat_id")
+            .eq("host_user_id", hostUserId)
+            .not("host_chat_id", "is", null)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          hostChatId = prior?.host_chat_id ?? null;
+        }
+        if (bookerUserId) {
+          const { data: prior } = await sb
+            .from("booking_relays")
+            .select("booker_chat_id")
+            .eq("booker_user_id", bookerUserId)
+            .not("booker_chat_id", "is", null)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          bookerChatId = prior?.booker_chat_id ?? null;
+        }
+
+        if (bookingId) {
+          await sb.from("booking_relays").upsert({
+            booking_id: bookingId,
+            village_id: villageId ?? null,
+            host_user_id: hostUserId ?? null,
+            booker_user_id: bookerUserId,
+            host_chat_id: hostChatId,
+            booker_chat_id: bookerChatId,
+            end_date: endDate ?? null,
+            status: "active",
+          }, { onConflict: "booking_id" });
+        }
+      } catch (e) {
+        console.log("relay setup error:", e);
+      }
+
+      const hostLink = bookingId ? `https://t.me/${botUsername}?start=relay_${bookingId}_host` : null;
+      const guestLink = bookingId ? `https://t.me/${botUsername}?start=relay_${bookingId}_guest` : null;
+
       telegramMessage = `🛏️ <b>New Room Booking</b>\n\n`;
       if (spotName) telegramMessage += `🏠 <b>${escapeHtml(spotName)}</b>\n`;
       if (roomName) telegramMessage += `Room: <b>${escapeHtml(roomName)}</b>\n`;
       if (bookerName) telegramMessage += `Guest: <b>${escapeHtml(bookerName)}</b>\n`;
       if (startDate && endDate) telegramMessage += `📅 ${escapeHtml(startDate)} → ${escapeHtml(endDate)}\n`;
       if (typeof price === "number" && price > 0) telegramMessage += `💵 ${price} USD\n`;
+
+      // If we already have host's chat_id, send the host a DM directly (in addition to village notif)
+      if (hostChatId && defaultBotToken) {
+        try {
+          const dmText = `${telegramMessage}\n💬 Reply to this chat to message the guest. Type /end to close the relay.`;
+          await fetch(`https://api.telegram.org/bot${defaultBotToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: hostChatId,
+              text: dmText,
+              parse_mode: "HTML",
+              disable_web_page_preview: true,
+            }),
+          });
+        } catch (e) { console.log("host DM failed:", e); }
+      } else if (hostLink) {
+        telegramMessage += `\n👤 <a href="${hostLink}">Host: tap to enable replies</a>\n`;
+      }
+
       telegramMessage += `\n🔗 <a href="${miniAppLinks.app}">View Village</a>`;
+
+      // Stash guest deep link so the response can return it to the app
+      (requestBody as any)._guestRelayLink = guestLink;
     }
 
     const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
@@ -610,7 +697,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("Mirror notification error (non-fatal):", mirrorErr);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, guestRelayLink: (requestBody as any)._guestRelayLink ?? null }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

@@ -635,7 +635,30 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // ── /start command (stay notification subscription) ──
+    // ── /end command (close active relay) ──
+    if (text === "/end" && message.chat.type === "private") {
+      const chatStr = String(chatId);
+      const { data: relays } = await supabase
+        .from("booking_relays")
+        .select("id")
+        .eq("status", "active")
+        .or(`host_chat_id.eq.${chatStr},booker_chat_id.eq.${chatStr}`);
+      if (relays && relays.length) {
+        await supabase
+          .from("booking_relays")
+          .update({ status: "closed" })
+          .in("id", relays.map((r: any) => r.id));
+        await sendTelegramMessage(botToken, chatId, "✅ Relay closed. You won't receive forwarded messages from this booking.");
+      } else {
+        await sendTelegramMessage(botToken, chatId, "No active booking relay to close.");
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // ── /start command (stay notification subscription + booking relay) ──
     if (text.startsWith("/start")) {
       const parts = text.split(" ");
 
@@ -646,7 +669,7 @@ const handler = async (req: Request): Promise<Response> => {
           "👋 <b>Welcome to Villedge!</b>\n\n" +
             "📌 Add a village: <code>/addvillage https://village-website.com</code>\n" +
             "🐦 Post a tweet: <code>/tweet Your message here</code>\n\n" +
-            "I also notify you about application status updates."
+            "I also notify you about application status updates and forward booking messages."
         );
         return new Response(JSON.stringify({ ok: true }), {
           status: 200,
@@ -655,6 +678,51 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const payload = parts[1];
+
+      // ── relay_<bookingId>_<host|guest> ──
+      if (payload.startsWith("relay_")) {
+        const rest = payload.replace(/^relay_/, "");
+        const lastUnderscore = rest.lastIndexOf("_");
+        const bookingId = rest.slice(0, lastUnderscore);
+        const role = rest.slice(lastUnderscore + 1);
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(bookingId) || (role !== "host" && role !== "guest")) {
+          await sendTelegramMessage(botToken, chatId, "❌ Invalid relay link.");
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        const updateField = role === "host" ? "host_chat_id" : "booker_chat_id";
+        const { data: relay, error: relayErr } = await supabase
+          .from("booking_relays")
+          .update({ [updateField]: String(chatId), status: "active" })
+          .eq("booking_id", bookingId)
+          .select()
+          .maybeSingle();
+
+        if (relayErr || !relay) {
+          await sendTelegramMessage(botToken, chatId, "❌ Booking not found or no longer active.");
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        const otherSide = role === "host" ? "guest" : "host";
+        await sendTelegramMessage(
+          botToken,
+          chatId,
+          `🔔 <b>Booking relay enabled!</b>\n\n` +
+            `Any message you send here will be forwarded to the ${otherSide}.\n` +
+            `Type /end to close the conversation.`
+        );
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
 
       if (payload.startsWith("stay_")) {
         const stayId = payload.replace("stay_", "");
@@ -709,6 +777,53 @@ const handler = async (req: Request): Promise<Response> => {
             `You'll receive updates about your application to <b>${villageName}</b>.\n\n` +
             `📋 <b>Current Status:</b> ${statusEmoji} ${statusText}`
         );
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // ── Forward private DM messages between active relay participants ──
+    if (message.chat.type === "private" && !text.startsWith("/")) {
+      const chatStr = String(chatId);
+      const { data: relay } = await supabase
+        .from("booking_relays")
+        .select("id, host_chat_id, booker_chat_id, end_date, status")
+        .eq("status", "active")
+        .or(`host_chat_id.eq.${chatStr},booker_chat_id.eq.${chatStr}`)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (relay) {
+        // Auto-close if past end_date
+        if (relay.end_date && new Date(relay.end_date) < new Date()) {
+          await supabase.from("booking_relays").update({ status: "closed" }).eq("id", relay.id);
+          await sendTelegramMessage(botToken, chatId, "ℹ️ This booking has ended; relay is now closed.");
+          return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        const isHost = relay.host_chat_id === chatStr;
+        const targetChat = isHost ? relay.booker_chat_id : relay.host_chat_id;
+        if (!targetChat) {
+          await sendTelegramMessage(
+            botToken,
+            chatId,
+            `⏳ The other party hasn't connected yet. Your message will not be delivered until they tap their relay link.`
+          );
+        } else {
+          const prefix = isHost ? "[Host]" : "[Guest]";
+          await sendTelegramMessage(botToken, parseInt(targetChat, 10), `${prefix} ${text}`);
+        }
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
       }
     }
 
