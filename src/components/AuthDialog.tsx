@@ -39,16 +39,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const [authType, setAuthType] = useState<'solana' | 'ethereum' | 'magic' | 'google' | 'telegram' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOtherMethods, setShowOtherMethods] = useState(false);
-  const [telegramBotId, setTelegramBotId] = useState<string | null>(null);
 
-  // Fetch telegram bot ID from public config
-  useEffect(() => {
-    if (open) {
-      supabase.functions.invoke('public-config').then(({ data }) => {
-        if (data?.telegramBotId) setTelegramBotId(data.telegramBotId);
-      });
-    }
-  }, [open]);
 
   const handleGoogleLogin = async () => {
     setAuthType('google');
