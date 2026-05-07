@@ -1005,60 +1005,6 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
         </div>
       )}
 
-      {activeView === "map" && (
-        <div className="absolute bottom-28 right-4 z-10 hidden w-72 rounded-lg bg-card/95 p-4 shadow-card backdrop-blur-sm md:bottom-32 md:block">
-          <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
-            {isZoomedIn && activeVillage ? (
-              <>
-                <img
-                  src={activeVillage.logo_url || '/placeholder.svg'}
-                  alt={activeVillage.name}
-                  className="h-10 w-10 rounded"
-                />
-                <div>
-                  <h3 className="font-display text-sm font-semibold text-foreground">
-                    {activeVillage.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">{activeVillage.dates}</p>
-                  {activeVillage.description && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{activeVillage.description}</p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div>
-                <h3 className="font-display text-sm font-semibold text-foreground">
-                  Popup Villages
-                </h3>
-                <p className="text-xs text-muted-foreground">Click on a village to explore</p>
-              </div>
-            )}
-          </div>
-
-          {isZoomedIn && activeVillage && (
-            <div className="mb-3 text-xs">
-              <p className="text-muted-foreground">Location</p>
-              <p className="font-medium text-foreground">{activeVillage.location}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {activeVillage?.participants && (
-              <div className="rounded-md bg-secondary/50 p-2">
-                <p className="text-muted-foreground">Participants</p>
-                <p className="font-medium text-foreground">{activeVillage.participants}</p>
-              </div>
-            )}
-            {activeVillage?.focus && (
-              <div className="rounded-md bg-secondary/50 p-2">
-                <p className="text-muted-foreground">Focus</p>
-                <p className="font-medium text-foreground">{activeVillage.focus}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Floating Action Buttons */}
       <div className="absolute bottom-24 right-3 z-20 flex flex-col gap-2 sm:bottom-20 sm:right-4 md:bottom-[88px] md:right-6">
         <Button
