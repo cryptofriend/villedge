@@ -9,14 +9,15 @@ const MAP_CENTER: [number, number] = [108.1885, 10.9355];
 
 interface EmbedMapProps {
   mapboxToken: string;
+  villageId?: string;
 }
 
-export const EmbedMap = ({ mapboxToken }: EmbedMapProps) => {
+export const EmbedMap = ({ mapboxToken, villageId }: EmbedMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
-  const { spots, loading } = useSpots();
+  const { spots, loading } = useSpots(villageId);
   const [selectedSpot, setSelectedSpot] = useState<DbSpot | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DbSpot["category"] | null>(null);
 
