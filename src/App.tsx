@@ -41,6 +41,7 @@ const App = () => (
       <PrivyProvider>
         <PortoProvider>
           <SolanaProvider>
+            <TonProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
