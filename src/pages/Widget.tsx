@@ -28,6 +28,7 @@ const Widget = () => {
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "https://villedge.tech";
+  const docsOrigin = "https://villedge.tech";
 
   const src = useMemo(() => {
     const u = new URL(`${origin}/embed`);
