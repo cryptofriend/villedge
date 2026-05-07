@@ -157,11 +157,11 @@ export const CategoryLegend = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const categories: Spot["category"][] = [
     "accommodation",
-    "food",
+    "eat",
+    "coffee",
+    "bar",
     "activity",
     "work",
-    "atm",
-    "shopping",
   ];
 
   // When a specific category is selected, show only that button (collapsed state)
