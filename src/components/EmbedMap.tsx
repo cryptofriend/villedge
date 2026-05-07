@@ -125,11 +125,11 @@ export const EmbedMap = ({ mapboxToken }: EmbedMapProps) => {
   const categories: DbSpot["category"][] = ["accommodation", "eat", "coffee", "bar", "activity", "work"];
   const categoryLabels: Record<DbSpot["category"], string> = {
     accommodation: "Stay",
-    food: "Eat",
+    eat: "Eat",
+    coffee: "Coffee",
+    bar: "Bars",
     activity: "Do",
     work: "Work",
-    atm: "ATMs",
-    shopping: "Shop",
   };
 
   return (
