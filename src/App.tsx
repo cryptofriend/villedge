@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Village from "./pages/Village";
 import EditVillage from "./pages/EditVillage";
 import Embed from "./pages/Embed";
+import Widget from "./pages/Widget";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import AdminAnalyticsPage from "./pages/AdminAnalytics";
@@ -56,6 +57,8 @@ const App = () => (
                         <Route path="/auth" element={<Auth />} />
                         <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
                         <Route path="/embed" element={<Embed />} />
+                        <Route path="/widget" element={<Widget />} />
+
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
                     </UserProfilePopupProvider>
@@ -64,6 +67,8 @@ const App = () => (
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/embed" element={<Embed />} />
+                        <Route path="/widget" element={<Widget />} />
+
                         <Route path="/auth" element={<Auth />} />
                         <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
                         <Route path="/admin" element={<Admin />} />
