@@ -121,11 +121,11 @@ const MarkerIcon = ({ category }: { category: Spot["category"] }) => {
           stroke="currentColor"
           strokeWidth="2"
         >
-          <rect x="2" y="4" width="20" height="16" rx="2" />
-          <line x1="6" y1="8" x2="6" y2="8.01" />
-          <line x1="10" y1="8" x2="10" y2="8.01" />
-          <line x1="14" y1="8" x2="14" y2="8.01" />
-          <rect x="6" y="12" width="12" height="4" />
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+          <line x1="6" y1="2" x2="6" y2="5" />
+          <line x1="10" y1="2" x2="10" y2="5" />
+          <line x1="14" y1="2" x2="14" y2="5" />
         </svg>
       );
     case "bar":
@@ -137,9 +137,9 @@ const MarkerIcon = ({ category }: { category: Spot["category"] }) => {
           stroke="currentColor"
           strokeWidth="2"
         >
-          <circle cx="9" cy="21" r="1" />
-          <circle cx="20" cy="21" r="1" />
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          <path d="M8 22h8" />
+          <path d="M12 15v7" />
+          <path d="M5 3l7 12 7-12z" />
         </svg>
       );
     default:
