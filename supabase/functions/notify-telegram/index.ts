@@ -636,6 +636,24 @@ const handler = async (req: Request): Promise<Response> => {
           "Bad Request: chat not found. This usually means the @username is wrong OR the bot is not a member/admin of that chat/channel. Add the bot to the target chat (and make it an admin for channels), then retry."
         );
       }
+
+      // Bot isn't a member of the target chat — treat as non-fatal so app flows
+      // (bookings, applications, etc.) don't 500. Caller still needs to add the
+      // bot to that chat/channel for notifications to be delivered.
+      if (response.status === 403 || desc.toLowerCase().includes("not a member") || desc.toLowerCase().includes("forbidden")) {
+        console.warn(`Telegram 403 for chat ${chatId} — bot not a member. Skipping.`);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            skipped: true,
+            reason: "bot_not_member",
+            chatId,
+            description: desc,
+            guestRelayLink: (requestBody as any)._guestRelayLink ?? null,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
       
       if (desc.toLowerCase().includes("message thread not found")) {
         throw new Error(
