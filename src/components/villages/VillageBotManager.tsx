@@ -70,6 +70,12 @@ const notificationTypes: {
     description: "Weekly digest every Sunday 8PM",
     icon: <Activity className="h-4 w-4" />,
   },
+  {
+    type: "booking",
+    label: "Room Bookings",
+    description: "Alerts when someone books a housing room",
+    icon: <Users className="h-4 w-4" />,
+  },
 ];
 
 export function VillageBotManager({ villageId, villageName, logoUrl, botTokenSecretName, botToken, onBotTokenUpdate }: VillageBotManagerProps) {
