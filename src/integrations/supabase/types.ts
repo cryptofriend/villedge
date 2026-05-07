@@ -1190,6 +1190,7 @@ export type Database = {
           focus: string | null
           id: string
           instagram_url: string | null
+          landing_blocks: Json
           location: string
           logo_url: string | null
           luma_calendar_id: string | null
@@ -1218,6 +1219,7 @@ export type Database = {
           focus?: string | null
           id: string
           instagram_url?: string | null
+          landing_blocks?: Json
           location: string
           logo_url?: string | null
           luma_calendar_id?: string | null
@@ -1246,6 +1248,7 @@ export type Database = {
           focus?: string | null
           id?: string
           instagram_url?: string | null
+          landing_blocks?: Json
           location?: string
           logo_url?: string | null
           luma_calendar_id?: string | null
