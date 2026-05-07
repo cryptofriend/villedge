@@ -228,6 +228,16 @@ export const AddSpotForm = ({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="tags">Tags (comma-separated, optional)</Label>
+            <Input
+              id="tags"
+              placeholder="e.g., Vegan, Outdoor, Live Music"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+            />
+          </div>
+
           <div className="flex gap-3 pt-2">
             <Button
               type="button"
