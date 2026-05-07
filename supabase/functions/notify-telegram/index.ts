@@ -39,6 +39,9 @@ interface NotificationRequest {
   startDate?: string;
   endDate?: string;
   price?: number;
+  bookingId?: string;
+  hostUserId?: string;
+  bookerUserId?: string;
   name?: string;
   description?: string;
   location?: string;
