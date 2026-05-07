@@ -697,7 +697,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("Mirror notification error (non-fatal):", mirrorErr);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, guestRelayLink: (requestBody as any)._guestRelayLink ?? null }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
