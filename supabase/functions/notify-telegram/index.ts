@@ -486,9 +486,11 @@ const handler = async (req: Request): Promise<Response> => {
       if (typeof price === "number" && price > 0) telegramMessage += `💵 ${price} USD\n`;
       telegramMessage += `\n🔗 <a href="${miniAppLinks.app}">View Village</a>`;
     }
-    
+
+    const telegramUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
+
     console.log(`Sending Telegram message to chat: ${chatId}${parsedThreadId ? ` (thread: ${parsedThreadId})` : ''}`);
-    
+
     const telegramPayload: Record<string, unknown> = {
       chat_id: chatId,
       text: telegramMessage,
