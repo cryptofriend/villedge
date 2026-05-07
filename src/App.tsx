@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Village from "./pages/Village";
 import EditVillage from "./pages/EditVillage";
 import Embed from "./pages/Embed";
+import Widget from "./pages/Widget";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import AdminAnalyticsPage from "./pages/AdminAnalytics";
