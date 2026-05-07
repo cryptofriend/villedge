@@ -239,10 +239,6 @@ export const useHousingRooms = (spotId: string | null) => {
     } catch (e) {
       console.log("Booking notification setup failed:", e);
     }
-    } catch (e) {
-      console.log("Booking notification setup failed:", e);
-    }
-
     await fetchAll();
     return data as RoomBooking;
   };
