@@ -28,6 +28,7 @@ const Widget = () => {
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "https://villedge.tech";
+  const docsOrigin = "https://villedge.tech";
 
   const src = useMemo(() => {
     const u = new URL(`${origin}/embed`);
@@ -186,7 +187,7 @@ const Widget = () => {
             <CardDescription>
               You can also build the embed URL manually:{" "}
               <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                {origin}/embed?village=&lt;slug&gt;&zoom=6
+                {docsOrigin}/embed?village=&lt;slug&gt;&zoom=6
               </code>
             </CardDescription>
           </CardHeader>
