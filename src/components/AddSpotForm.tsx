@@ -119,6 +119,7 @@ export const AddSpotForm = ({
       google_maps_url: placeData?.resolvedUrl || googleMapsUrl.trim() || undefined,
       image_url: imageUrl.trim() || placeData?.imageUrl || undefined,
       description: placeData?.description || undefined,
+      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
     };
 
     const result = await onAddSpot(newSpot);
