@@ -301,6 +301,14 @@ export const SpotCard = ({ spot, onClose, onDelete, onUpdate, userLocation, vill
               )}
             </div>
           )}
+
+          {/* Rooms / booking */}
+          {showJoin && (
+            <HousingRoomsPanel
+              spotId={spot.id}
+              canManage={!!user && (user.id === spot.created_by || (!!villageHostUserId && user.id === villageHostUserId))}
+            />
+          )}
         </div>
 
         {/* Comments Section */}
