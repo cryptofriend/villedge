@@ -57,6 +57,8 @@ const App = () => (
                         <Route path="/auth" element={<Auth />} />
                         <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
                         <Route path="/embed" element={<Embed />} />
+                        <Route path="/widget" element={<Widget />} />
+
                         <Route path="*" element={<Navigate to="/" replace />} />
                       </Routes>
                     </UserProfilePopupProvider>
@@ -65,6 +67,8 @@ const App = () => (
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/embed" element={<Embed />} />
+                        <Route path="/widget" element={<Widget />} />
+
                         <Route path="/auth" element={<Auth />} />
                         <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
                         <Route path="/admin" element={<Admin />} />
