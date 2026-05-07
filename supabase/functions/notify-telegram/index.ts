@@ -216,6 +216,7 @@ const handler = async (req: Request): Promise<Response> => {
       'resident': 'resident',
       'event': 'event',
       'new_application': 'new_application',
+      'booking': 'booking',
     };
     
     const routeType = typeToRouteType[type];
