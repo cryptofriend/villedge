@@ -74,7 +74,11 @@ export const AddSpotForm = ({
         if (place.name && !name) {
           setName(place.name);
         }
-        
+
+        if (place.imageUrl && !imageUrl) {
+          setImageUrl(place.imageUrl);
+        }
+
         toast.success("Location extracted successfully!");
       } else {
         toast.error(data.error || "Could not extract location from URL");
