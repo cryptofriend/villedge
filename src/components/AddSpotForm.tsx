@@ -132,6 +132,7 @@ export const AddSpotForm = ({
       setName("");
       setGoogleMapsUrl("");
       setImageUrl("");
+      setTags("");
       setCategory("activity");
       setPlaceData(null);
       onSetCoordinates?.(null);
