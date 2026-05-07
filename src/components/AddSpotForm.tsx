@@ -42,6 +42,7 @@ export const AddSpotForm = ({
   const [name, setName] = useState("");
   const [googleMapsUrl, setGoogleMapsUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [tags, setTags] = useState("");
   const [category, setCategory] = useState<Spot["category"]>("activity");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
