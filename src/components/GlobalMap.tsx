@@ -47,6 +47,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [villageTypeFilter, setVillageTypeFilter] = useState<VillageType>("popup");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [initialCenterSet, setInitialCenterSet] = useState(false);
 
   const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
