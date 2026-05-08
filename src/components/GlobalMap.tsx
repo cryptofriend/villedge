@@ -53,15 +53,60 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const isMobile = useIsMobile();
   const { profile, isAuthenticated } = useAuth();
 
-  // Filter villages by type, ensuring the featured village renders on top
+  // Parse popup dates string -> { start, end } (best effort)
+  const parsePopupDates = useCallback((dateStr?: string | null): { start: number; end: number } | null => {
+    if (!dateStr) return null;
+    const lower = dateStr.toLowerCase();
+    if (lower.includes('coming') || lower.includes('permanent')) return null;
+    const months: Record<string, number> = { jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11 };
+    try {
+      const parts = dateStr.split(/[–-]/);
+      const startPart = parts[0].trim();
+      const endPart = (parts[1] || parts[0]).trim();
+      const yearMatch = (endPart.match(/(\d{4})/) || startPart.match(/(\d{4})/));
+      const year = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+      const startMonth = startPart.match(/([a-zA-Z]+)/);
+      const startDay = startPart.match(/(\d+)/);
+      const endMonth = endPart.match(/([a-zA-Z]+)/);
+      const endDay = endPart.match(/(\d+)/);
+      const sM = startMonth ? months[startMonth[1].toLowerCase().slice(0,3)] : (endMonth ? months[endMonth[1].toLowerCase().slice(0,3)] : 0);
+      const eM = endMonth ? months[endMonth[1].toLowerCase().slice(0,3)] : sM;
+      if (sM === undefined || eM === undefined) return null;
+      const sD = startDay ? parseInt(startDay[1]) : 1;
+      const eD = endDay ? parseInt(endDay[1]) : 28;
+      return { start: new Date(year, sM, sD).getTime(), end: new Date(year, eM, eD).getTime() };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Filter villages by type, sort by relevance: current → upcoming → past
   const filteredVillages = useMemo(() => {
     const list = villages.filter(v => v.village_type === villageTypeFilter);
-    return list.sort((a, b) => {
-      if (a.id === FEATURED_VILLAGE_ID) return 1;
-      if (b.id === FEATURED_VILLAGE_ID) return -1;
-      return 0;
+    if (villageTypeFilter !== 'popup') return list;
+    const now = Date.now();
+    const ranked = list.map(v => {
+      const d = parsePopupDates(v.dates);
+      let bucket = 3; // unknown
+      let key = 0;
+      if (d) {
+        if (d.start <= now && d.end >= now) { bucket = 0; key = d.end; }          // ongoing — soonest ending first
+        else if (d.start > now) { bucket = 1; key = d.start; }                     // upcoming — soonest first
+        else { bucket = 2; key = -d.end; }                                         // past — most recent first
+      }
+      return { v, bucket, key };
     });
-  }, [villages, villageTypeFilter]);
+    ranked.sort((a, b) => a.bucket - b.bucket || a.key - b.key);
+    return ranked.map(r => r.v);
+  }, [villages, villageTypeFilter, parsePopupDates]);
+
+  // Re-sort every minute so the list stays fresh as time advances
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
 
   // Initialize map
   useEffect(() => {
