@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import AdminAnalyticsPage from "./pages/AdminAnalytics";
 import Profile from "./pages/Profile";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import TelegramCallback from "./pages/TelegramCallback";
 import { UserProfilePopupProvider } from "@/components/profile/UserProfilePopup";
@@ -76,6 +77,7 @@ const App = () => (
                         <Route path="/admin" element={<Admin />} />
                         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
                         <Route path="/profile/:username" element={<Profile />} />
+                        <Route path="/notifications" element={<Notifications />} />
                         {/* Village routes with category deep links */}
                         <Route path="/:villageSlug" element={<Village />} />
                         <Route path="/:villageSlug/about" element={<Village />} />
