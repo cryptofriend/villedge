@@ -35,14 +35,22 @@ export const NotificationBell = () => {
       <PopoverContent align="end" className="w-[360px] p-0">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <span className="text-sm font-semibold">Notifications</span>
-          {unreadCount > 0 && (
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <button
+                onClick={() => markAllAsRead()}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Mark all read
+              </button>
+            )}
             <button
-              onClick={() => markAllAsRead()}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => navigate("/notifications")}
+              className="text-xs text-primary hover:underline"
             >
-              Mark all read
+              See all
             </button>
-          )}
+          </div>
         </div>
         <ScrollArea className="max-h-[400px]">
           {notifications.length === 0 ? (
