@@ -916,6 +916,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                 ))}
               </div>
             )}
+            <NotificationBell />
             <AuthButton />
           </div>
         </div>
