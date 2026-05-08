@@ -6,6 +6,7 @@ import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
 import { AuthButton } from "@/components/AuthButton";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { PopupTimeline } from "@/components/PopupTimeline";
 import { useUserCount } from "@/hooks/useUserCount";
 import { useAuth } from "@/hooks/useAuth";
