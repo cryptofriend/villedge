@@ -13,6 +13,7 @@ import { EventsList } from "./events/EventsList";
 import { LocalTimeDisplay } from "./events/LocalTimeDisplay";
 import { createFloatingCommentHTML } from "./FloatingCommentBubble";
 import { AuthButton } from "./AuthButton";
+import { NotificationBell } from "./notifications/NotificationBell";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { VillageSocialIcons } from "./VillageSocialIcons";
 import { VillageAbout } from "./villages/VillageAbout";
@@ -915,6 +916,7 @@ export const InteractiveMap = ({ mapboxToken, initialVillageId, initialCategory 
                 ))}
               </div>
             )}
+            <NotificationBell />
             <AuthButton />
           </div>
         </div>

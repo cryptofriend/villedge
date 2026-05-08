@@ -288,6 +288,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email: boolean
+          id: string
+          in_app: boolean
+          telegram: boolean
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: boolean
+          id?: string
+          in_app?: boolean
+          telegram?: boolean
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: boolean
+          id?: string
+          in_app?: boolean
+          telegram?: boolean
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_routes: {
         Row: {
           chat_id: string
@@ -318,6 +351,51 @@ export type Database = {
           thread_id?: number | null
           updated_at?: string
           village_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          data: Json
+          entity_id: string
+          entity_type: string
+          id: string
+          parent_entity_id: string | null
+          parent_entity_type: string | null
+          read_at: string | null
+          recipient_id: string
+          seen_at: string | null
+          type: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          data?: Json
+          entity_id: string
+          entity_type: string
+          id?: string
+          parent_entity_id?: string | null
+          parent_entity_type?: string | null
+          read_at?: string | null
+          recipient_id: string
+          seen_at?: string | null
+          type: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          data?: Json
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          parent_entity_id?: string | null
+          parent_entity_type?: string | null
+          read_at?: string | null
+          recipient_id?: string
+          seen_at?: string | null
+          type?: string
         }
         Relationships: []
       }
@@ -1407,6 +1485,19 @@ export type Database = {
         Returns: boolean
       }
       cleanup_expired_webauthn_challenges: { Args: never; Returns: undefined }
+      create_notification: {
+        Args: {
+          _actor_id: string
+          _data?: Json
+          _entity_id: string
+          _entity_type: string
+          _parent_entity_id?: string
+          _parent_entity_type?: string
+          _recipient_id: string
+          _type: string
+        }
+        Returns: undefined
+      }
       generate_invitation_code: { Args: never; Returns: string }
       generate_username: { Args: { display_name: string }; Returns: string }
       get_safe_profile_data: {
@@ -1454,6 +1545,7 @@ export type Database = {
           village_id: string
         }[]
       }
+      get_village_host_ids: { Args: { _village_id: string }; Returns: string[] }
       has_approved_reveal: {
         Args: { _requester: string; _target: string }
         Returns: boolean

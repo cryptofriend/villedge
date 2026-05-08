@@ -6,6 +6,7 @@ import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
 import { AuthButton } from "@/components/AuthButton";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { PopupTimeline } from "@/components/PopupTimeline";
 import { useUserCount } from "@/hooks/useUserCount";
 import { useAuth } from "@/hooks/useAuth";
@@ -399,6 +400,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               <Users className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-foreground">{userCount}</span>
             </div>
+            <NotificationBell />
             <AuthButton />
           </div>
         </div>
