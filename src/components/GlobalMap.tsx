@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings, Calendar, Building2, ScrollText, User } from "lucide-react";
+import { Loader2, Users, Settings, Calendar, Building2, ScrollText, User, ChevronUp, ChevronDown } from "lucide-react";
 import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
@@ -47,6 +47,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [villageTypeFilter, setVillageTypeFilter] = useState<VillageType>("popup");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [initialCenterSet, setInitialCenterSet] = useState(false);
 
   const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
@@ -452,61 +453,74 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       </div>
 
       {/* Info sidebar - positioned above map markers and timeline */}
-      <div className="absolute top-24 right-4 z-[100] hidden w-56 max-h-[320px] rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-64">
-        <div className="mb-2 flex items-center justify-between border-b border-border pb-2">
-          <div>
+      <div className={`absolute top-24 right-4 z-[100] hidden w-56 ${sidebarCollapsed ? '' : 'max-h-[320px]'} rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-64`}>
+        <div className={`flex items-center justify-between ${sidebarCollapsed ? '' : 'mb-2 border-b border-border pb-2'}`}>
+          <div className="min-w-0">
             <h3 className="font-display text-sm font-semibold text-foreground">
               Villedge
             </h3>
-            <p className="text-xs text-muted-foreground">Click on a village to explore</p>
+            {!sidebarCollapsed && (
+              <p className="text-xs text-muted-foreground">Click on a village to explore</p>
+            )}
           </div>
-        </div>
-
-        {/* Type Switcher */}
-        <div className="mb-2">
-          <ToggleGroup
-            type="single"
-            value={villageTypeFilter}
-            onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
-            className="w-full"
+          <button
+            onClick={() => setSidebarCollapsed(c => !c)}
+            className="h-6 w-6 flex items-center justify-center rounded hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            aria-label={sidebarCollapsed ? "Expand" : "Collapse"}
           >
-            <ToggleGroupItem value="popup" className="flex-1 gap-1 text-xs py-1.5">
-              <Calendar className="h-3 w-3" />
-              Popups
-            </ToggleGroupItem>
-            <ToggleGroupItem value="permanent" className="flex-1 gap-1 text-xs py-1.5">
-              <Building2 className="h-3 w-3" />
-              Permanent
-            </ToggleGroupItem>
-          </ToggleGroup>
+            {sidebarCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[180px] space-y-1">
-          {filteredVillages.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              No {villageTypeFilter} villages yet
-            </p>
-          ) : (
-            filteredVillages.map((village) => (
-              <button
-                key={village.id}
-                onClick={() => navigate(getVillageRoute(village))}
-                className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+        {!sidebarCollapsed && (
+          <>
+            {/* Type Switcher */}
+            <div className="mb-2">
+              <ToggleGroup
+                type="single"
+                value={villageTypeFilter}
+                onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
+                className="w-full"
               >
-                <img
-                  src={village.logo_url || '/placeholder.svg'}
-                  alt={village.name}
-                  className="h-7 w-7 rounded object-cover flex-shrink-0"
-                  onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-foreground truncate">{village.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate" title={village.location}>{village.location}</p>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
+                <ToggleGroupItem value="popup" className="flex-1 gap-1 text-xs py-1.5">
+                  <Calendar className="h-3 w-3" />
+                  Popups
+                </ToggleGroupItem>
+                <ToggleGroupItem value="permanent" className="flex-1 gap-1 text-xs py-1.5">
+                  <Building2 className="h-3 w-3" />
+                  Permanent
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            <div className="overflow-y-auto max-h-[180px] space-y-1">
+              {filteredVillages.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  No {villageTypeFilter} villages yet
+                </p>
+              ) : (
+                filteredVillages.map((village) => (
+                  <button
+                    key={village.id}
+                    onClick={() => navigate(getVillageRoute(village))}
+                    className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+                  >
+                    <img
+                      src={village.logo_url || '/placeholder.svg'}
+                      alt={village.name}
+                      className="h-7 w-7 rounded object-cover flex-shrink-0"
+                      onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-foreground truncate">{village.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate" title={village.location}>{village.location}</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </>
+        )}
       </div>
 
 
