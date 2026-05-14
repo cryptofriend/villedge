@@ -46,6 +46,7 @@ export const AddStayForm = ({ villageId, onAddStay, botUsername }: AddStayFormPr
   
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [isPermanent, setIsPermanent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
 
   // Helper to get autofill value for a question
