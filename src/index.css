@@ -241,4 +241,10 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Ensure mapbox popups never overlay modal dialogs (Dialog uses z-50) */
+  .mapboxgl-popup,
+  .mapboxgl-marker {
+    z-index: 10;
+  }
 }
