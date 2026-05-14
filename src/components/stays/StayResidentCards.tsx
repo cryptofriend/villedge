@@ -150,14 +150,20 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
             >
               {/* Card Header - Avatar & Badge */}
               <div className="relative pt-4 pb-2 flex flex-col items-center">
-                {/* Here Now Badge */}
-                {hereNow && (
-                  <Badge 
-                    className="absolute top-3 right-3 bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] px-2"
-                  >
-                    Here now
-                  </Badge>
-                )}
+                {/* Top-right badges */}
+                <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                  {primaryStay.is_permanent && (
+                    <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] px-2 gap-1">
+                      <Home className="h-2.5 w-2.5" />
+                      Permanent
+                    </Badge>
+                  )}
+                  {hereNow && (
+                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] px-2">
+                      Here now
+                    </Badge>
+                  )}
+                </div>
                 
                 {/* Avatar (clickable when we know the user) */}
                 {userId ? (
