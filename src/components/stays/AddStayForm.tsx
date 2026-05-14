@@ -107,6 +107,7 @@ export const AddStayForm = ({ villageId, onAddStay, botUsername }: AddStayFormPr
 const resetForm = () => {
     setStartDate(undefined);
     setEndDate(undefined);
+    setIsPermanent(false);
     setSubmittedStayId(null);
     const initialAnswers: Record<string, string | string[]> = {};
     questions.forEach((q) => {
