@@ -982,6 +982,7 @@ export type Database = {
           id: string
           intention: string | null
           is_host: boolean | null
+          is_permanent: boolean
           nickname: string
           offerings: string | null
           project_description: string | null
@@ -1001,6 +1002,7 @@ export type Database = {
           id?: string
           intention?: string | null
           is_host?: boolean | null
+          is_permanent?: boolean
           nickname: string
           offerings?: string | null
           project_description?: string | null
@@ -1020,6 +1022,7 @@ export type Database = {
           id?: string
           intention?: string | null
           is_host?: boolean | null
+          is_permanent?: boolean
           nickname?: string
           offerings?: string | null
           project_description?: string | null
@@ -1531,6 +1534,7 @@ export type Database = {
           intention: string
           is_anon: boolean
           is_host: boolean
+          is_permanent: boolean
           is_visible: boolean
           nickname: string
           offerings: string
