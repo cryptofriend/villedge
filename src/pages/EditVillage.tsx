@@ -113,8 +113,8 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
     if (!startDate || !endDate) {
       return village?.dates || ''; // Keep existing if not both set
     }
-    // Format as "Mar 1 - Mar 30, 2025"
-    const startFormatted = format(startDate, "MMM d");
+    // Always include year on both sides so cross-year ranges round-trip safely
+    const startFormatted = format(startDate, "MMM d, yyyy");
     const endFormatted = format(endDate, "MMM d, yyyy");
     return `${startFormatted} - ${endFormatted}`;
   };
