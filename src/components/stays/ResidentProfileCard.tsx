@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Twitter, Instagram, Github, Linkedin, Calendar, MapPin } from "lucide-react";
+import { ExternalLink, Twitter, Instagram, Github, Linkedin, Calendar, MapPin, Home } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
