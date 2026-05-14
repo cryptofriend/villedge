@@ -82,11 +82,15 @@ const EditVillage = ({ overrideVillageSlug }: EditVillageProps) => {
           };
         }
         
-        // Try "Month Day, Year" format
-        const yearMatch = parts[1].match(/\d{4}/);
-        if (yearMatch) {
-          const year = yearMatch[0];
-          const startStr = `${parts[0].trim()}, ${year}`;
+        // Try "Month Day, Year" format - prefer explicit year on each side
+        const startYearMatch = parts[0].match(/\d{4}/);
+        const endYearMatch = parts[1].match(/\d{4}/);
+        if (endYearMatch) {
+          const endYear = endYearMatch[0];
+          // If start has its own year use it, otherwise fall back to end year
+          const startStr = startYearMatch
+            ? parts[0].trim()
+            : `${parts[0].trim()}, ${endYear}`;
           const endStr = parts[1].trim();
           const start = new Date(startStr);
           const end = new Date(endStr);
