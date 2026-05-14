@@ -482,18 +482,19 @@ const resetForm = () => {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm">
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  Departure <span className="text-destructive">*</span>
+                  Departure {!isPermanent && <span className="text-destructive">*</span>}
                 </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
+                      disabled={isPermanent}
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !endDate && "text-muted-foreground"
                       )}
                     >
-                      {endDate ? format(endDate, "MMM d, yyyy") : "Pick date"}
+                      {isPermanent ? "No end date" : (endDate ? format(endDate, "MMM d, yyyy") : "Pick date")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -509,6 +510,21 @@ const resetForm = () => {
                 </Popover>
               </div>
             </div>
+
+            {/* Permanent Resident toggle */}
+            <button
+              type="button"
+              onClick={() => setIsPermanent((p) => !p)}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                isPermanent
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:bg-accent/50"
+              )}
+            >
+              <Home className="h-4 w-4" />
+              {isPermanent ? "Permanent Resident ✓" : "I'm a Permanent Resident"}
+            </button>
 
             {/* Scenius Block */}
             <ApplicationSceniusBlock
