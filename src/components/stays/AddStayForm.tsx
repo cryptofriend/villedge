@@ -143,12 +143,21 @@ const resetForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!startDate || !endDate) {
-      toast.error("Please select arrival and departure dates");
+    if (!startDate) {
+      toast.error("Please select an arrival date");
       return;
     }
 
-    if (endDate < startDate) {
+    const effectiveEndDate = isPermanent
+      ? new Date(startDate.getFullYear() + 50, startDate.getMonth(), startDate.getDate())
+      : endDate;
+
+    if (!effectiveEndDate) {
+      toast.error("Please select a departure date");
+      return;
+    }
+
+    if (!isPermanent && endDate && endDate < startDate) {
       toast.error("Departure date must be after arrival date");
       return;
     }
@@ -178,7 +187,7 @@ const resetForm = () => {
         nickname: nickname.slice(0, 30),
         villa: "Default",
         start_date: format(startDate, "yyyy-MM-dd"),
-        end_date: format(endDate, "yyyy-MM-dd"),
+        end_date: format(effectiveEndDate, "yyyy-MM-dd"),
         intention: profile?.bio || undefined,
         social_profile: profile?.social_url || undefined,
         offerings: profile?.offerings || undefined,
@@ -187,6 +196,7 @@ const resetForm = () => {
         project_url: profile?.project_url || undefined,
         status: "planning", // Always planning - only host can confirm
         user_id: user.id,
+        is_permanent: isPermanent,
       };
 
       const result = await onAddStay(stay);
