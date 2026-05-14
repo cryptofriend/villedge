@@ -560,7 +560,7 @@ const resetForm = () => {
               type="submit" 
               variant="sage" 
               className="w-full" 
-              disabled={isSubmitting || !startDate || !endDate}
+              disabled={isSubmitting || !startDate || (!isPermanent && !endDate)}
             >
               {isSubmitting ? "Submitting..." : "Submit Application"}
             </Button>
