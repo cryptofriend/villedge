@@ -215,7 +215,9 @@ export const StayResidentCards = ({ stays, loading, applyUrl, isHost }: StayResi
               <div className="px-4 py-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3" />
                 <span>
-                  {format(startDate, "MMM d")} - {format(endDate, "MMM d")} ({duration} days)
+                  {primaryStay.is_permanent
+                    ? `Since ${format(startDate, "MMM yyyy")}`
+                    : `${format(startDate, "MMM d")} - ${format(endDate, "MMM d")} (${duration} days)`}
                 </span>
               </div>
               
