@@ -23,6 +23,7 @@ export interface Stay {
   user_id: string | null;
   is_anon?: boolean; // From joined profile
   is_visible?: boolean; // Backend-enforced visibility flag
+  is_permanent?: boolean;
 }
 
 export interface StayInput {
@@ -41,6 +42,7 @@ export interface StayInput {
   is_host?: boolean;
   status?: "planning" | "confirmed";
   user_id?: string;
+  is_permanent?: boolean;
 }
 
 // Simple hash function for secret codes

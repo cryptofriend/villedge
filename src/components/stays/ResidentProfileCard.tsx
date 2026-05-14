@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Twitter, Instagram, Github, Linkedin, Calendar, MapPin } from "lucide-react";
+import { ExternalLink, Twitter, Instagram, Github, Linkedin, Calendar, MapPin, Home } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { getBestAvatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
@@ -65,8 +65,14 @@ export const ResidentProfileCard = ({ stays, nickname, open, onOpenChange }: Res
           {/* Name & Status */}
           <div className="space-y-1">
             <h2 className="text-xl font-semibold">{nickname}</h2>
-            <div className="flex items-center justify-center gap-2">
-              {stays.map((stay, idx) => (
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {stays.some((s) => s.is_permanent) && (
+                <Badge className="bg-primary/10 text-primary border-primary/20 gap-1">
+                  <Home className="h-3 w-3" />
+                  Permanent Resident
+                </Badge>
+              )}
+              {stays.map((stay) => (
                 <Badge
                   key={stay.id}
                   variant={stay.status === "confirmed" ? "default" : "secondary"}

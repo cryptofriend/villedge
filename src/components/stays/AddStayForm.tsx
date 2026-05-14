@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { CalendarIcon, Plus, ExternalLink, CheckCircle2 } from "lucide-react";
+import { CalendarIcon, Plus, ExternalLink, CheckCircle2, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,7 @@ export const AddStayForm = ({ villageId, onAddStay, botUsername }: AddStayFormPr
   
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [isPermanent, setIsPermanent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
 
   // Helper to get autofill value for a question
@@ -106,6 +107,7 @@ export const AddStayForm = ({ villageId, onAddStay, botUsername }: AddStayFormPr
 const resetForm = () => {
     setStartDate(undefined);
     setEndDate(undefined);
+    setIsPermanent(false);
     setSubmittedStayId(null);
     const initialAnswers: Record<string, string | string[]> = {};
     questions.forEach((q) => {
@@ -141,12 +143,21 @@ const resetForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!startDate || !endDate) {
-      toast.error("Please select arrival and departure dates");
+    if (!startDate) {
+      toast.error("Please select an arrival date");
       return;
     }
 
-    if (endDate < startDate) {
+    const effectiveEndDate = isPermanent
+      ? new Date(startDate.getFullYear() + 50, startDate.getMonth(), startDate.getDate())
+      : endDate;
+
+    if (!effectiveEndDate) {
+      toast.error("Please select a departure date");
+      return;
+    }
+
+    if (!isPermanent && endDate && endDate < startDate) {
       toast.error("Departure date must be after arrival date");
       return;
     }
@@ -176,7 +187,7 @@ const resetForm = () => {
         nickname: nickname.slice(0, 30),
         villa: "Default",
         start_date: format(startDate, "yyyy-MM-dd"),
-        end_date: format(endDate, "yyyy-MM-dd"),
+        end_date: format(effectiveEndDate, "yyyy-MM-dd"),
         intention: profile?.bio || undefined,
         social_profile: profile?.social_url || undefined,
         offerings: profile?.offerings || undefined,
@@ -185,6 +196,7 @@ const resetForm = () => {
         project_url: profile?.project_url || undefined,
         status: "planning", // Always planning - only host can confirm
         user_id: user.id,
+        is_permanent: isPermanent,
       };
 
       const result = await onAddStay(stay);
@@ -470,18 +482,19 @@ const resetForm = () => {
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm">
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  Departure <span className="text-destructive">*</span>
+                  Departure {!isPermanent && <span className="text-destructive">*</span>}
                 </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
+                      disabled={isPermanent}
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !endDate && "text-muted-foreground"
                       )}
                     >
-                      {endDate ? format(endDate, "MMM d, yyyy") : "Pick date"}
+                      {isPermanent ? "No end date" : (endDate ? format(endDate, "MMM d, yyyy") : "Pick date")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -497,6 +510,21 @@ const resetForm = () => {
                 </Popover>
               </div>
             </div>
+
+            {/* Permanent Resident toggle */}
+            <button
+              type="button"
+              onClick={() => setIsPermanent((p) => !p)}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                isPermanent
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:bg-accent/50"
+              )}
+            >
+              <Home className="h-4 w-4" />
+              {isPermanent ? "Permanent Resident ✓" : "I'm a Permanent Resident"}
+            </button>
 
             {/* Scenius Block */}
             <ApplicationSceniusBlock
@@ -532,7 +560,7 @@ const resetForm = () => {
               type="submit" 
               variant="sage" 
               className="w-full" 
-              disabled={isSubmitting || !startDate || !endDate}
+              disabled={isSubmitting || !startDate || (!isPermanent && !endDate)}
             >
               {isSubmitting ? "Submitting..." : "Submit Application"}
             </Button>
