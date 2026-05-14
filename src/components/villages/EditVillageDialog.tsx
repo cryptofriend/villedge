@@ -70,11 +70,14 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
           };
         }
         
-        // Try "Month Day, Year" format
-        const yearMatch = parts[1].match(/\d{4}/);
-        if (yearMatch) {
-          const year = yearMatch[0];
-          const startStr = `${parts[0].trim()}, ${year}`;
+        // Try "Month Day, Year" format - prefer explicit year on each side
+        const startYearMatch = parts[0].match(/\d{4}/);
+        const endYearMatch = parts[1].match(/\d{4}/);
+        if (endYearMatch) {
+          const endYear = endYearMatch[0];
+          const startStr = startYearMatch
+            ? parts[0].trim()
+            : `${parts[0].trim()}, ${endYear}`;
           const endStr = parts[1].trim();
           const start = new Date(startStr);
           const end = new Date(endStr);
@@ -185,8 +188,8 @@ export const EditVillageDialog = ({ village, onVillageUpdated }: EditVillageDial
     if (!startDate || !endDate) {
       return village.dates; // Keep existing if not both set
     }
-    // Format as "Mar 1 - Mar 30, 2025"
-    const startFormatted = format(startDate, "MMM d");
+    // Always include year on both sides so cross-year ranges round-trip safely
+    const startFormatted = format(startDate, "MMM d, yyyy");
     const endFormatted = format(endDate, "MMM d, yyyy");
     return `${startFormatted} - ${endFormatted}`;
   };
