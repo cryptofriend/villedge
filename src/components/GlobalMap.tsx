@@ -456,70 +456,83 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
 
 
-      {/* Timeline (popup mode only) */}
-      {villageTypeFilter === 'popup' && timelineVillages.length > 0 && (
-        <PopupTimeline
-          villages={timelineVillages}
-          activeVillage={activeVillage}
-          isZoomedIn={false}
-          onVillageClick={handleTimelineVillageClick}
-        />
-      )}
+      {/* Shared switcher for popup/permanent containers */}
+      {(() => {
+        const typeSwitcher = (
+          <ToggleGroup
+            type="single"
+            value={villageTypeFilter}
+            onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
+            className="bg-card/95 backdrop-blur-sm rounded-full border border-border/50 shadow-sm px-1 py-0.5"
+          >
+            <ToggleGroupItem value="popup" className="gap-1 text-xs rounded-full px-3 py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <Calendar className="h-3.5 w-3.5" />
+              Popups
+            </ToggleGroupItem>
+            <ToggleGroupItem value="permanent" className="gap-1 text-xs rounded-full px-3 py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <Building2 className="h-3.5 w-3.5" />
+              Permanent
+            </ToggleGroupItem>
+          </ToggleGroup>
+        );
 
-      {/* Permanent villages list (permanent mode) */}
-      {villageTypeFilter === 'permanent' && (
-        <div className="absolute bottom-16 sm:bottom-4 left-0 right-0 z-20 px-4">
-          <div className="mx-auto max-w-5xl rounded-2xl bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg p-2">
-            {filteredVillages.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-3">No permanent villages yet</p>
-            ) : (
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {filteredVillages.map((village) => (
-                  <button
-                    key={village.id}
-                    onClick={() => navigate(getVillageRoute(village))}
-                    className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/60 transition-colors text-left min-w-0"
-                  >
-                    <img
-                      src={village.logo_url || '/placeholder.svg'}
-                      alt={village.name}
-                      className="h-8 w-8 rounded object-cover flex-shrink-0"
-                      onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
-                    />
-                    <div className="min-w-0 max-w-[160px]">
-                      <p className="text-xs font-medium text-foreground truncate">{village.name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{village.location}</p>
+        return (
+          <>
+            {/* Timeline (popup mode only) */}
+            {villageTypeFilter === 'popup' && timelineVillages.length > 0 && (
+              <PopupTimeline
+                villages={timelineVillages}
+                activeVillage={activeVillage}
+                isZoomedIn={false}
+                onVillageClick={handleTimelineVillageClick}
+                headerExtra={typeSwitcher}
+              />
+            )}
+
+            {/* Permanent villages list (permanent mode) */}
+            {villageTypeFilter === 'permanent' && (
+              <div className="absolute bottom-16 sm:bottom-4 left-0 right-0 z-20 px-4">
+                <div className="mx-auto max-w-5xl rounded-2xl bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg p-2">
+                  <div className="mb-2 flex items-center justify-center gap-2">
+                    {typeSwitcher}
+                  </div>
+                  {filteredVillages.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-3">No permanent villages yet</p>
+                  ) : (
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                      {filteredVillages.map((village) => (
+                        <button
+                          key={village.id}
+                          onClick={() => navigate(getVillageRoute(village))}
+                          className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/60 transition-colors text-left min-w-0"
+                        >
+                          <img
+                            src={village.logo_url || '/placeholder.svg'}
+                            alt={village.name}
+                            className="h-8 w-8 rounded object-cover flex-shrink-0"
+                            onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                          />
+                          <div className="min-w-0 max-w-[160px]">
+                            <p className="text-xs font-medium text-foreground truncate">{village.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{village.location}</p>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                  </button>
-                ))}
+                  )}
+                </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
+          </>
+        );
+      })()}
 
-      {/* Bottom bar — type switcher (all screens) + avatar (mobile) */}
-      <div className="absolute bottom-2 left-0 right-0 z-[200] flex items-center justify-center gap-3 px-4 sm:bottom-4">
-        <ToggleGroup
-          type="single"
-          value={villageTypeFilter}
-          onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
-          className="bg-card/95 backdrop-blur-sm rounded-full border border-border/50 shadow-lg px-1 py-1"
-        >
-          <ToggleGroupItem value="popup" className="gap-1 text-xs rounded-full px-3 py-1.5 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            Popups
-          </ToggleGroupItem>
-          <ToggleGroupItem value="permanent" className="gap-1 text-xs rounded-full px-3 py-1.5 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-            <Building2 className="h-3.5 w-3.5" />
-            Permanent
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        {isMobile && (
+      {/* Mobile avatar button */}
+      {isMobile && (
+        <div className="absolute bottom-2 right-4 z-[200] sm:hidden">
           <button
             onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
-            className="flex items-center justify-center h-9 w-9 rounded-full bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg sm:hidden"
+            className="flex items-center justify-center h-9 w-9 rounded-full bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg"
           >
             {isAuthenticated && profile?.avatar_url ? (
               <Avatar className="h-7 w-7">
@@ -532,8 +545,9 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               <User className="h-4 w-4 text-muted-foreground" />
             )}
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
 
     </div>
   );
