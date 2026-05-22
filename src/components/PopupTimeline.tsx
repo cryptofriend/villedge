@@ -222,7 +222,8 @@ export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onV
     <div className="absolute bottom-0 left-0 right-0 z-20">
       {/* Collapsed state - hide button when zoomed in */}
       {!isExpanded && !isZoomedIn && (
-        <div className="flex items-center justify-center px-4 pb-3">
+        <div className="flex items-center justify-center gap-2 px-4 pb-3">
+          {headerExtra}
           <Button
             variant="secondary"
             size="sm"
@@ -239,8 +240,9 @@ export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onV
       {/* Expanded state */}
       {isExpanded && (
         <div className="bg-gradient-to-t from-background/95 via-background/80 to-transparent px-4 pb-4 pt-8 md:px-6">
-          {/* Collapse button */}
-          <div className="mb-2 flex justify-center">
+          {/* Header row: switcher + collapse button */}
+          <div className="mb-2 flex items-center justify-center gap-2">
+            {headerExtra}
             <Button
               variant="ghost"
               size="sm"
@@ -251,6 +253,7 @@ export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onV
               Hide
             </Button>
           </div>
+
 
           {/* Month labels */}
           <div className="relative mb-2 h-6">
