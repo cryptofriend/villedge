@@ -124,7 +124,7 @@ const villageColors: { [key: string]: string } = {
   "edge-city-austin": "#667EEA",
 };
 
-export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onVillageClick }: PopupTimelineProps) => {
+export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onVillageClick, headerExtra }: PopupTimelineProps) => {
   const [isManuallyExpanded, setIsManuallyExpanded] = useState(true);
   
   // Auto-collapse when zoomed in, but allow manual override
