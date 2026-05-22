@@ -454,8 +454,8 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       {/* Info sidebar - positioned above map markers and timeline */}
       <div className={`absolute top-24 right-4 z-[100] hidden w-56 ${sidebarCollapsed ? '' : 'max-h-[320px]'} rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-64`}>
-        <div className={`flex items-center justify-between ${sidebarCollapsed ? '' : 'mb-2 border-b border-border pb-2'}`}>
-          <div className="min-w-0">
+        <div className={`flex items-center gap-2 ${sidebarCollapsed ? '' : 'mb-2 border-b border-border pb-2'}`}>
+          <div className="min-w-0 flex-1">
             <h3 className="font-display text-sm font-semibold text-foreground">
               Villedge
             </h3>
@@ -463,6 +463,23 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               <p className="text-xs text-muted-foreground">Click on a village to explore</p>
             )}
           </div>
+
+          <ToggleGroup
+            type="single"
+            value={villageTypeFilter}
+            onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
+            className="flex-shrink-0"
+          >
+            <ToggleGroupItem value="popup" className="gap-1 text-[10px] py-1 px-1.5 h-auto">
+              <Calendar className="h-3 w-3" />
+              <span className="hidden lg:inline">Popups</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="permanent" className="gap-1 text-[10px] py-1 px-1.5 h-auto">
+              <Building2 className="h-3 w-3" />
+              <span className="hidden lg:inline">Perm</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+
           <button
             onClick={() => setSidebarCollapsed(c => !c)}
             className="h-6 w-6 flex items-center justify-center rounded hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
@@ -474,25 +491,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
         {!sidebarCollapsed && (
           <>
-            {/* Type Switcher */}
-            <div className="mb-2">
-              <ToggleGroup
-                type="single"
-                value={villageTypeFilter}
-                onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
-                className="w-full"
-              >
-                <ToggleGroupItem value="popup" className="flex-1 gap-1 text-xs py-1.5">
-                  <Calendar className="h-3 w-3" />
-                  Popups
-                </ToggleGroupItem>
-                <ToggleGroupItem value="permanent" className="flex-1 gap-1 text-xs py-1.5">
-                  <Building2 className="h-3 w-3" />
-                  Permanent
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-
             <div className="overflow-y-auto max-h-[180px] space-y-1">
               {filteredVillages.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">
