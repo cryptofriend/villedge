@@ -19,7 +19,9 @@ interface PopupTimelineProps {
   activeVillage: PopupVillage;
   isZoomedIn?: boolean;
   onVillageClick: (village: PopupVillage) => void;
+  headerExtra?: React.ReactNode;
 }
+
 
 // Parse date string to get start and end dates
 const parseDateRange = (dateStr: string): { start: Date | null; end: Date | null } => {
