@@ -455,14 +455,8 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
       {/* Info sidebar - positioned above map markers and timeline */}
       <div className={`absolute top-24 right-4 z-[100] hidden w-56 ${sidebarCollapsed ? '' : 'max-h-[320px]'} rounded-lg bg-card/95 p-3 shadow-card backdrop-blur-sm md:block lg:w-64`}>
         <div className={`flex items-center gap-2 ${sidebarCollapsed ? '' : 'mb-2 border-b border-border pb-2'}`}>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              Villedge
-            </h3>
-            {!sidebarCollapsed && (
-              <p className="text-xs text-muted-foreground">Click on a village to explore</p>
-            )}
-          </div>
+          <div className="min-w-0 flex-1" />
+
 
           <ToggleGroup
             type="single"
