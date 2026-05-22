@@ -491,25 +491,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
         {!sidebarCollapsed && (
           <>
-            {/* Type Switcher */}
-            <div className="mb-2">
-              <ToggleGroup
-                type="single"
-                value={villageTypeFilter}
-                onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
-                className="w-full"
-              >
-                <ToggleGroupItem value="popup" className="flex-1 gap-1 text-xs py-1.5">
-                  <Calendar className="h-3 w-3" />
-                  Popups
-                </ToggleGroupItem>
-                <ToggleGroupItem value="permanent" className="flex-1 gap-1 text-xs py-1.5">
-                  <Building2 className="h-3 w-3" />
-                  Permanent
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-
             <div className="overflow-y-auto max-h-[180px] space-y-1">
               {filteredVillages.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">
