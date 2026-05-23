@@ -8,7 +8,7 @@ import { AddVillageForm } from "@/components/villages/AddVillageForm";
 import { AuthButton } from "@/components/AuthButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { PopupTimeline } from "@/components/PopupTimeline";
-import { useUserCount } from "@/hooks/useUserCount";
+import { useGlobalStats } from "@/hooks/useGlobalStats";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserCurrentVillage } from "@/hooks/useUserCurrentVillage";
 import { Button } from "@/components/ui/button";
