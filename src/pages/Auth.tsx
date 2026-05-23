@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { AuthDialog } from '@/components/AuthDialog';
+import { SEO } from '@/components/SEO';
 
 export default function Auth() {
   const navigate = useNavigate();
