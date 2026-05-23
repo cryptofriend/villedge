@@ -448,6 +448,15 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
           {/* Auth & actions */}
           <div className="flex items-center gap-2">
+            <a
+              href="https://x.com/villedgetech"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-card/90 backdrop-blur-sm border border-border/50 shadow-sm text-foreground hover:bg-secondary transition-colors"
+              title="Villedge on X"
+            >
+              <span className="font-bold text-sm">𝕏</span>
+            </a>
             <ManifestoDialog />
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm md:hidden">
               <Users className="h-4 w-4 text-primary" />
