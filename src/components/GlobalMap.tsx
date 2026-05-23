@@ -433,7 +433,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
                 </Button>
               )}
             </div>
-            <p className="font-body text-xs text-muted-foreground sm:text-sm md:text-base">
+            <p className="font-body text-xs text-muted-foreground hidden sm:block sm:text-sm md:text-base">
               Explore communities around the world
             </p>
           </div>
