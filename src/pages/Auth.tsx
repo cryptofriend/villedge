@@ -28,15 +28,22 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AuthDialog
-        open={open}
-        onOpenChange={(o) => {
-          setOpen(o);
-          if (!o) navigate('/');
-        }}
-        onSuccess={() => navigate(from, { replace: true })}
+    <>
+      <SEO
+        title="Sign In — Villedge"
+        description="Sign in to Villedge to connect with village communities, manage your stays, and discover events."
+        path="/auth"
       />
-    </div>
+      <div className="min-h-screen bg-background">
+        <AuthDialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) navigate('/');
+          }}
+          onSuccess={() => navigate(from, { replace: true })}
+        />
+      </div>
+    </>
   );
 }
