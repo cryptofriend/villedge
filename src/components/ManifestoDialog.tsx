@@ -1,4 +1,4 @@
-import { ScrollText, PenLine, Check } from "lucide-react";
+import { ScrollText, PenLine, Check, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
