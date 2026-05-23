@@ -36,8 +36,8 @@ export const StayCalendar = ({ villageId, applyUrl, botUsername }: StayCalendarP
   
   const isVillageHost = isHost(villageId);
   
-  // Default to cards view on mobile, timeline on desktop
-  const [viewMode, setViewMode] = useState<"cards" | "timeline">(isMobile ? "cards" : "timeline");
+  // Default to cards view (Gantt collapsed) regardless of screen size
+  const [viewMode, setViewMode] = useState<"cards" | "timeline">("cards");
   const [editingStay, setEditingStay] = useState<Stay | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingStay, setDeletingStay] = useState<Stay | null>(null);
