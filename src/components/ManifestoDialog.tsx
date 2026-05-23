@@ -31,36 +31,94 @@ export const ManifestoDialog = () => {
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl md:text-3xl text-foreground">
-            Road To Renaissance
+            Road to Renaissance
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 text-sm md:text-base leading-relaxed text-muted-foreground pt-2">
-          <p className="text-foreground font-medium text-base md:text-lg">
-            The Shift is happening.
+        <div className="space-y-6 text-sm md:text-base leading-relaxed text-muted-foreground pt-2">
+          <p className="text-foreground font-semibold text-base md:text-lg">
+            The shift is already happening.
           </p>
+
           <p>
-            Old assumptions are breaking faster than new ones can take their place. Conflict is rising, trust is thinning, and more people are moving through life with a quiet sense of confusion.
+            Old assumptions are breaking faster than new ones can replace them. Institutions are changing. Trust is fragmenting. More people move through life with a quiet feeling that something important no longer fits.
           </p>
+
           <p>
-            Work feels increasingly abstract and detached from what matters. We have more access, more noise, more stimulation, and less clarity about how to live.
+            We have more information, more access, and more technology than any generation before us, yet many feel increasingly disconnected from meaning, community, and purpose.
           </p>
+
           <p>
-            You can feel that something important is changing, but can't yet find the right place, people, or rhythm to meet the moment well.
+            Work becomes abstract. Attention becomes fragmented. Noise grows louder while clarity becomes harder to find.
           </p>
+
           <p className="text-foreground font-medium">
-            We are creating that place.
+            You can feel that something is changing.
           </p>
+
           <p>
-            A place for people who want to think clearly, live truthfully, and build what matters in the company of others doing the same. A place where technology, art, philosophy, culture, and research belong in the same conversation again.
+            But many still struggle to find the right people, the right place, and the right environment to meet this moment well.
           </p>
+
+          <div className="py-2 border-t border-b border-border/40">
+            <p className="text-foreground font-semibold text-base md:text-lg mb-3">
+              We are creating that place.
+            </p>
+            <p>
+              A place for people who want to think clearly, live truthfully, and build what matters alongside others who feel the same pull.
+            </p>
+            <p className="mt-2">
+              A place where technology, art, science, philosophy, culture, and human connection belong in the same conversation again.
+            </p>
+          </div>
+
           <p>
-            We believe the best work does not emerge from isolated ambition. It emerges from shared fields of trust, challenge, beauty, and serious play. From environments that invite people into deeper contact with themselves, each other, and the problems worth devoting a life to.
+            We believe the most important work does not emerge from isolated ambition.
           </p>
+
+          <div className="space-y-3 pl-4 border-l-2 border-primary/30">
+            <p>
+              The Renaissance was never created by a single genius.
+            </p>
+            <p>
+              It emerged from cities, workshops, communities, and collisions of minds.
+            </p>
+            <p>
+              Ideas moved through people.
+            </p>
+            <p>
+              People moved through places.
+            </p>
+            <p>
+              Networks created civilizations.
+            </p>
+          </div>
+
+          <div className="py-2">
+            <p className="text-foreground font-semibold text-base md:text-lg mb-3">
+              Our goal is simple:
+            </p>
+            <p>
+              To create places where a better future is not merely discussed —
+            </p>
+            <div className="pl-4 space-y-1 text-foreground font-medium">
+              <p>but lived,</p>
+              <p>practiced,</p>
+              <p>and built.</p>
+            </div>
+            <p className="mt-3">
+              And to connect these places into something larger.
+            </p>
+          </div>
+
           <p>
-            We care not only about projects, but about conditions: food, rest, space, attention, conversation, rhythm, and belonging. We want to reduce the friction of survival and the noise of distraction so people can contribute from a deeper place.
+            Villedge is the coordination layer for a new generation of popup villages: a network connecting people, communities, ideas, and places working toward a new Renaissance.
           </p>
-          <p className="text-foreground font-medium italic">
-            The goal is simple: to create places where a better future is not merely discussed, but lived, practiced, and built.
+
+          <p className="text-foreground font-semibold text-base md:text-lg">
+            Not one village.
+          </p>
+          <p className="text-foreground font-semibold text-lg md:text-xl">
+            A civilization.
           </p>
 
           {/* X backlink */}
@@ -68,7 +126,7 @@ export const ManifestoDialog = () => {
             href="https://x.com/villedgetech"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
           >
             <span className="font-bold text-base">𝕏</span>
             <span>@villedgetech</span>
