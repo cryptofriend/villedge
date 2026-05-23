@@ -16,6 +16,7 @@ import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useConnectionRequests } from "@/hooks/useConnectionRequests";
+import { SEO } from "@/components/SEO";
 
 export interface ProfileData extends ProfileType {
   title?: string | null;
@@ -252,10 +253,25 @@ const Profile = () => {
     }
   };
 
+  const profileTitle = profileData?.username
+    ? `${profileData.username} on Villedge`
+    : "Profile | Villedge";
+  const profileDescription = profileData?.bio
+    ? profileData.bio.slice(0, 160)
+    : `View ${profileData?.username || "this member"}'s villages, projects, and community activity on Villedge.`;
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={profileTitle}
+        description={profileDescription}
+        path={`/profile/${username || ""}`}
+        type="profile"
+        image={profileData?.avatar_url || undefined}
+      />
       {/* Navigation Bar */}
       <div className="fixed top-4 left-4 right-4 z-50 flex justify-between items-center">
+
         <Button
           variant="outline"
           size="sm"
