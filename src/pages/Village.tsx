@@ -20,9 +20,26 @@ const Village = ({ overrideVillageSlug }: VillageProps) => {
   const location = useLocation();
   const { isAuthenticated, loading } = useAuth();
   const [showAuthDialog, setShowAuthDialog] = useState(true);
+  const [villageMeta, setVillageMeta] = useState<{ name: string; description: string | null; location: string | null; logo_url: string | null; village_type: string | null } | null>(null);
   
   // Use override (custom domain) or URL param
   const villageId = overrideVillageSlug || villageSlug;
+
+  useEffect(() => {
+    if (!villageId) return;
+    let cancelled = false;
+    supabase
+      .from("villages")
+      .select("name, description, location, logo_url, village_type")
+      .eq("id", villageId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) setVillageMeta(data as typeof villageMeta);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [villageId]);
   
   // Extract category from the URL path (e.g., /proof-of-retreat/residents -> residents)
   const initialCategory = useMemo<CategoryType>(() => {
