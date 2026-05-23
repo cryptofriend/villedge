@@ -68,14 +68,13 @@ export const useUserWallets = (userId?: string) => {
 
     try {
       // Check if wallet is already linked to another user
-      const { data: existing } = await supabase
-        .from('user_wallets')
-        .select('user_id')
-        .eq('wallet_address', walletAddress)
-        .eq('wallet_type', walletType)
-        .maybeSingle();
+      const { data: existingOwnerId } = await supabase
+        .rpc('resolve_wallet_owner', {
+          _wallet_address: walletAddress,
+          _wallet_type: walletType,
+        });
 
-      if (existing && existing.user_id !== user.id) {
+      if (existingOwnerId && existingOwnerId !== user.id) {
         toast.error('This wallet is already linked to another account');
         return { error: new Error('Wallet already linked to another account') };
       }
