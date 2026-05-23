@@ -92,6 +92,7 @@ const AppRoutes = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/embed" element={<Embed />} />
+            <Route path="/about" element={<About />} />
             <Route path="/widget" element={<Widget />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
