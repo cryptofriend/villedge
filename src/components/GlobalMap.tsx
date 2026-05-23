@@ -417,7 +417,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         <div className="flex items-start justify-between pointer-events-auto gap-2">
           <div className="flex flex-col gap-1 w-fit">
             <div className="flex items-center gap-2">
-              <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
+              <h1 className="font-display text-3xl font-semibold text-foreground sm:text-2xl md:text-3xl">
                 Villedge
               </h1>
               <AddVillageForm onVillageAdded={() => window.location.reload()} />
