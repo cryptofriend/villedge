@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings, Calendar, Building2, ScrollText, User, ChevronUp, ChevronDown } from "lucide-react";
+import { Loader2, Users, Settings, Calendar, Building2, ScrollText, User, ChevronUp, ChevronDown, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
@@ -446,8 +447,8 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             </span>
           </div>
 
-          {/* Auth & actions */}
-          <div className="flex items-center gap-2">
+          {/* Auth & actions - desktop */}
+          <div className="hidden sm:flex items-center gap-2">
             <a
               href="https://x.com/villedgetech"
               target="_blank"
@@ -458,15 +459,56 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               <span className="font-bold text-sm">𝕏</span>
             </a>
             <ManifestoDialog />
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm md:hidden">
-              <Users className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">{userCount}</span>
-            </div>
             <NotificationBell />
             <AuthButton />
           </div>
-        </div>
 
+          {/* Mobile collapsed menu */}
+          <div className="flex sm:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 rounded-full bg-card/90 backdrop-blur-sm border-border/50 shadow-sm"
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 flex flex-col gap-3">
+                  <div className="flex items-center gap-1.5 px-3 py-2 bg-card rounded-full border border-border/50">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      <span className="font-semibold">{userCount}</span> residents · <span className="font-semibold">{villageCount}</span> villages
+                    </span>
+                  </div>
+                  <a
+                    href="https://x.com/villedgetech"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-card border border-border/50 text-foreground hover:bg-secondary transition-colors"
+                  >
+                    <span className="font-bold text-sm w-5 text-center">𝕏</span>
+                    <span className="text-sm">Villedge on X</span>
+                  </a>
+                  <div className="flex items-center gap-2">
+                    <ManifestoDialog />
+                    <span className="text-sm text-muted-foreground">Manifesto</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <NotificationBell />
+                    <span className="text-sm text-muted-foreground">Notifications</span>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
       </div>
 
 
