@@ -143,7 +143,10 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/')}
+              onClick={() => {
+                onOpenChange(false);
+                navigate('/');
+              }}
               className="self-start -ml-2 gap-2 text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
