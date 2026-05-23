@@ -489,38 +489,41 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
             {/* Permanent villages list (permanent mode) */}
             {villageTypeFilter === 'permanent' && (
-              <div className="absolute bottom-16 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 w-[min(92vw,360px)] px-2">
-                <div className="rounded-2xl bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg p-2">
+              <div className="absolute bottom-0 left-0 right-0 z-20">
+                <div className="bg-gradient-to-t from-background/95 via-background/80 to-transparent px-4 pb-4 pt-8 md:px-6">
                   <div className="mb-2 flex items-center justify-center gap-2">
                     {typeSwitcher}
                   </div>
                   {filteredVillages.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-3">No permanent villages yet</p>
                   ) : (
-                    <div className="flex flex-col gap-1 max-h-[40vh] overflow-y-auto pr-1">
-                      {filteredVillages.map((village) => (
-                        <button
-                          key={village.id}
-                          onClick={() => navigate(getVillageRoute(village))}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-secondary/60 transition-colors text-left min-w-0"
-                        >
-                          <img
-                            src={village.logo_url || '/placeholder.svg'}
-                            alt={village.name}
-                            className="h-9 w-9 rounded-lg object-cover flex-shrink-0"
-                            onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-foreground truncate">{village.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{village.location}</p>
-                          </div>
-                        </button>
-                      ))}
+                    <div className="mx-auto w-[min(92vw,360px)] rounded-lg bg-secondary/30 backdrop-blur-sm p-2">
+                      <div className="flex flex-col gap-1 max-h-[40vh] overflow-y-auto pr-1">
+                        {filteredVillages.map((village) => (
+                          <button
+                            key={village.id}
+                            onClick={() => navigate(getVillageRoute(village))}
+                            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-secondary/60 transition-colors text-left min-w-0"
+                          >
+                            <img
+                              src={village.logo_url || '/placeholder.svg'}
+                              alt={village.name}
+                              className="h-9 w-9 rounded-lg object-cover flex-shrink-0"
+                              onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground truncate">{village.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{village.location}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
             )}
+
           </>
         );
       })()}
