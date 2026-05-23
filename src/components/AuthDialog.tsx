@@ -11,6 +11,7 @@ import { Loader2, ChevronDown, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PrivyLoginButton } from '@/components/auth/PrivyLoginButton';
 import { TonLoginButton } from '@/components/auth/TonLoginButton';
+import { WorldIdLoginButton } from '@/components/auth/WorldIdLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { lovable } from '@/integrations/lovable';
 
