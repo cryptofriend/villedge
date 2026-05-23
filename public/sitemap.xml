@@ -17,10 +17,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/infinita-city-the-city-that-never-dies/about</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/infinita-city-the-city-that-never-dies/residents</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/infinita-city-the-city-that-never-dies/scenius</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/infinita-city-the-city-that-never-dies/events</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/frontier-tower</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/frontier-tower/about</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/frontier-tower/residents</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/frontier-tower/scenius</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/frontier-tower/events</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/protoville</loc>
@@ -29,10 +77,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/protoville/about</loc>
+    <lastmod>2026-02-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/protoville/residents</loc>
+    <lastmod>2026-02-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/protoville/scenius</loc>
+    <lastmod>2026-02-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/protoville/events</loc>
+    <lastmod>2026-02-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/findhorn-ecovillage</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/findhorn-ecovillage/about</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/findhorn-ecovillage/residents</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/findhorn-ecovillage/scenius</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/findhorn-ecovillage/events</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/proof-of-retreat</loc>
@@ -41,10 +137,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/proof-of-retreat/about</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/proof-of-retreat/residents</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/proof-of-retreat/scenius</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/proof-of-retreat/events</loc>
+    <lastmod>2026-03-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/edge-city-sought-africa</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/edge-city-sought-africa/about</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/edge-city-sought-africa/residents</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/edge-city-sought-africa/scenius</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/edge-city-sought-africa/events</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/ip-village</loc>
@@ -53,10 +197,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/ip-village/about</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ip-village/residents</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ip-village/scenius</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ip-village/events</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/network-school</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/network-school/about</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/network-school/residents</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/network-school/scenius</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/network-school/events</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/4-seas</loc>
@@ -65,10 +257,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/4-seas/about</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/4-seas/residents</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/4-seas/scenius</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/4-seas/events</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/twin-oaks-community</loc>
     <lastmod>2026-03-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/twin-oaks-community/about</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/twin-oaks-community/residents</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/twin-oaks-community/scenius</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/twin-oaks-community/events</loc>
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/mushanghai</loc>
@@ -77,10 +317,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/mushanghai/about</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/mushanghai/residents</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/mushanghai/scenius</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/mushanghai/events</loc>
+    <lastmod>2026-04-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/tui-community</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/tui-community/about</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/tui-community/residents</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/tui-community/scenius</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/tui-community/events</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/cosmo-local-cnx-join-us-september-2026-cosmo-local-cnx</loc>
@@ -89,10 +377,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/cosmo-local-cnx-join-us-september-2026-cosmo-local-cnx/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/cosmo-local-cnx-join-us-september-2026-cosmo-local-cnx/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/cosmo-local-cnx-join-us-september-2026-cosmo-local-cnx/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/cosmo-local-cnx-join-us-september-2026-cosmo-local-cnx/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/4seas</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/4seas/about</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/4seas/residents</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/4seas/scenius</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/4seas/events</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/edge-esmeralda</loc>
@@ -101,10 +437,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/edge-esmeralda/about</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/edge-esmeralda/residents</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/edge-esmeralda/scenius</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/edge-esmeralda/events</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/arc-montenegro</loc>
     <lastmod>2026-01-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/arc-montenegro/about</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/arc-montenegro/residents</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/arc-montenegro/scenius</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/arc-montenegro/events</loc>
+    <lastmod>2026-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/aleph-hub</loc>
@@ -113,10 +497,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/aleph-hub/about</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/aleph-hub/residents</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/aleph-hub/scenius</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/aleph-hub/events</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/renaissance-village</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/renaissance-village/about</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/renaissance-village/residents</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/renaissance-village/scenius</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/renaissance-village/events</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/auroville</loc>
@@ -125,10 +557,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/auroville/about</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/auroville/residents</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/auroville/scenius</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/auroville/events</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/earthaven-ecovillage</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/earthaven-ecovillage/about</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/earthaven-ecovillage/residents</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/earthaven-ecovillage/scenius</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/earthaven-ecovillage/events</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/damanhur</loc>
@@ -137,10 +617,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/damanhur/about</loc>
+    <lastmod>2026-03-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/damanhur/residents</loc>
+    <lastmod>2026-03-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/damanhur/scenius</loc>
+    <lastmod>2026-03-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/damanhur/events</loc>
+    <lastmod>2026-03-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/ethchiangmai-2025</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ethchiangmai-2025/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ethchiangmai-2025/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ethchiangmai-2025/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ethchiangmai-2025/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/futura-camp-2026-x-zuberlin</loc>
@@ -149,10 +677,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/futura-camp-2026-x-zuberlin/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/futura-camp-2026-x-zuberlin/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/futura-camp-2026-x-zuberlin/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/futura-camp-2026-x-zuberlin/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/iceland-eclipse</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/iceland-eclipse/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/iceland-eclipse/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/iceland-eclipse/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/iceland-eclipse/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/pr-spera</loc>
@@ -161,10 +737,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/pr-spera/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/pr-spera/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/pr-spera/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/pr-spera/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/revillage</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/revillage/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/revillage/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/revillage/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/revillage/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/valley-of-the-commons</loc>
@@ -173,10 +797,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/valley-of-the-commons/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/valley-of-the-commons/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/valley-of-the-commons/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/valley-of-the-commons/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/zanzalu</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/zanzalu/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/zanzalu/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/zanzalu/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/zanzalu/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/z-village</loc>
@@ -185,10 +857,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/z-village/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/z-village/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/z-village/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/z-village/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/ethglobal-cannes-2025</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ethglobal-cannes-2025/about</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ethglobal-cannes-2025/residents</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ethglobal-cannes-2025/scenius</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/ethglobal-cannes-2025/events</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/zucity-popup-2026-annual-popup-city-in-komoro-nagano</loc>
@@ -197,10 +917,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/zucity-popup-2026-annual-popup-city-in-komoro-nagano/about</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/zucity-popup-2026-annual-popup-city-in-komoro-nagano/residents</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/zucity-popup-2026-annual-popup-city-in-komoro-nagano/scenius</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/zucity-popup-2026-annual-popup-city-in-komoro-nagano/events</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/v4-koh-samui-jun-2026</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/v4-koh-samui-jun-2026/about</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/v4-koh-samui-jun-2026/residents</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/v4-koh-samui-jun-2026/scenius</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/v4-koh-samui-jun-2026/events</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/forma</loc>
@@ -209,10 +977,58 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/forma/about</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/forma/residents</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/forma/scenius</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/forma/events</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/superteam-ireland</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/superteam-ireland/about</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/superteam-ireland/residents</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/superteam-ireland/scenius</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/superteam-ireland/events</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://villedge.tech/events</loc>
@@ -221,9 +1037,57 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://villedge.tech/events/about</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/events/residents</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/events/scenius</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/events/events</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://villedge.tech/amagi-life-villages-for-the-future</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/amagi-life-villages-for-the-future/about</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/amagi-life-villages-for-the-future/residents</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/amagi-life-villages-for-the-future/scenius</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://villedge.tech/amagi-life-villages-for-the-future/events</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>

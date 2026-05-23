@@ -63,16 +63,31 @@ function buildSitemap(entries: SitemapEntry[]) {
 async function main() {
   const villages = await fetchVillageSlugs();
 
+  const VILLAGE_SUBROUTES = ["about", "residents", "scenius", "events"] as const;
+
+  const villageEntries: SitemapEntry[] = villages.flatMap((v) => {
+    const lastmod = v.updated_at ? new Date(v.updated_at).toISOString().slice(0, 10) : undefined;
+    const base: SitemapEntry = {
+      path: `/${v.slug}`,
+      lastmod,
+      changefreq: "weekly",
+      priority: "0.8",
+    };
+    const subs: SitemapEntry[] = VILLAGE_SUBROUTES.map((sub) => ({
+      path: `/${v.slug}/${sub}`,
+      lastmod,
+      changefreq: "weekly",
+      priority: "0.6",
+    }));
+    return [base, ...subs];
+  });
+
   const entries: SitemapEntry[] = [
     { path: "/", changefreq: "daily", priority: "1.0" },
     { path: "/widget", changefreq: "monthly", priority: "0.5" },
-    ...villages.map((v): SitemapEntry => ({
-      path: `/${v.slug}`,
-      lastmod: v.updated_at ? new Date(v.updated_at).toISOString().slice(0, 10) : undefined,
-      changefreq: "weekly",
-      priority: "0.8",
-    })),
+    ...villageEntries,
   ];
+
 
   writeFileSync(resolve("public/sitemap.xml"), buildSitemap(entries));
   console.log(`sitemap.xml written (${entries.length} entries)`);
