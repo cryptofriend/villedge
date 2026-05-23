@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Loader2, Users, Settings, Calendar, Building2, ScrollText, User, ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
+import { Loader2, Users, Settings, Calendar, Building2, ScrollText, User, ChevronUp, ChevronDown } from "lucide-react";
 import { useVillages, Village, VillageType } from "@/hooks/useVillages";
 import { useNavigate } from "react-router-dom";
 import { AddVillageForm } from "@/components/villages/AddVillageForm";
