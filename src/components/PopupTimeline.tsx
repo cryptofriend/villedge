@@ -222,8 +222,7 @@ export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onV
     <div className="absolute bottom-0 left-0 right-0 z-20">
       {/* Collapsed state - hide button when zoomed in */}
       {!isExpanded && !isZoomedIn && (
-        <div className="flex items-center justify-start gap-2 px-4 pb-3">
-          {headerExtra}
+        <div className="flex items-center justify-center gap-2 px-4 pb-3">
           <Button
             variant="secondary"
             size="icon"
@@ -235,6 +234,7 @@ export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onV
             <span className="hidden sm:inline">Show Timeline</span>
             <ChevronUp className="h-4 w-4" />
           </Button>
+          {headerExtra}
         </div>
       )}
 
