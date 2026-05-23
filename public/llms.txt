@@ -1,0 +1,14 @@
+# Villedge
+
+> Villedge is the coordination layer for popup villages — a global network connecting people, communities, ideas, and places working toward a new Renaissance.
+
+Villedge helps people discover popup villages around the world, join existing ones, or start their own. Each village is a temporary or permanent place where a better future is not merely discussed, but lived, practiced, and built.
+
+## Pages
+
+- [Home](/): Global interactive map of popup and permanent villages worldwide.
+- [Embed the map](/widget): Embed the live Villedge map of popup villages on any website.
+
+## Optional
+
+- [Embed view](/embed): Lightweight, embeddable version of the map.
