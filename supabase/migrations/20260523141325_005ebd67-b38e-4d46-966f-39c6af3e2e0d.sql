@@ -1,0 +1,1 @@
+GRANT SELECT (secret_hash) ON public.stays TO authenticated;

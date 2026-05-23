@@ -67,15 +67,17 @@ export const useSceniusProjects = (villageId?: string) => {
       }));
       setProjects(typedProjects);
 
-      // Fetch resident projects from user_projects via stays
+      // Fetch resident projects via privacy-aware stays RPC
       if (villageId) {
-        const { data: staysData, error: staysError } = await supabase
-          .from("stays")
-          .select("user_id, nickname, social_profile")
-          .eq("village_id", villageId)
-          .not("user_id", "is", null);
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: staysRaw, error: staysError } = await supabase
+          .rpc("get_stays_with_privacy", {
+            _village_id: villageId,
+            _viewer_id: user?.id || null,
+          });
 
         if (staysError) throw staysError;
+        const staysData = (staysRaw || []).filter((s: any) => s.user_id);
 
         if (staysData && staysData.length > 0) {
           const userIds = staysData

@@ -110,12 +110,13 @@ export const ApplicationsManager = ({ villageId, villageName }: ApplicationsMana
 
   const fetchApplications = async () => {
     try {
-      // Fetch stays for this village
+      // Fetch stays for this village via privacy-aware RPC (hosts see full data)
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: stays, error: staysError } = await supabase
-        .from("stays")
-        .select("*")
-        .eq("village_id", villageId)
-        .order("created_at", { ascending: false });
+        .rpc("get_stays_with_privacy", {
+          _village_id: villageId,
+          _viewer_id: user?.id || null,
+        });
 
       if (staysError) throw staysError;
 
