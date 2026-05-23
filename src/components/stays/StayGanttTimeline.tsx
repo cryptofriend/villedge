@@ -131,9 +131,10 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   // Compute dayWidth so the full timeline fits the visible width when possible.
   // Falls back to a minimum width (with horizontal scroll) if there are too many days.
   const dayWidth = useMemo(() => {
-    if (!timelineWidth || days.length === 0) return minDayWidth;
-    return Math.max(minDayWidth, timelineWidth / days.length);
-  }, [timelineWidth, days.length, minDayWidth]);
+    if (!timelineWidth || days.length === 0) return minDayWidth * zoom;
+    const fit = timelineWidth / days.length;
+    return Math.max(minDayWidth, fit) * zoom;
+  }, [timelineWidth, days.length, minDayWidth, zoom]);
 
   // Measure the timeline scroll container width
   useEffect(() => {
