@@ -387,7 +387,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ touchAction: 'manipulation', overscrollBehavior: 'contain' }}>
-      <div ref={mapContainer} className="h-full w-full" />
+      <div ref={mapContainer} className="relative isolate z-0 h-full w-full" />
 
       {mapError && (
         <div className="absolute inset-0 z-0 flex items-center justify-center bg-muted/20">
