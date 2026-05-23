@@ -1503,6 +1503,18 @@ export type Database = {
       }
       generate_invitation_code: { Args: never; Returns: string }
       generate_username: { Args: { display_name: string }; Returns: string }
+      get_room_availability: {
+        Args: { _room_ids: string[] }
+        Returns: {
+          avatar_url: string
+          end_date: string
+          id: string
+          room_id: string
+          start_date: string
+          status: string
+          username: string
+        }[]
+      }
       get_safe_profile_data: {
         Args: { target_user_id: string }
         Returns: {
@@ -1569,6 +1581,13 @@ export type Database = {
       is_village_host: {
         Args: { _user_id: string; _village_id: string }
         Returns: boolean
+      }
+      resolve_wallet_owner: {
+        Args: {
+          _wallet_address: string
+          _wallet_type: Database["public"]["Enums"]["wallet_type"]
+        }
+        Returns: string
       }
       use_invitation_code: {
         Args: { _code_id: string; _referred_id: string; _referrer_id: string }
