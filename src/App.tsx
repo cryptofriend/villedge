@@ -27,6 +27,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const TelegramCallback = lazy(() => import("./pages/TelegramCallback"));
+const WorldCallback = lazy(() => import("./pages/WorldCallback"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +82,7 @@ const AppRoutes = () => (
             <Route path="/edit" element={<EditVillage overrideVillageSlug={customVillageSlug!} />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
+            <Route path="/auth/world-callback" element={<WorldCallback />} />
             <Route path="/embed" element={<Embed />} />
             <Route path="/widget" element={<Widget />} />
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -92,6 +94,7 @@ const AppRoutes = () => (
             <Route path="/widget" element={<Widget />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
+            <Route path="/auth/world-callback" element={<WorldCallback />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
             <Route path="/profile/:username" element={<Profile />} />
