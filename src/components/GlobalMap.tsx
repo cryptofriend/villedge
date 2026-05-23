@@ -121,6 +121,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         style: "mapbox://styles/mapbox/light-v11",
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
+        projection: { name: 'globe' } as any,
       });
 
       // Apply padding to visually center the map within the visible area
