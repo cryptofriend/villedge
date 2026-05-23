@@ -198,7 +198,7 @@ const Profile = () => {
       // Refresh profile data after onboarding
       const { data: newProfile } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, user_id, username, avatar_url, bio, offerings, asks, project_description, project_url, social_url, is_anon, is_verified, created_at, updated_at")
         .eq("user_id", user.id)
         .maybeSingle();
       
