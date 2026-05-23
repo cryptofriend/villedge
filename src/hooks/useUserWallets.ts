@@ -79,7 +79,7 @@ export const useUserWallets = (userId?: string) => {
         return { error: new Error('Wallet already linked to another account') };
       }
 
-      if (existing && existing.user_id === user.id) {
+      if (existingOwnerId && existingOwnerId === user.id) {
         toast.info('This wallet is already linked to your account');
         return { error: null };
       }
