@@ -307,7 +307,34 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {/* Zoom controls */}
+      <div className="absolute top-0 right-2 z-20 flex items-center gap-1 bg-card/90 backdrop-blur-sm border border-border rounded-md shadow-sm p-0.5">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}
+          disabled={zoom <= 0.5}
+          title="Zoom out"
+        >
+          <ZoomOut className="h-3.5 w-3.5" />
+        </Button>
+        <span className="text-[10px] tabular-nums text-muted-foreground w-8 text-center select-none">
+          {Math.round(zoom * 100)}%
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))}
+          disabled={zoom >= 4}
+          title="Zoom in"
+        >
+          <ZoomIn className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
       {/* Profile Card Dialog */}
       <ResidentProfileCard
         stays={selectedStays}
