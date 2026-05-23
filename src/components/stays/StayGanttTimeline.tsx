@@ -12,7 +12,7 @@ import { Stay } from "@/hooks/useStays";
 import { OccupancyChart } from "./OccupancyChart";
 import { ResidentProfileCard } from "./ResidentProfileCard";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin, Trash2 } from "lucide-react";
+import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBestAvatar } from "@/lib/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
