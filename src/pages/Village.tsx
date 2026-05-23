@@ -69,22 +69,46 @@ const Village = ({ overrideVillageSlug }: VillageProps) => {
     return <Navigate to="/" replace />;
   }
 
+  const displayName = villageMeta?.name || villageId;
+  const seoTitle = villageMeta
+    ? `${villageMeta.name}${villageMeta.location ? ` — ${villageMeta.location}` : ""} | Villedge`
+    : `${displayName} | Villedge`;
+  const seoDescription =
+    villageMeta?.description ||
+    `Discover ${displayName}, a ${villageMeta?.village_type === "permanent" ? "permanent" : "popup"} village on Villedge. Connect with residents, explore events, and join the community.`;
+
   return (
-    <main className="w-screen overflow-hidden bg-background" style={{ height: 'var(--viewport-height, 100dvh)' }}>
-      <InteractiveMap 
-        mapboxToken={MAPBOX_TOKEN} 
-        initialVillageId={villageId} 
-        initialCategory={initialCategory}
+    <>
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        path={`/${villageId}${initialCategory !== "map" ? `/${initialCategory}` : ""}`}
+        image={villageMeta?.logo_url || undefined}
+        jsonLd={villageMeta ? {
+          "@context": "https://schema.org",
+          "@type": villageMeta.village_type === "popup" ? "Event" : "Place",
+          name: villageMeta.name,
+          description: villageMeta.description || undefined,
+          ...(villageMeta.location ? { address: { "@type": "PostalAddress", addressLocality: villageMeta.location } } : {}),
+          ...(villageMeta.logo_url ? { image: villageMeta.logo_url } : {}),
+        } : undefined}
       />
-      
-      {/* Auth popup for unauthenticated users */}
-      {!isAuthenticated && (
-        <AuthDialog 
-          open={showAuthDialog} 
-          onOpenChange={setShowAuthDialog}
+      <main className="w-screen overflow-hidden bg-background" style={{ height: 'var(--viewport-height, 100dvh)' }}>
+        <InteractiveMap 
+          mapboxToken={MAPBOX_TOKEN} 
+          initialVillageId={villageId} 
+          initialCategory={initialCategory}
         />
-      )}
-    </main>
+        
+        {/* Auth popup for unauthenticated users */}
+        {!isAuthenticated && (
+          <AuthDialog 
+            open={showAuthDialog} 
+            onOpenChange={setShowAuthDialog}
+          />
+        )}
+      </main>
+    </>
   );
 };
 
