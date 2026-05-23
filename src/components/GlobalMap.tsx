@@ -507,7 +507,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
                   {filteredVillages.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-3">No permanent villages yet</p>
                   ) : (
-                    <div className="mx-auto w-[min(92vw,360px)] rounded-lg bg-secondary/30 backdrop-blur-sm p-2">
+                    <div className="mx-auto rounded-lg bg-secondary/30 backdrop-blur-sm p-2">
                       <div className="flex flex-col gap-1 max-h-[40vh] overflow-y-auto pr-1">
                         {filteredVillages.map((village) => (
                           <button
