@@ -381,7 +381,13 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <>
+      <SEO
+        title="Bot Admin — Villedge"
+        description="Villedge admin dashboard for managing Telegram bots, notifications, and platform settings."
+        path="/admin"
+      />
+      <div className="min-h-screen bg-muted/30">
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
