@@ -153,12 +153,12 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
             <h2 className="font-display text-3xl font-bold text-foreground">Get Started</h2>
 
             <div className="w-full max-w-sm space-y-3">
-              {/* Primary auth: Google + World ID side by side */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Primary auth: Google + World ID stacked */}
+              <div className="space-y-3">
                 <Button
                   onClick={handleGoogleLogin}
                   disabled={anyLoading}
-                  className="h-14 px-3 text-sm font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+                  className="w-full h-14 px-3 text-sm font-medium bg-foreground hover:bg-foreground/90 text-background rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
                 >
                   {isGoogleBtnLoading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
