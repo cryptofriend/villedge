@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, CalendarDays } from "lucide-react";
+import { Users, CalendarDays, ChevronUp } from "lucide-react";
 import { useStays, Stay } from "@/hooks/useStays";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
@@ -107,7 +107,8 @@ export const StayCalendar = ({ villageId, applyUrl, botUsername }: StayCalendarP
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <CalendarDays className="h-3.5 w-3.5" />
+              <CalendarDays className="h-3.5 w-3.5 hidden sm:block" />
+              <ChevronUp className="h-3.5 w-3.5 sm:hidden" />
               <span className="hidden sm:inline">Timeline</span>
             </Button>
           </div>
