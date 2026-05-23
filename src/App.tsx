@@ -28,6 +28,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const TelegramCallback = lazy(() => import("./pages/TelegramCallback"));
 const WorldCallback = lazy(() => import("./pages/WorldCallback"));
+const About = lazy(() => import("./pages/About"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
