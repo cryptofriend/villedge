@@ -130,7 +130,7 @@ export const useStays = (villageId?: string) => {
       const { data, error } = await supabase
         .from("stays")
         .insert(stay)
-        .select()
+        .select("id, village_id, nickname, villa, start_date, end_date, intention, social_profile, offerings, asks, secret_hash, is_host, created_at, project_description, project_url, status, user_id, is_permanent")
         .single();
 
       if (error) throw error;
