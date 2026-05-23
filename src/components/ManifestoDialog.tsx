@@ -22,10 +22,11 @@ export const ManifestoDialog = () => {
         <button
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 backdrop-blur-sm text-foreground font-semibold text-sm rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
-          <ScrollText className="h-4 w-4" />
+          className="inline-flex items-center gap-2 px-5 py-3 sm:gap-1.5 sm:px-3 sm:py-1.5 bg-muted/50 backdrop-blur-sm text-foreground font-semibold text-base sm:text-sm rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
+          <ScrollText className="h-5 w-5 sm:h-4 sm:w-4" />
           Manifesto
         </button>
+
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>

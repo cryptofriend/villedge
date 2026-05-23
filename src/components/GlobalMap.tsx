@@ -417,7 +417,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         <div className="flex items-start justify-between pointer-events-auto gap-2">
           <div className="flex flex-col gap-1 w-fit">
             <div className="flex items-center gap-2">
-              <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
+              <h1 className="font-display text-3xl font-semibold text-foreground sm:text-2xl md:text-3xl">
                 Villedge
               </h1>
               <AddVillageForm onVillageAdded={() => window.location.reload()} />
@@ -464,16 +464,17 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           </div>
 
           {/* Mobile collapsed menu */}
-          <div className="flex sm:hidden">
+          <div className="flex sm:hidden items-center gap-2">
+            <ManifestoDialog />
             <Sheet>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-9 w-9 rounded-full bg-card/90 backdrop-blur-sm border-border/50 shadow-sm"
+                  className="h-14 w-14 rounded-full bg-card/90 backdrop-blur-sm border-border/50 shadow-sm [&_svg]:size-7"
                   aria-label="Open menu"
                 >
-                  <Menu className="h-4 w-4" />
+                  <Menu />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-72">
@@ -497,10 +498,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
                     <span className="text-sm">Villedge on X</span>
                   </a>
                   <div className="flex items-center gap-2">
-                    <ManifestoDialog />
-                    <span className="text-sm text-muted-foreground">Manifesto</span>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <NotificationBell />
                     <span className="text-sm text-muted-foreground">Notifications</span>
                   </div>
@@ -508,6 +505,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               </SheetContent>
             </Sheet>
           </div>
+
         </div>
       </div>
 
@@ -522,17 +520,18 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             type="single"
             value={villageTypeFilter}
             onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
-            className="bg-card/95 backdrop-blur-sm rounded-full border border-border/50 shadow-sm px-1 py-0.5"
+            className="bg-card/95 backdrop-blur-sm rounded-full border border-border/50 shadow-sm px-1.5 py-1 sm:px-1 sm:py-0.5"
           >
-            <ToggleGroupItem value="popup" className="gap-1 text-xs rounded-full px-3 py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-              <Calendar className="h-3.5 w-3.5" />
+            <ToggleGroupItem value="popup" className="gap-2 text-base sm:gap-1 sm:text-xs rounded-full px-5 py-2 sm:px-3 sm:py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <Calendar className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
               Popups
             </ToggleGroupItem>
-            <ToggleGroupItem value="permanent" className="gap-1 text-xs rounded-full px-3 py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-              <Building2 className="h-3.5 w-3.5" />
+            <ToggleGroupItem value="permanent" className="gap-2 text-base sm:gap-1 sm:text-xs rounded-full px-5 py-2 sm:px-3 sm:py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <Building2 className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
               Permanent
             </ToggleGroupItem>
           </ToggleGroup>
+
         );
 
         return (
@@ -591,24 +590,25 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       {/* Mobile avatar button */}
       {isMobile && (
-        <div className="absolute bottom-2 right-4 z-[200] sm:hidden">
+        <div className="absolute bottom-3 right-4 z-[200] sm:hidden">
           <button
             onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
-            className="flex items-center justify-center h-9 w-9 rounded-full bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg"
+            className="flex items-center justify-center h-16 w-16 rounded-full bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg"
           >
             {isAuthenticated && profile?.avatar_url ? (
-              <Avatar className="h-7 w-7">
+              <Avatar className="h-12 w-12">
                 <AvatarImage src={profile.avatar_url} />
-                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                <AvatarFallback className="text-sm bg-primary/10 text-primary">
                   {(profile.username || "U").slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             ) : (
-              <User className="h-4 w-4 text-muted-foreground" />
+              <User className="h-7 w-7 text-muted-foreground" />
             )}
           </button>
         </div>
       )}
+
 
 
     </div>
