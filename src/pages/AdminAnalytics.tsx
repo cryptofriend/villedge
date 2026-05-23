@@ -84,5 +84,6 @@ export default function AdminAnalyticsPage() {
         <AdminAnalyticsComponent />
       </div>
     </div>
+  </>
   );
 }
