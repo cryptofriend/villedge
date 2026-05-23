@@ -94,6 +94,7 @@ const AppRoutes = () => (
             <Route path="/widget" element={<Widget />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
+            <Route path="/auth/world-callback" element={<WorldCallback />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
             <Route path="/profile/:username" element={<Profile />} />
