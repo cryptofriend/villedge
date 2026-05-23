@@ -226,12 +226,13 @@ export const PopupTimeline = ({ villages, activeVillage, isZoomedIn = false, onV
           {headerExtra}
           <Button
             variant="secondary"
-            size="sm"
+            size="icon"
             onClick={() => setIsManuallyExpanded(true)}
-            className="gap-2 rounded-full bg-card/95 shadow-lg backdrop-blur-sm"
+            aria-label="Show Timeline"
+            className="h-9 w-9 rounded-full bg-card/95 shadow-lg backdrop-blur-sm sm:h-auto sm:w-auto sm:gap-2 sm:px-3"
           >
-            <Calendar className="h-4 w-4" />
-            <span>Show Timeline</span>
+            <Calendar className="hidden h-4 w-4 sm:block" />
+            <span className="hidden sm:inline">Show Timeline</span>
             <ChevronUp className="h-4 w-4" />
           </Button>
         </div>
