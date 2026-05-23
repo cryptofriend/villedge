@@ -161,22 +161,19 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     };
   }, [mapboxToken]);
 
-  // Center map on user's current village or preferred village
+  // Center map on user's current village only (default stays as world/globe view)
   useEffect(() => {
     if (!map.current || !mapReady || initialCenterSet) return;
 
-    // Prefer Renaissance Village as the featured village, then fall back to user's current village
-    const preferredVillage = villages.find(v => v.id === FEATURED_VILLAGE_ID) || currentVillage;
-
-    if (preferredVillage) {
+    if (currentVillage) {
       map.current.flyTo({
-        center: preferredVillage.center,
-        zoom: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_ZOOM : 5,
+        center: currentVillage.center,
+        zoom: 5,
         duration: 1500,
       });
       setInitialCenterSet(true);
     }
-  }, [mapReady, currentVillage, villages, initialCenterSet]);
+  }, [mapReady, currentVillage, initialCenterSet]);
 
   // Get village route slug - all villages use /:id format now
   const getVillageRoute = (village: Village | { id: string }) => {
