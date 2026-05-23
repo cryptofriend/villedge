@@ -82,6 +82,7 @@ const AppRoutes = () => (
             <Route path="/edit" element={<EditVillage overrideVillageSlug={customVillageSlug!} />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
+            <Route path="/auth/world-callback" element={<WorldCallback />} />
             <Route path="/embed" element={<Embed />} />
             <Route path="/widget" element={<Widget />} />
             <Route path="*" element={<Navigate to="/" replace />} />
