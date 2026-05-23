@@ -61,30 +61,22 @@ export const useHousingRooms = (spotId: string | null) => {
       }
 
       const { data: bData, error: bErr } = await supabase
-        .from("room_bookings")
-        .select("*")
-        .in("room_id", ids)
-        .in("status", ["confirmed", "pending"])
-        .order("start_date", { ascending: true });
+        .rpc("get_room_availability", { _room_ids: ids });
       if (bErr) throw bErr;
-
-      const userIds = Array.from(new Set((bData || []).map((b: any) => b.user_id)));
-      let profileMap = new Map<string, { username: string | null; avatar_url: string | null }>();
-      if (userIds.length) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("user_id, username, avatar_url")
-          .in("user_id", userIds);
-        (profs || []).forEach((p: any) =>
-          profileMap.set(p.user_id, { username: p.username, avatar_url: p.avatar_url })
-        );
-      }
 
       setBookings(
         (bData || []).map((b: any) => ({
-          ...b,
-          username: profileMap.get(b.user_id)?.username ?? null,
-          avatar_url: profileMap.get(b.user_id)?.avatar_url ?? null,
+          id: b.id,
+          room_id: b.room_id,
+          start_date: b.start_date,
+          end_date: b.end_date,
+          status: b.status,
+          user_id: null,
+          notes: null,
+          created_at: null,
+          updated_at: null,
+          username: b.username ?? null,
+          avatar_url: b.avatar_url ?? null,
         }))
       );
     } catch (err) {
