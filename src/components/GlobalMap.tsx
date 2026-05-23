@@ -17,11 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ManifestoDialog } from "@/components/ManifestoDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-const ADMIN_USER_IDS = [
-  "9807c494-ba07-4438-9a89-07ac13334e78", // dev
-  "b015441b-3bb4-4150-94e6-d8be048035bb", // booga
-];
+import { useAdminRole } from "@/hooks/useAdminRole";
 const RENAISSANCE_CENTER: [number, number] = [106.7358675, 10.8056129];
 const DEFAULT_CENTER: [number, number] = [0, 20];
 const DEFAULT_ZOOM = 0;
@@ -51,7 +47,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [initialCenterSet, setInitialCenterSet] = useState(false);
 
-  const isAdmin = user?.id ? ADMIN_USER_IDS.includes(user.id) : false;
+  const { isAdmin } = useAdminRole();
   const isMobile = useIsMobile();
   const { profile, isAuthenticated } = useAuth();
 
