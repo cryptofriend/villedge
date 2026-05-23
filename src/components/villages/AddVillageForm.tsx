@@ -238,7 +238,8 @@ export const AddVillageForm = ({ onVillageAdded }: AddVillageFormProps) => {
     setWebsiteMetadata(null);
     setOpen(false);
     
-    onVillageAdded?.();
+    // Navigate to the newly created village
+    navigate(`/${slug}`);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
