@@ -464,16 +464,17 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           </div>
 
           {/* Mobile collapsed menu */}
-          <div className="flex sm:hidden">
+          <div className="flex sm:hidden items-center gap-2">
+            <ManifestoDialog />
             <Sheet>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-9 w-9 rounded-full bg-card/90 backdrop-blur-sm border-border/50 shadow-sm"
+                  className="h-14 w-14 rounded-full bg-card/90 backdrop-blur-sm border-border/50 shadow-sm [&_svg]:size-7"
                   aria-label="Open menu"
                 >
-                  <Menu className="h-4 w-4" />
+                  <Menu />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-72">
@@ -497,10 +498,6 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
                     <span className="text-sm">Villedge on X</span>
                   </a>
                   <div className="flex items-center gap-2">
-                    <ManifestoDialog />
-                    <span className="text-sm text-muted-foreground">Manifesto</span>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <NotificationBell />
                     <span className="text-sm text-muted-foreground">Notifications</span>
                   </div>
@@ -508,6 +505,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
               </SheetContent>
             </Sheet>
           </div>
+
         </div>
       </div>
 
