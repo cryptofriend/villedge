@@ -37,7 +37,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const { setVisible: openSolanaModal } = useWalletModal();
   
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authType, setAuthType] = useState<'solana' | 'ethereum' | 'magic' | 'google' | 'telegram' | null>(null);
+  const [authType, setAuthType] = useState<'solana' | 'ethereum' | 'magic' | 'google' | 'telegram' | 'worldid' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOtherMethods, setShowOtherMethods] = useState(false);
 
