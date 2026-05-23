@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BarChart3, Bot } from "lucide-react";
 import { AdminAnalytics as AdminAnalyticsComponent } from "@/components/admin/AdminAnalytics";
+import { SEO } from "@/components/SEO";
 
 export default function AdminAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
