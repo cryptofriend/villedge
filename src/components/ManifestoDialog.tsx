@@ -98,13 +98,6 @@ export const ManifestoDialog = () => {
             Villedge is the coordination layer for a new generation of popup villages: a network connecting people, communities, ideas, and places working toward a new Renaissance.
           </p>
 
-          <p className="text-foreground font-semibold text-base md:text-lg">
-            Not one village.
-          </p>
-          <p className="text-foreground font-semibold text-lg md:text-xl">
-            A civilization.
-          </p>
-
           {/* X backlink */}
           <a
             href="https://x.com/villedgetech"
