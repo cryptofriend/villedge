@@ -18,6 +18,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
 import { BotNotificationSection } from "@/components/admin/BotNotificationSection";
+import { SEO } from "@/components/SEO";
 
 const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
