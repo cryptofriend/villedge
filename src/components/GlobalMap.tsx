@@ -8,7 +8,7 @@ import { AddVillageForm } from "@/components/villages/AddVillageForm";
 import { AuthButton } from "@/components/AuthButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { PopupTimeline } from "@/components/PopupTimeline";
-import { useUserCount } from "@/hooks/useUserCount";
+import { useGlobalStats } from "@/hooks/useGlobalStats";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserCurrentVillage } from "@/hooks/useUserCurrentVillage";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const navigate = useNavigate();
 
   const { villages, loading: villagesLoading } = useVillages();
-  const { count: userCount } = useUserCount();
+  const { userCount, villageCount } = useGlobalStats();
   const { user } = useAuth();
   const { currentVillage } = useUserCurrentVillage(user?.id, villages);
   const [mapReady, setMapReady] = useState(false);
@@ -442,7 +442,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             <Users className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-foreground">
               <span className="font-semibold">{userCount}</span> residents across{" "}
-              <span className="font-semibold">{villages.length}</span> villages
+              <span className="font-semibold">{villageCount}</span> villages
             </span>
           </div>
 
