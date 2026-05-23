@@ -54,9 +54,10 @@ const Profile = () => {
 
       try {
         // First try to fetch by username
+        const PROFILE_COLS = "id, user_id, username, avatar_url, bio, offerings, asks, project_description, project_url, social_url, is_anon, is_verified, created_at, updated_at";
         let { data: profile, error } = await supabase
           .from("profiles")
-          .select("*")
+          .select(PROFILE_COLS)
           .eq("username", username)
           .maybeSingle();
 
@@ -64,7 +65,7 @@ const Profile = () => {
         if (error || !profile) {
           const { data: profileById, error: errorById } = await supabase
             .from("profiles")
-            .select("*")
+            .select(PROFILE_COLS)
             .eq("user_id", username)
             .maybeSingle();
           
