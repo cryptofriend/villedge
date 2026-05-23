@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { AuthDialog } from '@/components/AuthDialog';
+import { SEO } from '@/components/SEO';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -27,15 +28,22 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AuthDialog
-        open={open}
-        onOpenChange={(o) => {
-          setOpen(o);
-          if (!o) navigate('/');
-        }}
-        onSuccess={() => navigate(from, { replace: true })}
+    <>
+      <SEO
+        title="Sign In — Villedge"
+        description="Sign in to Villedge to connect with village communities, manage your stays, and discover events."
+        path="/auth"
       />
-    </div>
+      <div className="min-h-screen bg-background">
+        <AuthDialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) navigate('/');
+          }}
+          onSuccess={() => navigate(from, { replace: true })}
+        />
+      </div>
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BarChart3, Bot } from "lucide-react";
 import { AdminAnalytics as AdminAnalyticsComponent } from "@/components/admin/AdminAnalytics";
+import { SEO } from "@/components/SEO";
 
 export default function AdminAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -31,7 +32,13 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <>
+      <SEO
+        title="Analytics — Villedge"
+        description="Villedge platform analytics dashboard with insights on villages, users, and community activity."
+        path="/admin/analytics"
+      />
+      <div className="min-h-screen bg-muted/30">
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -77,5 +84,6 @@ export default function AdminAnalyticsPage() {
         <AdminAnalyticsComponent />
       </div>
     </div>
+  </>
   );
 }

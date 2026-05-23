@@ -16,6 +16,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
+import { SEO } from "@/components/SEO";
 
 const PAGE_SIZE = 20;
 
@@ -55,7 +56,13 @@ const Notifications = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEO
+        title="Notifications — Villedge"
+        description="View your activity notifications, village updates, and community alerts on Villedge."
+        path="/notifications"
+      />
+      <div className="min-h-screen bg-background">
       <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-10">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-2 min-w-0">
@@ -201,6 +208,7 @@ const Notifications = () => {
         )}
       </div>
     </div>
+  </>
   );
 };
 

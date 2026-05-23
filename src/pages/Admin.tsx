@@ -18,6 +18,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { AdminAIChat } from "@/components/admin/AdminAIChat";
 import { BotNotificationSection } from "@/components/admin/BotNotificationSection";
+import { SEO } from "@/components/SEO";
 
 const TelegramIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -380,7 +381,13 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <>
+      <SEO
+        title="Bot Admin — Villedge"
+        description="Villedge admin dashboard for managing Telegram bots, notifications, and platform settings."
+        path="/admin"
+      />
+      <div className="min-h-screen bg-muted/30">
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
@@ -705,5 +712,6 @@ export default function Admin() {
         </div>
       </div>
     </div>
+  </>
   );
 }
