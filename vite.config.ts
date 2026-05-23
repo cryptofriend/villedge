@@ -29,7 +29,14 @@ export default defineConfig(({ mode }) => ({
         manualChunks: (id) => {
           if (!id.includes("node_modules")) return;
           if (id.includes("mapbox-gl")) return "vendor-mapbox";
-          if (id.includes("@privy-io")) return "vendor-privy";
+          // Bundle wagmi/viem with privy to avoid circular-dep TDZ errors
+          // (Privy depends on wagmi/viem internally).
+          if (
+            id.includes("@privy-io") ||
+            id.includes("wagmi") ||
+            id.includes("viem")
+          )
+            return "vendor-privy";
           if (
             id.includes("@solana/") ||
             id.includes("@walletconnect") ||
@@ -37,7 +44,6 @@ export default defineConfig(({ mode }) => ({
           )
             return "vendor-solana";
           if (id.includes("@tonconnect")) return "vendor-ton";
-          if (id.includes("wagmi") || id.includes("viem")) return "vendor-wagmi";
           if (id.includes("@supabase")) return "vendor-supabase";
           if (id.includes("@tanstack")) return "vendor-tanstack";
           if (
