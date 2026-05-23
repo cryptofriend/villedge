@@ -22,13 +22,13 @@ const ADMIN_USER_IDS = [
   "b015441b-3bb4-4150-94e6-d8be048035bb", // booga
 ];
 const RENAISSANCE_CENTER: [number, number] = [106.7358675, 10.8056129];
-const DEFAULT_CENTER: [number, number] = RENAISSANCE_CENTER;
-const DEFAULT_ZOOM = 8;
+const DEFAULT_CENTER: [number, number] = [0, 20];
+const DEFAULT_ZOOM = 1.1;
 const FEATURED_VILLAGE_ID = "renaissance-village";
 const FEATURED_VILLAGE_ZOOM = 8;
 
-// Padding to account for UI overlays (right sidebar, bottom timeline)
-const MAP_PADDING = { top: 80, bottom: 220, left: 0, right: 300 };
+// Padding to account for UI overlays (bottom timeline)
+const MAP_PADDING = { top: 0, bottom: 120, left: 0, right: 0 };
 
 interface GlobalMapProps {
   mapboxToken: string;
@@ -121,6 +121,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
         style: "mapbox://styles/mapbox/light-v11",
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
+        projection: { name: 'globe' } as any,
       });
 
       // Apply padding to visually center the map within the visible area
@@ -160,22 +161,19 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
     };
   }, [mapboxToken]);
 
-  // Center map on user's current village or preferred village
+  // Center map on user's current village only (default stays as world/globe view)
   useEffect(() => {
     if (!map.current || !mapReady || initialCenterSet) return;
 
-    // Prefer Renaissance Village as the featured village, then fall back to user's current village
-    const preferredVillage = villages.find(v => v.id === FEATURED_VILLAGE_ID) || currentVillage;
-
-    if (preferredVillage) {
+    if (currentVillage) {
       map.current.flyTo({
-        center: preferredVillage.center,
-        zoom: preferredVillage.id === FEATURED_VILLAGE_ID ? FEATURED_VILLAGE_ZOOM : 5,
+        center: currentVillage.center,
+        zoom: 5,
         duration: 1500,
       });
       setInitialCenterSet(true);
     }
-  }, [mapReady, currentVillage, villages, initialCenterSet]);
+  }, [mapReady, currentVillage, initialCenterSet]);
 
   // Get village route slug - all villages use /:id format now
   const getVillageRoute = (village: Village | { id: string }) => {
