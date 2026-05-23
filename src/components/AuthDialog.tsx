@@ -126,7 +126,8 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const isMagicLoading = isAuthenticating && authType === 'magic';
   const isGoogleBtnLoading = authType === 'google';
   const isTelegramLoading = authType === 'telegram';
-  const anyLoading = isMagicLoading || isGoogleBtnLoading || isTelegramLoading;
+  const isWorldIdLoading = authType === 'worldid';
+  const anyLoading = isMagicLoading || isGoogleBtnLoading || isTelegramLoading || isWorldIdLoading;
 
   return (
     <>
