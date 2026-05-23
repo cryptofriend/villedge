@@ -442,7 +442,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             <Users className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-foreground">
               <span className="font-semibold">{userCount}</span> residents across{" "}
-              <span className="font-semibold">{villages.length}</span> villages
+              <span className="font-semibold">{villageCount}</span> villages
             </span>
           </div>
 
