@@ -41,7 +41,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
   const navigate = useNavigate();
 
   const { villages, loading: villagesLoading } = useVillages();
-  const { count: userCount } = useUserCount();
+  const { userCount, villageCount } = useGlobalStats();
   const { user } = useAuth();
   const { currentVillage } = useUserCurrentVillage(user?.id, villages);
   const [mapReady, setMapReady] = useState(false);
