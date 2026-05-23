@@ -435,7 +435,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
           </div>
 
           {/* Center analytics */}
-          <div className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm">
+          <div
+            onClick={() => navigate("/about")}
+            className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm cursor-pointer hover:bg-secondary transition-colors"
+          >
             <Users className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-foreground">
               <span className="font-semibold">{userCount}</span> residents across{" "}
