@@ -711,6 +711,7 @@ export default function Admin() {
           <AdminAIChat />
         </div>
       </div>
-    </>
+    </div>
+  </>
   );
 }
