@@ -185,11 +185,9 @@ export const useHousingRooms = (spotId: string | null) => {
 
       // Warn if host has no Telegram linked — relay won't work end-to-end
       if (hostUserId) {
-        const { data: hostProfile } = await supabase
-          .from("profiles")
-          .select("telegram_id")
-          .eq("user_id", hostUserId)
-          .maybeSingle();
+        const { data: hostProfileData } = await supabase
+          .rpc("get_safe_profile_data", { target_user_id: hostUserId });
+        const hostProfile = Array.isArray(hostProfileData) ? hostProfileData[0] : hostProfileData;
         if (!hostProfile?.telegram_id) {
           toast.warning("Host hasn't connected Telegram — they'll be notified in the village chat instead of receiving a direct message.");
         }
