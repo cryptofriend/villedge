@@ -478,7 +478,10 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 flex flex-col gap-3">
-                  <div className="flex items-center gap-1.5 px-3 py-2 bg-card rounded-full border border-border/50">
+                  <div
+                    onClick={() => navigate("/about")}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-card rounded-full border border-border/50 cursor-pointer hover:bg-secondary transition-colors"
+                  >
                     <Users className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium text-foreground">
                       <span className="font-semibold">{userCount}</span> residents · <span className="font-semibold">{villageCount}</span> villages
