@@ -12,7 +12,7 @@ import { Stay } from "@/hooks/useStays";
 import { OccupancyChart } from "./OccupancyChart";
 import { ResidentProfileCard } from "./ResidentProfileCard";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin, Trash2 } from "lucide-react";
+import { CalendarCheck, ExternalLink, Twitter, Instagram, Github, Linkedin, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBestAvatar } from "@/lib/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -96,6 +96,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   const [selectedResidentKey, setSelectedResidentKey] = useState<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const [timelineWidth, setTimelineWidth] = useState(0);
+  const [zoom, setZoom] = useState(1);
   const minDayWidth = isMobile ? 14 : 20;
 
   // Calculate date range from stays
@@ -130,9 +131,10 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   // Compute dayWidth so the full timeline fits the visible width when possible.
   // Falls back to a minimum width (with horizontal scroll) if there are too many days.
   const dayWidth = useMemo(() => {
-    if (!timelineWidth || days.length === 0) return minDayWidth;
-    return Math.max(minDayWidth, timelineWidth / days.length);
-  }, [timelineWidth, days.length, minDayWidth]);
+    if (!timelineWidth || days.length === 0) return minDayWidth * zoom;
+    const fit = timelineWidth / days.length;
+    return Math.max(minDayWidth, fit) * zoom;
+  }, [timelineWidth, days.length, minDayWidth, zoom]);
 
   // Measure the timeline scroll container width
   useEffect(() => {
@@ -305,7 +307,34 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {/* Zoom controls */}
+      <div className="absolute top-0 right-2 z-20 flex items-center gap-1 bg-card/90 backdrop-blur-sm border border-border rounded-md shadow-sm p-0.5">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}
+          disabled={zoom <= 0.5}
+          title="Zoom out"
+        >
+          <ZoomOut className="h-3.5 w-3.5" />
+        </Button>
+        <span className="text-[10px] tabular-nums text-muted-foreground w-8 text-center select-none">
+          {Math.round(zoom * 100)}%
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))}
+          disabled={zoom >= 4}
+          title="Zoom in"
+        >
+          <ZoomIn className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
       {/* Profile Card Dialog */}
       <ResidentProfileCard
         stays={selectedStays}
