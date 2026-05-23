@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, user_id, username, avatar_url, bio, offerings, asks, project_description, project_url, social_url, is_anon, is_verified, created_at, updated_at')
       .eq('user_id', userId)
       .maybeSingle();
     
