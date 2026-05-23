@@ -23,7 +23,7 @@ const ADMIN_USER_IDS = [
 ];
 const RENAISSANCE_CENTER: [number, number] = [106.7358675, 10.8056129];
 const DEFAULT_CENTER: [number, number] = [0, 20];
-const DEFAULT_ZOOM = 1.1;
+const DEFAULT_ZOOM = 0;
 const FEATURED_VILLAGE_ID = "renaissance-village";
 const FEATURED_VILLAGE_ZOOM = 8;
 
