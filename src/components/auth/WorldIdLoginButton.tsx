@@ -44,7 +44,7 @@ export function WorldIdLoginButton({ disabled, isLoading, onStart }: WorldIdLogi
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
             <path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20" stroke="currentColor" strokeWidth="2" />
           </svg>
-          <span>Continue with World ID</span>
+          <span>World ID</span>
         </div>
       )}
     </Button>
