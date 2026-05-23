@@ -96,6 +96,7 @@ export const StayGanttTimeline = ({ stays, loading, onEditStay, onDeleteStay, is
   const [selectedResidentKey, setSelectedResidentKey] = useState<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const [timelineWidth, setTimelineWidth] = useState(0);
+  const [zoom, setZoom] = useState(1);
   const minDayWidth = isMobile ? 14 : 20;
 
   // Calculate date range from stays
