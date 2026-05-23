@@ -172,19 +172,6 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
                 )}
               </Button>
 
-              {/* TON Login */}
-              <TonLoginButton
-                disabled={anyLoading}
-                isLoading={isTelegramLoading}
-                onStart={() => setAuthType('telegram')}
-                onSuccess={(isNewUser) => {
-                  if (isNewUser) {
-                    setShowOnboarding(true);
-                  }
-                }}
-                onError={() => setAuthType(null)}
-              />
-
               {/* Other Methods Collapsible */}
               <div className="space-y-3">
                 <button
@@ -198,6 +185,17 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
 
                 {showOtherMethods && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <TonLoginButton
+                      disabled={anyLoading}
+                      isLoading={isTelegramLoading}
+                      onStart={() => setAuthType('telegram')}
+                      onSuccess={(isNewUser) => {
+                        if (isNewUser) {
+                          setShowOnboarding(true);
+                        }
+                      }}
+                      onError={() => setAuthType(null)}
+                    />
                     <PrivyLoginButton
                       disabled={anyLoading}
                       className="w-full h-12 text-sm font-medium border-2 border-border bg-background hover:bg-muted text-foreground rounded-xl transition-all duration-200"
