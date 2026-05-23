@@ -16,6 +16,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
+import { SEO } from "@/components/SEO";
 
 const PAGE_SIZE = 20;
 
