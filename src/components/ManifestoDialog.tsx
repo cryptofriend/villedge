@@ -93,22 +93,6 @@ export const ManifestoDialog = () => {
             </p>
           </div>
 
-          <div className="py-2">
-            <p className="text-foreground font-semibold text-base md:text-lg mb-3">
-              Our goal is simple:
-            </p>
-            <p>
-              To create places where a better future is not merely discussed —
-            </p>
-            <div className="pl-4 space-y-1 text-foreground font-medium">
-              <p>but lived,</p>
-              <p>practiced,</p>
-              <p>and built.</p>
-            </div>
-            <p className="mt-3">
-              And to connect these places into something larger.
-            </p>
-          </div>
 
           <p>
             Villedge is the coordination layer for a new generation of popup villages: a network connecting people, communities, ideas, and places working toward a new Renaissance.
