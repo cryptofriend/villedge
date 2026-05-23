@@ -1,4 +1,4 @@
-import { ScrollText, PenLine, Check } from "lucide-react";
+import { ScrollText, PenLine, Check, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -61,6 +61,18 @@ export const ManifestoDialog = () => {
           <p className="text-foreground font-medium italic">
             The goal is simple: to create places where a better future is not merely discussed, but lived, practiced, and built.
           </p>
+
+          {/* X backlink */}
+          <a
+            href="https://x.com/villedgetech"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <span className="font-bold text-base">𝕏</span>
+            <span>@villedgetech</span>
+            <ExternalLink className="h-3 w-3" />
+          </a>
 
           {/* Sign button */}
           <div className="flex items-center gap-3 pt-4 border-t border-border">
