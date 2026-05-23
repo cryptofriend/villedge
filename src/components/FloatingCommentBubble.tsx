@@ -17,28 +17,39 @@ const formatCompactTime = (date: Date): string => {
 // Generate consistent avatar color based on name
 const getAvatarColorHex = (name: string): string => {
   const colors = [
-    "#f59e0b", // amber-500
-    "#10b981", // emerald-500
-    "#3b82f6", // blue-500
-    "#8b5cf6", // purple-500
-    "#ec4899", // pink-500
-    "#f97316", // orange-500
-    "#14b8a6", // teal-500
-    "#6366f1", // indigo-500
+    "#f59e0b",
+    "#10b981",
+    "#3b82f6",
+    "#8b5cf6",
+    "#ec4899",
+    "#f97316",
+    "#14b8a6",
+    "#6366f1",
   ];
   const index = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[index % colors.length];
 };
 
+// Escape arbitrary user-provided strings before they reach innerHTML.
+const escapeHtml = (unsafe: string): string =>
+  unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
 export const createFloatingCommentHTML = (comment: Comment): string => {
   const avatarColor = getAvatarColorHex(comment.author_name);
   const timeAgo = formatCompactTime(new Date(comment.created_at));
-  const initial = comment.author_name.charAt(0).toUpperCase();
-  
-  // Truncate content to ~30 chars
-  const truncatedContent = comment.content.length > 35 
-    ? comment.content.substring(0, 35) + "…" 
-    : comment.content;
+  const initial = escapeHtml(comment.author_name.charAt(0).toUpperCase());
+
+  const truncatedContent =
+    comment.content.length > 35
+      ? comment.content.substring(0, 35) + "…"
+      : comment.content;
+  const safeContent = escapeHtml(truncatedContent);
+  const safeTimeAgo = escapeHtml(timeAgo);
 
   return `
     <div style="
@@ -81,12 +92,12 @@ export const createFloatingCommentHTML = (comment: Comment): string => {
             text-overflow: ellipsis;
             max-width: 100px;
             line-height: 1.2;
-          ">${truncatedContent}</span>
+          ">${safeContent}</span>
           <span style="
             font-size: 9px;
             color: #999;
             white-space: nowrap;
-          ">· ${timeAgo}</span>
+          ">· ${safeTimeAgo}</span>
         </div>
       </div>
       <div style="
