@@ -520,17 +520,18 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             type="single"
             value={villageTypeFilter}
             onValueChange={(value) => value && setVillageTypeFilter(value as VillageType)}
-            className="bg-card/95 backdrop-blur-sm rounded-full border border-border/50 shadow-sm px-1 py-0.5"
+            className="bg-card/95 backdrop-blur-sm rounded-full border border-border/50 shadow-sm px-1.5 py-1 sm:px-1 sm:py-0.5"
           >
-            <ToggleGroupItem value="popup" className="gap-1 text-xs rounded-full px-3 py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-              <Calendar className="h-3.5 w-3.5" />
+            <ToggleGroupItem value="popup" className="gap-2 text-base sm:gap-1 sm:text-xs rounded-full px-5 py-2 sm:px-3 sm:py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <Calendar className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
               Popups
             </ToggleGroupItem>
-            <ToggleGroupItem value="permanent" className="gap-1 text-xs rounded-full px-3 py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-              <Building2 className="h-3.5 w-3.5" />
+            <ToggleGroupItem value="permanent" className="gap-2 text-base sm:gap-1 sm:text-xs rounded-full px-5 py-2 sm:px-3 sm:py-1 h-auto data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <Building2 className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
               Permanent
             </ToggleGroupItem>
           </ToggleGroup>
+
         );
 
         return (
