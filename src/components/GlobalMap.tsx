@@ -413,7 +413,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
 
       {/* Header overlay */}
       <div className="absolute left-0 right-0 top-0 z-10 pointer-events-none bg-gradient-to-b from-background/90 via-background/60 to-transparent p-3 pb-12 sm:p-4 sm:pb-16 md:p-6 md:pb-20">
-        <div className="flex items-start justify-between pointer-events-auto">
+        <div className="flex items-start justify-between pointer-events-auto gap-2">
           <div className="flex flex-col gap-1 w-fit">
             <div className="flex items-center gap-2">
               <h1 className="font-display text-xl font-semibold text-foreground sm:text-2xl md:text-3xl">
@@ -437,10 +437,19 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             </p>
           </div>
 
-          {/* User count badge + Showtime + Auth button */}
+          {/* Center analytics */}
+          <div className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">
+              <span className="font-semibold">{userCount}</span> residents across{" "}
+              <span className="font-semibold">{villages.length}</span> villages
+            </span>
+          </div>
+
+          {/* Auth & actions */}
           <div className="flex items-center gap-2">
             <ManifestoDialog />
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm md:hidden">
               <Users className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium text-foreground">{userCount}</span>
             </div>
@@ -448,6 +457,7 @@ export const GlobalMap = ({ mapboxToken }: GlobalMapProps) => {
             <AuthButton />
           </div>
         </div>
+
       </div>
 
 
