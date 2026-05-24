@@ -70,12 +70,31 @@ const Village = ({ overrideVillageSlug }: VillageProps) => {
   }
 
   const displayName = villageMeta?.name || villageId;
-  const seoTitle = villageMeta
-    ? `${villageMeta.name}${villageMeta.location ? ` — ${villageMeta.location}` : ""} | Villedge`
-    : `${displayName} | Villedge`;
+  const categoryLabels: Record<CategoryType, string> = {
+    map: "Map",
+    about: "About",
+    residents: "Residents",
+    scenius: "Scenius",
+    events: "Events",
+  };
+  const baseTitle = villageMeta
+    ? `${villageMeta.name}${villageMeta.location ? ` — ${villageMeta.location}` : ""}`
+    : displayName;
+  const seoTitle =
+    initialCategory !== "map"
+      ? `${categoryLabels[initialCategory]} — ${baseTitle} | Villedge`
+      : `${baseTitle} | Villedge`;
+  const categoryDescriptions: Record<CategoryType, string> = {
+    map: `Discover ${displayName} on the Villedge map — places to stay, eat, work and meet up.`,
+    about: `About ${displayName} — focus, dates, location and how to join this Villedge community.`,
+    residents: `Meet the residents of ${displayName} — profiles, projects and offerings from this Villedge community.`,
+    scenius: `Projects and scenius from ${displayName} — explore what the community is building on Villedge.`,
+    events: `Upcoming events at ${displayName} — talks, workshops and gatherings from this Villedge community.`,
+  };
   const seoDescription =
-    villageMeta?.description ||
-    `Discover ${displayName}, a ${villageMeta?.village_type === "permanent" ? "permanent" : "popup"} village on Villedge. Connect with residents, explore events, and join the community.`;
+    initialCategory === "map" && villageMeta?.description
+      ? villageMeta.description
+      : categoryDescriptions[initialCategory];
 
   return (
     <>

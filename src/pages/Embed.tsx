@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import { EmbedMap } from "@/components/EmbedMap";
 import { EmbedVillagesMap } from "@/components/EmbedVillagesMap";
+import { SEO } from "@/components/SEO";
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoiZXVkYWZvcm0iLCJhIjoiY21lczgwdndsMDZlczJqcXo3Y2g3d2diMSJ9.MbyZaNannwrrF44tMnz3aA";
 
@@ -13,20 +14,28 @@ const Embed = () => {
   const centerZoom = zoomParam ? Number(zoomParam) : undefined;
 
   return (
-    <main
-      className="w-screen overflow-hidden bg-background"
-      style={{ height: "var(--viewport-height, 100dvh)" }}
-    >
-      {mode === "spots" ? (
-        <EmbedMap mapboxToken={MAPBOX_TOKEN} />
-      ) : (
-        <EmbedVillagesMap
-          mapboxToken={MAPBOX_TOKEN}
-          centerVillageId={centerVillage}
-          centerZoom={centerZoom}
-        />
-      )}
-    </main>
+    <>
+      <SEO
+        title="Villedge Embed — interactive popup villages map"
+        description="Embeddable Villedge map showing popup villages and spots. Designed to be iframed into external sites."
+        path="/embed"
+        noIndex
+      />
+      <main
+        className="w-screen overflow-hidden bg-background"
+        style={{ height: "var(--viewport-height, 100dvh)" }}
+      >
+        {mode === "spots" ? (
+          <EmbedMap mapboxToken={MAPBOX_TOKEN} />
+        ) : (
+          <EmbedVillagesMap
+            mapboxToken={MAPBOX_TOKEN}
+            centerVillageId={centerVillage}
+            centerZoom={centerZoom}
+          />
+        )}
+      </main>
+    </>
   );
 };
 

@@ -10,9 +10,10 @@ interface SEOProps {
   image?: string;
   type?: "website" | "article" | "profile";
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  noIndex?: boolean;
 }
 
-export const SEO = ({ title, description, path, image = DEFAULT_IMAGE, type = "website", jsonLd }: SEOProps) => {
+export const SEO = ({ title, description, path, image = DEFAULT_IMAGE, type = "website", jsonLd, noIndex = false }: SEOProps) => {
   const url = `${SITE_URL}${path}`;
   const trimmedDesc = description.length > 160 ? description.slice(0, 157) + "…" : description;
   const ldArray = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
@@ -21,6 +22,7 @@ export const SEO = ({ title, description, path, image = DEFAULT_IMAGE, type = "w
     <Helmet>
       <title>{title}</title>
       <meta name="description" content={trimmedDesc} />
+      {noIndex && <meta name="robots" content="noindex,nofollow" />}
       <link rel="canonical" href={url} />
       <meta property="og:type" content={type} />
       <meta property="og:title" content={title} />
