@@ -278,7 +278,9 @@ const Profile = () => {
         path={`/profile/${username || ""}`}
         type="profile"
         image={profileData?.avatar_url || undefined}
+        jsonLd={personJsonLd}
       />
+
       {/* Navigation Bar */}
       <div className="fixed top-4 left-4 right-4 z-50 flex justify-between items-center">
 
