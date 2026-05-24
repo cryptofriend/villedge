@@ -84,6 +84,7 @@ async function main() {
 
   const entries: SitemapEntry[] = [
     { path: "/", changefreq: "daily", priority: "1.0" },
+    { path: "/about", changefreq: "monthly", priority: "0.6" },
     { path: "/widget", changefreq: "monthly", priority: "0.5" },
     ...villageEntries,
   ];
