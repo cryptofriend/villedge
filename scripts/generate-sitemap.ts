@@ -63,7 +63,7 @@ function buildSitemap(entries: SitemapEntry[]) {
 async function main() {
   const villages = await fetchVillageSlugs();
 
-  const VILLAGE_SUBROUTES = ["about", "residents", "scenius", "events"] as const;
+  const VILLAGE_SUBROUTES = ["about", "map", "residents", "scenius", "events"] as const;
 
   const villageEntries: SitemapEntry[] = villages.flatMap((v) => {
     const lastmod = v.updated_at ? new Date(v.updated_at).toISOString().slice(0, 10) : undefined;
