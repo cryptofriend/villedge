@@ -14,6 +14,7 @@ import { TonLoginButton } from '@/components/auth/TonLoginButton';
 import { WorldIdLoginButton } from '@/components/auth/WorldIdLoginButton';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { lovable } from '@/integrations/lovable';
+import { isWorldApp } from '@/lib/inAppBrowser';
 
 
 interface AuthDialogProps {
