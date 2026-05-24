@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SEO } from "@/components/SEO";
 
 const Widget = () => {
   const { villages, loading } = useVillages();
@@ -54,6 +55,12 @@ const Widget = () => {
   };
 
   return (
+    <>
+      <SEO
+        title="Embed the Villedge map — widget for popup villages"
+        description="Copy a one-line snippet to embed the live Villedge map of popup villages on your own site. Choose the centered village and size."
+        path="/widget"
+      />
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-4 py-10 sm:py-14">
         <header className="mb-8 flex items-start justify-between gap-4">
@@ -229,6 +236,7 @@ const Widget = () => {
         </Card>
       </div>
     </main>
+    </>
   );
 };
 
