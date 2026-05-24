@@ -41,6 +41,7 @@ export function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
   const [authType, setAuthType] = useState<'solana' | 'ethereum' | 'magic' | 'google' | 'telegram' | 'worldid' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOtherMethods, setShowOtherMethods] = useState(false);
+  const inWorldApp = isWorldApp();
 
 
   const handleGoogleLogin = async () => {
