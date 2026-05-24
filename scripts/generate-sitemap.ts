@@ -63,7 +63,7 @@ function buildSitemap(entries: SitemapEntry[]) {
 async function main() {
   const villages = await fetchVillageSlugs();
 
-  const VILLAGE_SUBROUTES = ["about", "residents", "scenius", "events"] as const;
+  const VILLAGE_SUBROUTES = ["about", "map", "residents", "scenius", "events"] as const;
 
   const villageEntries: SitemapEntry[] = villages.flatMap((v) => {
     const lastmod = v.updated_at ? new Date(v.updated_at).toISOString().slice(0, 10) : undefined;
@@ -84,6 +84,7 @@ async function main() {
 
   const entries: SitemapEntry[] = [
     { path: "/", changefreq: "daily", priority: "1.0" },
+    { path: "/about", changefreq: "monthly", priority: "0.6" },
     { path: "/widget", changefreq: "monthly", priority: "0.5" },
     ...villageEntries,
   ];
