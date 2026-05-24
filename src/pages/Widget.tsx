@@ -236,6 +236,7 @@ const Widget = () => {
         </Card>
       </div>
     </main>
+    </>
   );
 };
 
