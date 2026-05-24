@@ -260,6 +260,16 @@ const Profile = () => {
     ? profileData.bio.slice(0, 160)
     : `View ${profileData?.username || "this member"}'s villages, projects, and community activity on Villedge.`;
 
+  const personJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: profileData?.username || "Villedge member",
+    ...(profileData?.bio && { description: profileData.bio }),
+    ...(profileData?.avatar_url && { image: profileData.avatar_url }),
+    url: `https://villedge.tech/profile/${username || ""}`,
+    ...(profileData?.social_url && { sameAs: [profileData.social_url] }),
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <SEO
