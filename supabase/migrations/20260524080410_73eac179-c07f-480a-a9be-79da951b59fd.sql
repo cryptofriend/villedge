@@ -1,0 +1,2 @@
+ALTER TABLE public.spots DROP CONSTRAINT IF EXISTS spots_category_check;
+ALTER TABLE public.spots ADD CONSTRAINT spots_category_check CHECK (category = ANY (ARRAY['accommodation'::text,'food'::text,'eat'::text,'coffee'::text,'bar'::text,'activity'::text,'work'::text,'atm'::text,'shopping'::text]));
