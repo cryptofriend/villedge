@@ -20,6 +20,7 @@ import Index from "./pages/Index";
 const Village = lazy(() => import("./pages/Village"));
 const EditVillage = lazy(() => import("./pages/EditVillage"));
 const Embed = lazy(() => import("./pages/Embed"));
+const EmbedResidents = lazy(() => import("./pages/EmbedResidents"));
 const Widget = lazy(() => import("./pages/Widget"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Admin = lazy(() => import("./pages/Admin"));
