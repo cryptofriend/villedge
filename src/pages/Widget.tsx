@@ -28,6 +28,13 @@ const Widget = () => {
   const [height, setHeight] = useState<string>("520");
   const [copied, setCopied] = useState(false);
 
+  // Residents widget state
+  const [resVillage, setResVillage] = useState<string>("");
+  const [resInteractive, setResInteractive] = useState<string>("interactive");
+  const [resWidth, setResWidth] = useState<string>("100%");
+  const [resHeight, setResHeight] = useState<string>("700");
+  const [resCopied, setResCopied] = useState(false);
+
   const origin =
     typeof window !== "undefined" ? window.location.origin : "https://villedge.tech";
   const docsOrigin = "https://villedge.tech";
@@ -49,10 +56,52 @@ const Widget = () => {
   title="Villedge map"
 ></iframe>`;
 
+  const resSrc = useMemo(() => {
+    if (!resVillage) return "";
+    const u = new URL(`${origin}/embed/${resVillage}/residents`);
+    if (resInteractive === "readonly") u.searchParams.set("mode", "readonly");
+    return u.toString();
+  }, [origin, resVillage, resInteractive]);
+
+  const resSnippet = resVillage
+    ? `<iframe
+  id="villedge-residents"
+  src="${resSrc}"
+  width="${resWidth}"
+  height="${resHeight}"
+  style="border:0;border-radius:12px;overflow:hidden;max-width:100%;"
+  loading="lazy"
+  referrerpolicy="no-referrer-when-downgrade"
+  sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+  title="Villedge residents"
+></iframe>
+<script>
+  // Optional: react to events from the residents widget
+  window.addEventListener("message", (e) => {
+    if (!e.data || typeof e.data !== "object") return;
+    if (!String(e.data.type || "").startsWith("villedge:")) return;
+    // e.data.type can be: villedge:residents-loaded | villedge:residents-changed
+    // | villedge:add-resident-clicked | villedge:resize
+    if (e.data.type === "villedge:resize") {
+      const f = document.getElementById("villedge-residents");
+      if (f && e.data.height) f.style.height = e.data.height + "px";
+    }
+    console.log("[villedge]", e.data);
+  });
+</script>`
+    : "";
+
   const copy = async () => {
     await navigator.clipboard.writeText(snippet);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const copyRes = async () => {
+    if (!resSnippet) return;
+    await navigator.clipboard.writeText(resSnippet);
+    setResCopied(true);
+    setTimeout(() => setResCopied(false), 1500);
   };
 
   return (
