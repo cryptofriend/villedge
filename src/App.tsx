@@ -95,6 +95,7 @@ const AppRoutes = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/embed" element={<Embed />} />
+            <Route path="/embed/:villageSlug/residents" element={<EmbedResidents />} />
             <Route path="/about" element={<About />} />
             <Route path="/widget" element={<Widget />} />
             <Route path="/auth" element={<Auth />} />
