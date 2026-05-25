@@ -11,6 +11,7 @@ import { TonProvider } from "@/components/TonProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { getVillageSlugFromDomain, isCustomVillageDomain } from "@/lib/domainMapping";
 import { UserProfilePopupProvider } from "@/components/profile/UserProfilePopup";
+import { ContactDevButton } from "@/components/ContactDevButton";
 
 // Eager: Index is the landing page; load instantly for fast LCP
 import Index from "./pages/Index";
@@ -128,13 +129,17 @@ const App = () => (
         <Sonner />
         {isLightweightEmbedRoute ? (
           // Embed/Widget: skip wallet providers entirely to keep bundle minimal
-          <AppRoutes />
+          <>
+            <AppRoutes />
+            <ContactDevButton />
+          </>
         ) : (
           <PrivyProvider>
             <PortoProvider>
               <SolanaProvider>
                 <TonProvider>
                   <AppRoutes />
+                  <ContactDevButton />
                 </TonProvider>
               </SolanaProvider>
             </PortoProvider>
