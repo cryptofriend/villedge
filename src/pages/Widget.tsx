@@ -133,6 +133,13 @@ const Widget = () => {
           </a>
         </header>
 
+        <Tabs defaultValue="map" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="map">Map widget</TabsTrigger>
+            <TabsTrigger value="residents">Residents widget</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="map" className="mt-0 space-y-6">
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
