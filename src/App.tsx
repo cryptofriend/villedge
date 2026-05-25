@@ -129,13 +129,17 @@ const App = () => (
         <Sonner />
         {isLightweightEmbedRoute ? (
           // Embed/Widget: skip wallet providers entirely to keep bundle minimal
-          <AppRoutes />
+          <>
+            <AppRoutes />
+            <ContactDevButton />
+          </>
         ) : (
           <PrivyProvider>
             <PortoProvider>
               <SolanaProvider>
                 <TonProvider>
                   <AppRoutes />
+                  <ContactDevButton />
                 </TonProvider>
               </SolanaProvider>
             </PortoProvider>
