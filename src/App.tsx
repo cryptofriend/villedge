@@ -87,6 +87,7 @@ const AppRoutes = () => (
             <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
             <Route path="/auth/world-callback" element={<WorldCallback />} />
             <Route path="/embed" element={<Embed />} />
+            <Route path="/embed/:villageSlug/residents" element={<EmbedResidents />} />
             <Route path="/widget" element={<Widget />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
