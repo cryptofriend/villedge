@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SEO } from "@/components/SEO";
 
 const Widget = () => {
@@ -26,6 +27,13 @@ const Widget = () => {
   const [width, setWidth] = useState<string>("100%");
   const [height, setHeight] = useState<string>("520");
   const [copied, setCopied] = useState(false);
+
+  // Residents widget state
+  const [resVillage, setResVillage] = useState<string>("");
+  const [resInteractive, setResInteractive] = useState<string>("interactive");
+  const [resWidth, setResWidth] = useState<string>("100%");
+  const [resHeight, setResHeight] = useState<string>("700");
+  const [resCopied, setResCopied] = useState(false);
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "https://villedge.tech";
@@ -48,10 +56,52 @@ const Widget = () => {
   title="Villedge map"
 ></iframe>`;
 
+  const resSrc = useMemo(() => {
+    if (!resVillage) return "";
+    const u = new URL(`${origin}/embed/${resVillage}/residents`);
+    if (resInteractive === "readonly") u.searchParams.set("mode", "readonly");
+    return u.toString();
+  }, [origin, resVillage, resInteractive]);
+
+  const resSnippet = resVillage
+    ? `<iframe
+  id="villedge-residents"
+  src="${resSrc}"
+  width="${resWidth}"
+  height="${resHeight}"
+  style="border:0;border-radius:12px;overflow:hidden;max-width:100%;"
+  loading="lazy"
+  referrerpolicy="no-referrer-when-downgrade"
+  sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+  title="Villedge residents"
+></iframe>
+<script>
+  // Optional: react to events from the residents widget
+  window.addEventListener("message", (e) => {
+    if (!e.data || typeof e.data !== "object") return;
+    if (!String(e.data.type || "").startsWith("villedge:")) return;
+    // e.data.type can be: villedge:residents-loaded | villedge:residents-changed
+    // | villedge:add-resident-clicked | villedge:resize
+    if (e.data.type === "villedge:resize") {
+      const f = document.getElementById("villedge-residents");
+      if (f && e.data.height) f.style.height = e.data.height + "px";
+    }
+    console.log("[villedge]", e.data);
+  });
+</script>`
+    : "";
+
   const copy = async () => {
     await navigator.clipboard.writeText(snippet);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const copyRes = async () => {
+    if (!resSnippet) return;
+    await navigator.clipboard.writeText(resSnippet);
+    setResCopied(true);
+    setTimeout(() => setResCopied(false), 1500);
   };
 
   return (
@@ -83,6 +133,13 @@ const Widget = () => {
           </a>
         </header>
 
+        <Tabs defaultValue="map" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="map">Map widget</TabsTrigger>
+            <TabsTrigger value="residents">Residents widget</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="map" className="mt-0 space-y-6">
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -234,6 +291,173 @@ const Widget = () => {
             <p>• No script tags or API keys required.</p>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="residents" className="mt-0 space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">1. Configure</CardTitle>
+                  <CardDescription>
+                    Pick a village. The widget shows its residents in real time.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="res-village">Village</Label>
+                    <Select value={resVillage} onValueChange={setResVillage}>
+                      <SelectTrigger id="res-village">
+                        <SelectValue
+                          placeholder={loading ? "Loading…" : "Select a village"}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {villages.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.name}
+                            {v.location ? ` — ${v.location}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="res-mode">Mode</Label>
+                    <Select value={resInteractive} onValueChange={setResInteractive}>
+                      <SelectTrigger id="res-mode">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="interactive">
+                          Interactive (with "Add yourself" button)
+                        </SelectItem>
+                        <SelectItem value="readonly">Read-only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="res-w">Width</Label>
+                      <Input
+                        id="res-w"
+                        value={resWidth}
+                        onChange={(e) => setResWidth(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="res-h">Height</Label>
+                      <Input
+                        id="res-h"
+                        value={resHeight}
+                        onChange={(e) => setResHeight(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">2. Preview</CardTitle>
+                  <CardDescription>
+                    {resVillage
+                      ? "Live preview of your residents widget."
+                      : "Select a village to see the preview."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-hidden rounded-md border border-border">
+                    {resSrc ? (
+                      <iframe
+                        src={resSrc}
+                        width="100%"
+                        height={360}
+                        style={{ border: 0, display: "block" }}
+                        loading="lazy"
+                        title="Villedge residents preview"
+                      />
+                    ) : (
+                      <div className="flex h-[360px] items-center justify-center text-sm text-muted-foreground">
+                        No village selected
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+                <div>
+                  <CardTitle className="text-lg">3. Copy the snippet</CardTitle>
+                  <CardDescription>
+                    Includes an optional <code>message</code> listener so your page
+                    can react when residents change.
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={copyRes}
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  disabled={!resSnippet}
+                >
+                  {resCopied ? (
+                    <>
+                      <Check className="h-4 w-4" /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" /> Copy
+                    </>
+                  )}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <pre className="max-h-96 overflow-auto rounded-md border border-border bg-muted/40 p-4 text-xs leading-relaxed text-foreground">
+                  <code>
+                    {resSnippet ||
+                      "// Select a village above to generate the snippet"}
+                  </code>
+                </pre>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">How auth & submissions work</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  • Users click <strong>Add yourself</strong> inside the widget; a new
+                  tab opens on <code>villedge.tech</code> where they log in
+                  (Google / TON) and submit their resident details.
+                </p>
+                <p>
+                  • The widget listens to Villedge in real time — new residents
+                  appear automatically without a page refresh.
+                </p>
+                <p>
+                  • Your page receives <code>postMessage</code> events:{" "}
+                  <code className="rounded bg-muted px-1">villedge:residents-loaded</code>,{" "}
+                  <code className="rounded bg-muted px-1">villedge:residents-changed</code>,{" "}
+                  <code className="rounded bg-muted px-1">villedge:add-resident-clicked</code>,{" "}
+                  <code className="rounded bg-muted px-1">villedge:resize</code>.
+                </p>
+                <p>
+                  • All data lives in the Villedge backend, so the same residents
+                  show on{" "}
+                  <code className="rounded bg-muted px-1">
+                    /{resVillage || "village"}/residents
+                  </code>{" "}
+                  and inside the embed.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
     </>
