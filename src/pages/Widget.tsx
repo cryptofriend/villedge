@@ -44,8 +44,9 @@ const Widget = () => {
     const u = new URL(`${origin}/embed`);
     if (centerVillage) u.searchParams.set("village", centerVillage);
     if (zoom) u.searchParams.set("zoom", zoom);
+    if (theme && theme !== "default") u.searchParams.set("theme", theme);
     return u.toString();
-  }, [origin, centerVillage, zoom]);
+  }, [origin, centerVillage, zoom, theme]);
 
   const snippet = `<iframe
   src="${src}"
