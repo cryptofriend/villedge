@@ -154,7 +154,7 @@ const Widget = () => {
                 <Select value={centerVillage} onValueChange={setCenterVillage}>
                   <SelectTrigger id="village">
                     <SelectValue
-                      placeholder={loading ? "Loading…" : "Default (first popup)"}
+                      placeholder={loading ? "Loading…" : "None (show whole world)"}
                     />
                   </SelectTrigger>
                   <SelectContent>
