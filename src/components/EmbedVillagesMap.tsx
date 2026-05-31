@@ -4,8 +4,62 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Loader2, ExternalLink } from "lucide-react";
 import { useVillages, Village } from "@/hooks/useVillages";
 
-const DEFAULT_CENTER: [number, number] = [106.7358675, 10.8056129];
-const DEFAULT_ZOOM = 4;
+const WORLD_CENTER: [number, number] = [10, 20];
+const WORLD_ZOOM = 1.2;
+
+export type EmbedTheme = "default" | "blue" | "dark" | "ocean" | "terracotta";
+
+interface ThemeConfig {
+  accent: string; // hex
+  accentSoft: string; // rgba/hex with low alpha
+  mapStyle: string;
+  badgeBg: string;
+  badgeText: string;
+  surface: string; // bubble background
+}
+
+const THEMES: Record<EmbedTheme, ThemeConfig> = {
+  default: {
+    accent: "#466946",
+    accentSoft: "rgba(70,105,70,0.12)",
+    mapStyle: "mapbox://styles/mapbox/light-v11",
+    badgeBg: "rgba(250,248,245,0.97)",
+    badgeText: "#333",
+    surface: "rgba(250,248,245,0.97)",
+  },
+  blue: {
+    accent: "#3B82F6",
+    accentSoft: "rgba(59,130,246,0.14)",
+    mapStyle: "mapbox://styles/mapbox/light-v11",
+    badgeBg: "rgba(255,255,255,0.97)",
+    badgeText: "#1e293b",
+    surface: "rgba(255,255,255,0.97)",
+  },
+  dark: {
+    accent: "#60A5FA",
+    accentSoft: "rgba(96,165,250,0.18)",
+    mapStyle: "mapbox://styles/mapbox/dark-v11",
+    badgeBg: "rgba(20,25,35,0.95)",
+    badgeText: "#f1f5f9",
+    surface: "rgba(20,25,35,0.95)",
+  },
+  ocean: {
+    accent: "#0c8a9e",
+    accentSoft: "rgba(12,138,158,0.14)",
+    mapStyle: "mapbox://styles/mapbox/light-v11",
+    badgeBg: "rgba(255,255,255,0.97)",
+    badgeText: "#0c2340",
+    surface: "rgba(255,255,255,0.97)",
+  },
+  terracotta: {
+    accent: "#bf6e4e",
+    accentSoft: "rgba(191,110,78,0.14)",
+    mapStyle: "mapbox://styles/mapbox/light-v11",
+    badgeBg: "rgba(250,248,245,0.97)",
+    badgeText: "#3a2418",
+    surface: "rgba(250,248,245,0.97)",
+  },
+};
 
 interface EmbedVillagesMapProps {
   mapboxToken: string;
@@ -13,16 +67,21 @@ interface EmbedVillagesMapProps {
   centerVillageId?: string;
   /** Zoom override when centering on a village */
   centerZoom?: number;
+  /** Visual theme for the embed */
+  theme?: EmbedTheme;
 }
 
 export const EmbedVillagesMap = ({
   mapboxToken,
   centerVillageId,
-  centerZoom = 6,
+  centerZoom,
+  theme = "default",
 }: EmbedVillagesMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+
+  const t = THEMES[theme] ?? THEMES.default;
 
   const { villages, loading } = useVillages();
   const [mapReady, setMapReady] = useState(false);
@@ -33,16 +92,17 @@ export const EmbedVillagesMap = ({
     [villages],
   );
 
-  // Init map
+  // Init map — default view shows the whole planet
   useEffect(() => {
     if (map.current || !mapContainer.current || !mapboxToken) return;
     mapboxgl.accessToken = mapboxToken;
     const m = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: DEFAULT_CENTER,
-      zoom: DEFAULT_ZOOM,
+      style: t.mapStyle,
+      center: WORLD_CENTER,
+      zoom: WORLD_ZOOM,
       attributionControl: false,
+      projection: { name: "mercator" },
     });
     map.current = m;
     m.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-right");
@@ -53,18 +113,18 @@ export const EmbedVillagesMap = ({
       m.remove();
       map.current = null;
     };
-  }, [mapboxToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapboxToken, t.mapStyle]);
 
-  // Center on requested village
+  // Center on requested village ONLY if explicitly provided
   useEffect(() => {
-    if (!map.current || !mapReady || centered || popupVillages.length === 0) return;
-    const target = centerVillageId
-      ? popupVillages.find((v) => v.id === centerVillageId)
-      : popupVillages[0];
+    if (!map.current || !mapReady || centered) return;
+    if (!centerVillageId) return;
+    const target = popupVillages.find((v) => v.id === centerVillageId);
     if (target) {
       map.current.flyTo({
         center: target.center,
-        zoom: centerZoom,
+        zoom: centerZoom ?? 6,
         duration: 1200,
       });
       setCentered(true);
@@ -85,21 +145,21 @@ export const EmbedVillagesMap = ({
         <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
           <div style="
             display:flex;align-items:center;gap:6px;
-            background:${isCenter ? "hsl(var(--background))" : "rgba(250,248,245,0.97)"};
+            background:${isCenter ? t.surface : t.badgeBg};
             padding:6px 10px 6px 6px;border-radius:20px;
-            border:${isCenter ? "2px solid hsl(var(--primary))" : "0"};
-            box-shadow:${isCenter ? "0 6px 22px hsl(var(--primary) / 0.35)" : "0 3px 12px rgba(0,0,0,0.15)"};
+            border:${isCenter ? `2px solid ${t.accent}` : "0"};
+            box-shadow:${isCenter ? `0 6px 22px ${t.accent}59` : "0 3px 12px rgba(0,0,0,0.15)"};
             max-width:180px;
           ">
             <img src="${village.logo_url || "/placeholder.svg"}" alt="${village.name}"
               style="width:24px;height:24px;border-radius:6px;object-fit:cover;flex-shrink:0;"
               onerror="this.onerror=null;this.src='/placeholder.svg';" />
             <div style="display:flex;flex-direction:column;line-height:1.2;min-width:0;overflow:hidden;">
-              <span style="font-weight:600;font-size:11px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${village.name}</span>
-              <span style="font-size:9px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${village.location || ""}</span>
+              <span style="font-weight:600;font-size:11px;color:${t.badgeText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${village.name}</span>
+              <span style="font-size:9px;color:${t.badgeText};opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${village.location || ""}</span>
             </div>
           </div>
-          <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid ${isCenter ? "hsl(var(--primary))" : "rgba(250,248,245,0.97)"};margin-top:-1px;"></div>
+          <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid ${isCenter ? t.accent : t.badgeBg};margin-top:-1px;"></div>
         </div>
       `;
       el.addEventListener("click", () => {
@@ -110,7 +170,7 @@ export const EmbedVillagesMap = ({
         .addTo(map.current!);
       markersRef.current.set(village.id, marker);
     });
-  }, [popupVillages, centerVillageId]);
+  }, [popupVillages, centerVillageId, t]);
 
   useEffect(() => {
     if (mapReady) renderMarkers();
@@ -122,7 +182,7 @@ export const EmbedVillagesMap = ({
 
       {loading && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/80">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: t.accent }} />
         </div>
       )}
 
@@ -141,7 +201,8 @@ export const EmbedVillagesMap = ({
             href={window.location.origin}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+            className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium hover:opacity-80"
+            style={{ background: t.accentSoft, color: t.accent }}
           >
             Explore all
             <ExternalLink className="h-3 w-3" />
