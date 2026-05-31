@@ -23,9 +23,10 @@ const Widget = () => {
   );
 
   const [centerVillage, setCenterVillage] = useState<string>("");
-  const [zoom, setZoom] = useState<string>("6");
+  const [zoom, setZoom] = useState<string>("");
   const [width, setWidth] = useState<string>("100%");
   const [height, setHeight] = useState<string>("520");
+  const [theme, setTheme] = useState<string>("default");
   const [copied, setCopied] = useState(false);
 
   // Residents widget state
