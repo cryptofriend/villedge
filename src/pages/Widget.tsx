@@ -168,6 +168,39 @@ const Widget = () => {
                 </Select>
               </div>
 
+              <div className="space-y-1.5">
+                <Label>Color theme</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: "default", name: "Sage", color: "#466946" },
+                    { id: "blue", name: "Blue", color: "#3B82F6" },
+                    { id: "dark", name: "Dark", color: "#0f172a" },
+                    { id: "ocean", name: "Ocean", color: "#0c8a9e" },
+                    { id: "terracotta", name: "Terracotta", color: "#bf6e4e" },
+                  ].map((opt) => {
+                    const active = theme === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setTheme(opt.id)}
+                        className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                          active
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border bg-background text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <span
+                          className="h-3.5 w-3.5 rounded-full ring-1 ring-black/10"
+                          style={{ background: opt.color }}
+                        />
+                        {opt.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="zoom">Zoom</Label>
@@ -177,6 +210,7 @@ const Widget = () => {
                     min={1}
                     max={18}
                     value={zoom}
+                    placeholder="auto"
                     onChange={(e) => setZoom(e.target.value)}
                   />
                 </div>
