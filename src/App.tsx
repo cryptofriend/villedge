@@ -31,6 +31,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const TelegramCallback = lazy(() => import("./pages/TelegramCallback"));
 const WorldCallback = lazy(() => import("./pages/WorldCallback"));
 const About = lazy(() => import("./pages/About"));
+const Festivals = lazy(() => import("./pages/Festivals"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,6 +98,7 @@ const AppRoutes = () => (
             <Route path="/embed" element={<Embed />} />
             <Route path="/embed/:villageSlug/residents" element={<EmbedResidents />} />
             <Route path="/about" element={<About />} />
+            <Route path="/festivals" element={<Festivals />} />
             <Route path="/widget" element={<Widget />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/telegram-callback" element={<TelegramCallback />} />
