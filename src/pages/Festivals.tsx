@@ -1,4 +1,5 @@
 import { FestivalsMap } from "@/components/FestivalsMap";
+import { FestivalsGantt } from "@/components/FestivalsGantt";
 import { SEO } from "@/components/SEO";
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoiZXVkYWZvcm0iLCJhIjoiY21lczgwdndsMDZlczJqcXo3Y2g3d2diMSJ9.MbyZaNannwrrF44tMnz3aA";
@@ -11,11 +12,22 @@ const Festivals = () => {
         description="Explore a live world map of music festivals. Discover lineups, dates and locations of festivals happening around the globe."
         path="/festivals"
       />
-      <main
-        className="w-screen overflow-hidden bg-background"
-        style={{ height: "var(--viewport-height, 100dvh)" }}
-      >
-        <FestivalsMap mapboxToken={MAPBOX_TOKEN} />
+      <main className="w-screen min-h-[100dvh] overflow-x-hidden bg-background flex flex-col">
+        <section
+          className="w-full"
+          style={{ height: "var(--viewport-height, 100dvh)" }}
+        >
+          <FestivalsMap mapboxToken={MAPBOX_TOKEN} />
+        </section>
+        <section className="w-full border-t border-border bg-card">
+          <div className="px-4 sm:px-6 py-5">
+            <h2 className="text-lg font-semibold">Festival timeline</h2>
+            <p className="text-sm text-muted-foreground">
+              Festivals plotted on their exact dates.
+            </p>
+          </div>
+          <FestivalsGantt />
+        </section>
       </main>
     </>
   );
