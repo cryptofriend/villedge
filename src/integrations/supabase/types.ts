@@ -193,6 +193,72 @@ export type Database = {
         }
         Relationships: []
       }
+      festivals: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          genres: string[] | null
+          id: string
+          latitude: number
+          lineup_summary: string | null
+          location_name: string | null
+          logo_url: string | null
+          longitude: number
+          name: string
+          slug: string
+          source_url: string | null
+          start_date: string | null
+          updated_at: string
+          website_url: string | null
+          year: number | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          genres?: string[] | null
+          id?: string
+          latitude: number
+          lineup_summary?: string | null
+          location_name?: string | null
+          logo_url?: string | null
+          longitude: number
+          name: string
+          slug: string
+          source_url?: string | null
+          start_date?: string | null
+          updated_at?: string
+          website_url?: string | null
+          year?: number | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          genres?: string[] | null
+          id?: string
+          latitude?: number
+          lineup_summary?: string | null
+          location_name?: string | null
+          logo_url?: string | null
+          longitude?: number
+          name?: string
+          slug?: string
+          source_url?: string | null
+          start_date?: string | null
+          updated_at?: string
+          website_url?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       housing_rooms: {
         Row: {
           capacity: number
