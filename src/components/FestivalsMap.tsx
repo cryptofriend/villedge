@@ -72,9 +72,10 @@ const formatDateRange = (start?: string | null, end?: string | null) => {
 interface FestivalsMapProps {
   mapboxToken: string;
   theme?: FestivalsTheme;
+  onFestivalClick?: (f: Festival) => void;
 }
 
-export const FestivalsMap = ({ mapboxToken, theme = "default" }: FestivalsMapProps) => {
+export const FestivalsMap = ({ mapboxToken, theme = "default", onFestivalClick }: FestivalsMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -145,7 +146,9 @@ export const FestivalsMap = ({ mapboxToken, theme = "default" }: FestivalsMapPro
         </div>
       `;
       el.addEventListener("click", () => {
-        if (f.website_url) {
+        if (onFestivalClick) {
+          onFestivalClick(f);
+        } else if (f.website_url) {
           window.open(f.website_url, "_blank", "noopener");
         }
       });
@@ -154,7 +157,7 @@ export const FestivalsMap = ({ mapboxToken, theme = "default" }: FestivalsMapPro
         .addTo(map.current!);
       markersRef.current.set(f.id, marker);
     });
-  }, [validFestivals, t]);
+  }, [validFestivals, t, onFestivalClick]);
 
   useEffect(() => {
     if (mapReady) renderMarkers();
